@@ -28,7 +28,7 @@ class Search:
         if self.access_token is not None and self.expiration_time is not None and timezone.now() <= self.expiration_time:
             return 
 
-        print("Obtaining new access token")
+        logging.info("Obtaining new access token")
         data = {'grant_type': 'client_credentials',
             'scope': settings.LN_SCOPE}
 
@@ -42,7 +42,16 @@ class Search:
             self.expiration_time = timezone.now() + datetime.timedelta(seconds=int(tokens['expires_in']))
 
         else:
-            pass # TODO handle bad request/response
+            logging.error("Error occured obtaining access token. Return code: {0}. Response:".format(access_token_response.status_code))
+            results = access_token_response.json()
+            logging.error(results)
+            if "error" in results and "message" in results["error"]:
+                return results["error"]["message"]
+            else:
+                return "An unexpected error occured."
+
+        return ""
+
 
     def check_can_search(self):
         '''
@@ -59,8 +68,11 @@ class Search:
 
         # Compare against the limits for min/hr/day
         throttles = self.limits.objects.all()
-        if throttles.count() != 1:
-            pass # TODO handle/raise error for the record not existing, or too many existing
+        if throttles.count() == 0:
+            logging.error("No record exists in the database containing the throttling limitations!")
+            return False
+        if throttles.count() > 1:
+            logging.error("More than one record exists in the database for the throttling limitations!")
 
         throttles = throttles[0]
 
@@ -90,8 +102,11 @@ class Search:
 
         # Compare against the limits for min/hr/day
         throttles = self.limits.objects.all()
-        if throttles.count() != 1:
-            pass # TODO handle/raise error for the record not existing, or too many existing
+        if throttles.count() == 0:
+            logging.error("No record exists in the database containing the throttling limitations!")
+            return False
+        if throttles.count() > 1:
+            logging.error("More than one record exists in the database for the throttling limitations!")
 
         throttles = throttles[0]
 
@@ -119,8 +134,11 @@ class Search:
 
         # Compare against the limits for min/hr/day
         throttles = self.limits.objects.all()
-        if throttles.count() != 1:
-            pass # TODO handle/raise error for the record not existing, or too many existing
+        if throttles.count() == 0:
+            logging.error("No record exists in the database containing the throttling limitations!")
+            return False
+        if throttles.count() > 1:
+            logging.error("More than one record exists in the database for the throttling limitations!")
 
         throttles = throttles.first()
         # Available now
@@ -155,7 +173,10 @@ class Search:
             # We are out of searches for the timeframe
             return {"error_message":"There are no searches remaining for the current min/hour/day"}
 
-        self.authenticate()
+        error_message = self.authenticate()
+        if error_message:
+            return {"error_message": error_message}
+
         headers = {"Authorization": "Bearer " + self.access_token}
         url = self.api_url + resource
     
