@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'crispy_forms',
+    'textassembler_processor.apps.TextassemblerProcessorConfig',
     'textassembler_web.apps.TextassemblerWebConfig',
 ]
 

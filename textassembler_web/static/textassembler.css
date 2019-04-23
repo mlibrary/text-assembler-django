@@ -1,6 +1,11 @@
 /**************************************
 * General CSS shared by all the pages *
 ***************************************/
+/* CONTENT*/
+.content {
+    padding-left:10px;
+    padding-right:10px;
+}
 /*NAVBAR*/
 
 #navbar-wrapper {
@@ -64,8 +69,45 @@
     float: right !important;
 }
 
+.logout {
+    padding:0px !important;
+}
 #user_logout_link {
     padding-left: 0px !important;
     padding-right: 0px !important;
     text-decoration: underline !important;
+}
+
+
+/********
+* Search Form
+**********/
+.input-group-append, .add-form-row, .remove-form-row {
+    width:20px;
+}
+.col-4 {
+    margin-top: 1px;
+    margin-bottom: 1px;
+}
+.filter_opt_value {
+    width: 100%;
+    display:inline-flex;
+}
+.remove-form-row {
+    border: none;
+    padding: 0px 5px 15px 5px;
+    font-size: 13px;
+    border-radius:50%;
+    height: 20px;
+    margin-top: 10px;
+}
+.filter_type_label {
+    padding-left:40px !important;
+}
+.comp-dd {
+    width: 18%;
+}
+
+.filter-date {
+    width: 90%;
 }
