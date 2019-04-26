@@ -24,10 +24,10 @@ class Filters:
             return {}
 
         if filter_type == 'people':
-            return {'type':'text'}
+            return {'name':"People", 'type':'text'}
 
         if filter_type == 'lang':
-            return {'type':'select', 'choices':[
+            return {'name':'Language', 'type':'select', 'choices':[
                 {'val':'English','name':'English'},
                 {'val':'French', 'name':'French'},
                 {'val':'German', 'name':'German'},
@@ -54,12 +54,13 @@ class Filters:
 
         if filter_type == 'source':
             results = []
+            print("number of sources: {0}".format(sources.objects.all().count()))
             for source in sources.objects.all():
                 results.append({"val":source.source_id,"name":source.source_name})
-            return {'type':'select', 'choices':results}
+            return {'name':'Source','type':'select', 'choices':results}
 
         if filter_type == 'date':
-            return {"type":"date", "choices":[
+            return {'name':'Date', "type":"date", "choices":[
                 {"val":"gt", "name":"&#62;"},
                 {"val":"lt", "name":"&#60;"},
                 {"val":"gte", "name":"&#8804;"},

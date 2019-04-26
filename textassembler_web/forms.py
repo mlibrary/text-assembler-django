@@ -1,6 +1,7 @@
 from django import forms
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Submit, Row, Column
+import json
 
 class TextAssemblerWebForm(forms.Form):
 
@@ -19,13 +20,16 @@ class TextAssemblerWebForm(forms.Form):
     def set_form_action(self):
         self.helper.form_action = reverse("search")
 
-    def set_fields(self, filter_data):
+    def set_fields(self, filter_data, search = ''):
         choices = [('','Select...')]
+
         for opt in filter_data:
             choices.append((opt["id"],opt["name"]))
-        
+
         self.fields['search'] = forms.CharField(
             label='Search Term',
+            error_messages={'required': 'Required field'},
+            initial= search,
             widget=forms.TextInput(attrs={
                 'class':'form-control',
                 'placeholder':'Search term'
@@ -37,4 +41,5 @@ class TextAssemblerWebForm(forms.Form):
             required=False,
             widget=forms.Select(attrs={'class':'filter_opts form-control'}),
         )
+
             

@@ -17,6 +17,7 @@
                     {{form.search}}
                 </div>
             </div>
+            <span class='required'>&nbsp;*</span>
         </div>
         <div class="row form-row spacer">
             <div class="col-2">
@@ -35,13 +36,16 @@
                 <button type="submit" class="btn btn-block btn-primary">Search</button>
             </div>
         </div>
+        <input type="hidden" id="post_data" value="{{ post_data }}" />
     </form>
 
-    {% if search %}
-    <p>search term: {{ search }}</p>
-    {% endif %}
-
-    
+    {% for field in form %}
+        {% if field.errors %}
+            {% for error in field.errors %}
+                <p class='error'> Error! {{ field.label }}: {{ error }} </p>
+            {% endfor %}
+        {% endif %}
+    {% endfor %}
 
     {% if message %}
     <br/><p>{{ message }}</p>

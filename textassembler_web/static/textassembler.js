@@ -38,51 +38,93 @@ function deleteForm(prefix, btn) {
     }
     return false;
 }
-function displayFilterValues(selected_filter, selected_filter_name) {
+
+function addFilterRow(data, selected_filter, selected_filter_value='') {
+    var newRow =
+        "<div class='row form-row spacer'>" +
+        "<div class='col-2 filter_type_label'><label>" + data['name'] + "</label></div>" +
+            "<div class='col-4'>" +
+                "<div class='input-group'>" +
+                    "<div class='filter_opt_value'>";
+
+    switch(data["type"]){
+        case "text":
+            newRow += "<input type='text' name='" + selected_filter + "' class='form-control' ";
+            if (selected_filter_value && selected_filter_value.length == 1){
+                newRow += "value='" + selected_filter_value[0] + "'";
+            }
+            newRow += "></input>";
+            break;
+        case "select":
+            newRow += "<select name='" + selected_filter + "' class='sp' multiple data-live-search='true' data-width='100%'>";
+            var i = 0;
+            for (i=0; i< data["choices"].length; i++){
+                newRow += "<option value='" + data["choices"][i]['val'] + "'";
+                for (filter in selected_filter_value) {
+                    if (selected_filter_value[filter] == data["choices"][i]['val']) {
+                        newRow += " selected";
+                    }
+                }
+                newRow += ">" + data["choices"][i]['name'] + "</option>";
+            }
+            newRow += "</select>";
+            break;
+        case "date":
+            newRow += "<select name='" + selected_filter + "' class='sp comp-dd' data-width='15%'>";
+            var i = 0;
+            for (i=0; i< data["choices"].length; i++){
+                newRow += "<option value='" + data["choices"][i]['val'] + "'";
+                if (selected_filter_value != null && selected_filter_value.length == 2){
+                    if (selected_filter_value[0] == data["choices"][i]['val']){
+                        newRow += " selected";
+                    }
+                }
+                newRow += ">" + data["choices"][i]['name'] + "</option>";
+            }
+            newRow += "</select><input type ='date' name='" + selected_filter + "' class='form-control filter-date'";
+            if (selected_filter_value != null && selected_filter_value.length == 2){
+                newRow += " value='" + selected_filter_value[1] + "'";
+            }
+            newRow += "/>";
+            break;
+    }
+
+    newRow += "</div>" +
+              "</div>" +
+              "</div>" +
+            "<div class='input-group-append'>" +
+                "<button class='btn btn-danger remove-form-row'>-</button>" +
+            "</div></div>";
+    $(".search_filters").append(newRow);
+    $(".sp").selectpicker();
+    $("#id_filter_opts").val("");
+
+}
+function displayFilterValues(selected_filter, selected_filter_value='') {
     $.ajax({
         url: '/ajax/filter_val_input/'+selected_filter,
         dataType: 'json',
         success: function(data) {
-            var newRow = 
-                "<div class='row form-row spacer'>" +
-                "<div class='col-2 filter_type_label'><label>" + selected_filter_name + "</label></div>" +
-                    "<div class='col-4'>" +
-                        "<div class='input-group'>" +
-                            "<div class='filter_opt_value'>";
-
-            switch(data["type"]){
-                case "text":
-                    newRow += "<input type='text' name='" + selected_filter + "' class='form-control'></input>";
-                    break;
-                case "select":
-                    newRow += "<select name='" + selected_filter + "' class='sp' multiple data-live-search='true' data-width='100%'>";
-                    var i = 0;
-                    for (i=0; i< data["choices"].length; i++){
-                        newRow += "<option value='" + data["choices"][i]['val'] + "'>" +
-                            data["choices"][i]['name'] + "</option>";
-                    }
-                    newRow += "</select>";
-                    break;
-                case "date":
-                    newRow += "<select name='" + selected_filter + "' class='sp comp-dd' data-width='15%'>";
-                    var i = 0;
-                    for (i=0; i< data["choices"].length; i++){
-                        newRow += "<option value='" + data["choices"][i]['val'] + "'>" +
-                            data["choices"][i]['name'] + "</option>";
-                    }
-                    newRow += "</select><input type ='date' name='" + selected_filter + "' class='form-control filter-date'/>";
-                    break;
+            if (selected_filter_value === '' || selected_filter_value === null){
+                addFilterRow(data, selected_filter, selected_filter_value);
             }
-
-            newRow += "</div>" +
-                      "</div>" +
-                      "</div>" +
-                    "<div class='input-group-append'>" +
-                        "<button class='btn btn-danger remove-form-row'>-</button>" +
-                    "</div></div>";
-            $(".search_filters").append(newRow);
-            $(".sp").selectpicker();
-            $("#id_filter_opts").val("");
+            else {
+                switch(data["type"]){
+                    case "text":
+                        for (filter_value in selected_filter_value){
+                            addFilterRow(data, selected_filter, [selected_filter_value[filter_value]]);
+                        }
+                        break;
+                    case "select":
+                        addFilterRow(data, selected_filter, selected_filter_value);
+                        break;
+                    case "date":
+                        for (i=0; i< selected_filter_value.length; i=i+2) {
+                            addFilterRow(data, selected_filter, selected_filter_value.slice(i,i+2));
+                        }
+                        break;
+                }
+            }
         }
     });
 }
@@ -100,6 +142,20 @@ $(document).on('click', '.remove-form-row', function(e){
 $(document).on('change', '#id_filter_opts', function(e) {
     var selected_filter = this.value;
     var selected_filter_name = this.options[this.selectedIndex].text;
-    displayFilterValues(selected_filter, selected_filter_name);
+    displayFilterValues(selected_filter, null);
 
+});
+
+/* 
+Handle POST data to pre-populate the filters
+*/
+$( document ).ready(function() {
+    post_data = $("#post_data")[0].value;
+    if (post_data) {
+        post_data = JSON.parse(post_data);
+        for (filter in post_data) {
+            values = post_data[filter];
+            displayFilterValues(filter,values);
+        }
+    }
 });

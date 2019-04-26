@@ -9,23 +9,29 @@ from django.conf import settings
 from django.db import connections
 from .search import Search
 from .filters import Filters
+import json
 
 def search(request):
+    filter_data = get_filter_opts()
+    set_filters = {}
+
     form = TextAssemblerWebForm(request.POST or None)
-    form.set_fields(get_filter_opts())
+    form.set_fields(filter_data, request.POST['search'] if 'search' in request.POST else '')
+
+    for opt in filter_data:
+            filters = {k:v for k,v in dict(request.POST).items() if k == opt['id']}
+            for k,v in filters.items():
+                set_filters[k] = v
 
     response = {
         "form": form,
         "message": "",
     }
-    # TODO -- if form is invalid, it is just showing an empty form
 
-    # TODO -- send back filters in the form to pre-populate
+    response["post_data"] = json.dumps(set_filters)
 
     if request.method == 'POST' and form.is_valid():
         clean = form.cleaned_data
-        #print(request.POST)
-        response["search"] = clean["search"]   
    
         if clean["search"]  != "":
             try:
@@ -41,6 +47,11 @@ def search(request):
                 response["message"] += search_results    
             except Exception as e:
                 response["message"] += "{0} on line {1} of {2}: {3}\n{4}".format(type(e).__name__, sys.exc_info()[-1].tb_lineno, os.path.basename(__file__), e, traceback.format_exc())
+
+    elif request.method == 'POST' and not form.is_valid():
+        for field in form.errors:
+            form[field].field.widget.attrs['class'] += ' error-field'
+        
 
     return render(request, "textassembler_web/search.html", response)
 

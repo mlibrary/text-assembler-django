@@ -111,3 +111,12 @@
 .filter-date {
     width: 90%;
 }
+.required {
+    color: red;
+}
+.error {
+    color: red;
+}
+.error-field {
+    border-color: red;
+}
