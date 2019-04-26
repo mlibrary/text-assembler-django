@@ -1,3 +1,7 @@
+[general]
+APP_NAME = Text Assembler
+TIME_ZONE = America/Detroit
+
 [database.default]
 ENGINE = django.db.backends.mysql
 NAME = name
@@ -8,21 +12,18 @@ PORT = 3306
 ATOMIC_REQUESTS = true
 
 [hosts]
-allowed_hosts = textassembler.lib.msu.edu
+ALLOWED_HOSTS = textassembler.lib.msu.edu
 
 [debug]
-debug = true
+DEBUG = true
 
 [secretkey]
 SECRET_KEY = secretkey
 
-[general]
-TIME_ZONE = America/Detroit
-
 [lexisnexis]
-token_url = https://auth-api.lexisnexis.com/oauth/v2/token
-client_id = client_id
-client_secret = secret
-scope = http://oauth.lexisnexis.com/all
-api_url = https://services-api.lexisnexis.com/v1/
+TOKEN_URL = https://auth-api.lexisnexis.com/oauth/v2/token
+CLIENT_ID = client_id
+CLIENT_SECRET = secret
+SCOPE = http://oauth.lexisnexis.com/all
+API_URL = https://services-api.lexisnexis.com/v1/
 

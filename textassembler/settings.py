@@ -37,19 +37,21 @@ SECURE_SETTINGS = os.path.join(BASE_DIR, "textassembler.cfg")
 # Load configs from location in SECURE_SETTINGS
 configs = load_configs(SECURE_SETTINGS)
 
+# App Name
+APP_NAME = configs.get("general","APP_NAME")
 
 # LexisNexis Configs
-LN_TOKEN_URL = configs.get("lexisnexis","token_url")
-LN_CLIENT_ID = configs.get("lexisnexis","client_id")
-LN_CLIENT_SECRET = configs.get("lexisnexis","client_secret")
-LN_SCOPE = configs.get("lexisnexis","scope")
-LN_API_URL = configs.get("lexisnexis","api_url")
+LN_TOKEN_URL = configs.get("lexisnexis","TOKEN_URL")
+LN_CLIENT_ID = configs.get("lexisnexis","CLIENT_ID")
+LN_CLIENT_SECRET = configs.get("lexisnexis","CLIENT_SECRET")
+LN_SCOPE = configs.get("lexisnexis","SCOPE")
+LN_API_URL = configs.get("lexisnexis","API_URL")
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = configs.get("secretkey", "SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = configs.get("debug", "debug").lower() == 'true'
+DEBUG = configs.get("debug", "DEBUG").lower() == 'true'
 
 if DEBUG:
     # will output to console

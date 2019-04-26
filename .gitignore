@@ -4,3 +4,10 @@ ta_env/
 .pyc
 __pycache__/
 activate.sh
+textassembler_web/templates/base.html
+textassembler_web/templates/header.html
+textassembler_web/templates/footer.html
+textassembler_web/static/*
+!textassembler_web/static/MSU.css
+!textassembler_web/static/textassembler.css
+!textassembler_web/static/textassembler.js

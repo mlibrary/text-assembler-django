@@ -1,3 +1,7 @@
+/*
+Javascript to control the optional filters on the page
+*/
+
 function updateElementIndex(el, prefix, ndx) {
     var id_regex = new RegExp('(' + prefix + '-\\d+)');
     var replacement = prefix + '-' + ndx;

@@ -44,7 +44,6 @@ class Command(BaseCommand):
                     break
                 skip += 100
 
-
         # Start a transaction to remove the current sources then add the new ones
         logging.info("Updating the database with the {0} sources.".format(len(results)))
         with transaction.atomic():

@@ -19,10 +19,21 @@ export LANG='en_US.UTF-8'
 export LC_ALL='en_US.UTF-8'
 ```
 
+Copy all of the .example files (find . -name '*.example') and make necessary changes.
+
 Running commands from cron with virtualenv
 ta_env/bin/python manage.py update_sources
 
 Notes
 --------------
-* API return 429 when too many requests are being sent, and even gives information on limits remaining/used
-    * still have checks locally to limit that, but can be a special handling
+
+
+UI TODO
+-------
+* Authentication
+* Customizable theme
+* Display results
+* Apply filters
+* Display Post Filters
+* Style h1
+
