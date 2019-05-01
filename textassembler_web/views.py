@@ -35,7 +35,7 @@ def search(request):
         if clean["search"]  != "":
             try:
                 search_api = Search()
-                results = search_api.search(clean["search"])
+                results = search_api.search(clean["search"], set_filters)
                 if "value" in results:
                     results['count'] = results['@odata.count']
                     results['postFilters'] = clean_post_filters(results['value'])

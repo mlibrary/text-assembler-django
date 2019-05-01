@@ -207,7 +207,42 @@ class Search:
                 return {"error_message": "An unexpected error occured."}
 
 
-    def search(self, term = ""):
+    def search(self, term = "", set_filters = {}):
+        '''
+        Processes the filters and turns them into parameters for the API.
+        Filters from the same field will be treated as AND
+        Filters from different fields will be treated with OR
+        '''
+        from .filters import Filters
+        
+        filters = ""
+        filter_data = Filters()
+
+        for key, values in set_filters.items():
+            namespace = filter_data.getEnumNamespace(key)
+
+            if filters != '':
+                filters += " and "
+
+            # Handle dates separately
+            if key == 'Date':
+                for i in range(0,len(values),2):
+                    filters += key.replace('_','/') + " " + values[i] + " " + values[i+1] + " and "
+                filters = filters[:-5]
+
+            else:
+                if len(values) == 1:
+                    filters += key.replace('_','/') + " eq " + namespace + "'" + values[0] + "' "
+                else:
+                    for value in values:
+                        filters += key.replace('_','/') + " eq " + namespace + "'" + value + "' or "
+                    filters = filters[:-4] # remove the last OR
+
+        print(filters)
+
         params = {"$search":term, "$expand": "PostFilters"}
+        if len(filters) > 0:
+            params['$filter'] = filters
+
         return self.api_call(resource='News', params=params)
 

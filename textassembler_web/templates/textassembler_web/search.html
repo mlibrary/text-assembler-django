@@ -54,38 +54,42 @@
     {% endif %}
 
     {% if search_results %}
-        <br/>
-        <span class='result-count'>{{ search_results.count | intcomma }} result(s) found. Showing only the first {{search_results.value | length }} result(s).</span><br/><hr/>
-        <h2>Search Results</h2>
-        {% for result in search_results.value %}
-            <div class='result'>
-                <span class='title'>{{ result.Title }}</span><br/>
-                <span class='field-title'>Date: </span><span class='date'>{{ result.Date|parse_iso|date:"F jS Y" }}</span>
-                <span class='field-title overview-title'>Overview: </span><span class='overview'>{{ result.Overview }}</span><br/>
-                {% for extract in result.Extracts %}
-                <span class='field-title'>Extract: <button type="button" class="btn btn-info btn-sm" data-toggle="collapse" data-target="#extract-{{forloop.parentloop.counter}}-{{forloop.counter}}">Show/Hide</button></span><br/>
-                <div class='extract collapse' id='extract-{{forloop.parentloop.counter}}-{{forloop.counter}}'>{{ extract.SummaryText | safe }}</div><br/>
-                {% endfor %}
-            </div>
-        {% endfor %}
+        {% if search_results.value|length == 0 %}
+            <br/>
+            <span class='result-count'>Your search returned 0 results. Please review your filter 
+            criteria and try again.</span>
+        {% else %}
+            <br/>
+            <span class='result-count'>{{ search_results.count | intcomma }} result(s) found. Showing only the first {{search_results.value | length }} result(s).</span><br/><hr/>
+            <h2>Search Results</h2>
+            {% for result in search_results.value %}
+                <div class='result'>
+                    <span class='title'>{{ result.Title }}</span><br/>
+                    <span class='field-title'>Date: </span><span class='date'>{{ result.Date|parse_iso|date:"F jS Y" }}</span>
+                    <span class='field-title overview-title'>Overview: </span><span class='overview'>{{ result.Overview }}</span><br/>
+                    {% for extract in result.Extracts %}
+                    <span class='field-title'>Extract: <button type="button" class="btn btn-info btn-sm" data-toggle="collapse" data-target="#extract-{{forloop.parentloop.counter}}-{{forloop.counter}}">Show/Hide</button></span><br/>
+                    <div class='extract collapse' id='extract-{{forloop.parentloop.counter}}-{{forloop.counter}}'>{{ extract.SummaryText | safe }}</div><br/>
+                    {% endfor %}
+                </div>
+            {% endfor %}
 
-        <!-- Post Filters -->
-        <hr/>
-        <h2 class='avail-post-filters'>Facets:</h2>
-        {% for filterName, filterValues in search_results.postFilters.items %}
-            <div class='post-filter'>
-                <span class='post-filter-title'>{{ filterName }}
-                    <button type="button" class="btn btn-info btn-sm" data-toggle="collapse" data-target="#postFilterGroup{{forloop.counter}}">Show/Hide</button>
-                </span>
-                <span class='post-filter-val collapse' id='postFilterGroup{{forloop.counter}}'>
-                {% for valueName, value in filterValues.items %}
-                        {{ valueName }} <span class='badge'>{{ value.Count | intcomma }} </span>{% if not forloop.last %} , {% endif %}
-                {% endfor %}
-                </span>
-            </div>
-        {% endfor %}
-        
-
+            <!-- Post Filters -->
+            <hr/>
+            <h2 class='avail-post-filters'>Facets:</h2>
+            {% for filterName, filterValues in search_results.postFilters.items %}
+                <div class='post-filter'>
+                    <span class='post-filter-title'>{{ filterName }}
+                        <button type="button" class="btn btn-info btn-sm" data-toggle="collapse" data-target="#postFilterGroup{{forloop.counter}}">Show/Hide</button>
+                    </span>
+                    <span class='post-filter-val collapse' id='postFilterGroup{{forloop.counter}}'>
+                    {% for valueName, value in filterValues.items %}
+                            {{ valueName }} <span class='badge'>{{ value.Count | intcomma }} </span>{% if not forloop.last %} , {% endif %}
+                    {% endfor %}
+                    </span>
+                </div>
+            {% endfor %}
+       {% endif %} 
     {% endif %}
 
 {% endblock %}
