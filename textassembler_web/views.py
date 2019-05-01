@@ -24,8 +24,7 @@ def search(request):
                 set_filters[k] = v
 
     response = {
-        "form": form,
-        "message": "",
+        "form": form
     }
 
     response["post_data"] = json.dumps(set_filters)
@@ -37,16 +36,17 @@ def search(request):
             try:
                 search_api = Search()
                 results = search_api.search(clean["search"])
-                if "value" in results and len(results["value"]) > 0:
-                    search_results = results["value"][0]["Title"]
-                elif "error_message" in results:
-                    search_results = results["error_message"]
-                else:
-                    search_results = "No results found"
+                if "value" in results:
+                    results['count'] = results['@odata.count']
+                    results['postFilters'] = clean_post_filters(results['value'])
+                    response['search_results'] = results
+                if "error_message" in results:
+                    response['error_message'] = results["error_message"]
                 
-                response["message"] += search_results    
             except Exception as e:
-                response["message"] += "{0} on line {1} of {2}: {3}\n{4}".format(type(e).__name__, sys.exc_info()[-1].tb_lineno, os.path.basename(__file__), e, traceback.format_exc())
+                # TODO probably don't want to print stack trace to page, log error and display
+                # generic message if not in debug mode
+                response["error_message"] = "{0} on line {1} of {2}: {3}\n{4}".format(type(e).__name__, sys.exc_info()[-1].tb_lineno, os.path.basename(__file__), e, traceback.format_exc())
 
     elif request.method == 'POST' and not form.is_valid():
         for field in form.errors:
@@ -54,6 +54,19 @@ def search(request):
         
 
     return render(request, "textassembler_web/search.html", response)
+
+def clean_post_filters(results):
+    postFilters = {}
+    for result in results:
+        for postFilter in result['PostFilters']:
+            for item in postFilter['FilterItems']:
+                if item['Count'] != None and item['Count'] != 'null' and item['Count'] > 0:
+                    if postFilter['PostFilterId'] not in postFilters:
+                        postFilters[postFilter['PostFilterId']] = {}
+                    postFilters[postFilter['PostFilterId']][item['Name']] = {"Count":item['Count'], "URL": item['SearchResults@odata.navigationLink']}
+    print(postFilters)
+    return postFilters
+
 
 def get_filter_opts():
     filters = Filters()

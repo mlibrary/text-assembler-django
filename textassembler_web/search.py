@@ -165,7 +165,7 @@ class Search:
         is_download = True if "$expand" in params else False
 
         # Make sure we are within the API throttling limits
-        if is_download and not check_can_download():
+        if is_download and not self.check_can_download():
             # We are out of downloads for the timeframe
             return {"error_message":"There are no downloads remaining for the current min/hour/day"}
 
@@ -208,6 +208,6 @@ class Search:
 
 
     def search(self, term = ""):
-        params = {"$search":term}
+        params = {"$search":term, "$expand": "PostFilters"}
         return self.api_call(resource='News', params=params)
 

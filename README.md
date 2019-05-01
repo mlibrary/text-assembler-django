@@ -31,9 +31,7 @@ Notes
 UI TODO
 -------
 * Authentication
-* Customizable theme
 * Display results
 * Apply filters
 * Display Post Filters
-* Style h1
-
+* Add instruction blurbs

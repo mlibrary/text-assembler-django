@@ -59,7 +59,7 @@ if DEBUG:
 else:
     logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)-8s %(message)s', datefmt='%a, %d %b %Y %H:%M:%S', filemode='w')
 
-ALLOWED_HOSTS = [host.strip() for host in configs.get("hosts", "allowed_hosts").split(",")]
+ALLOWED_HOSTS = [host.strip() for host in configs.get("hosts", "ALLOWED_HOSTS").split(",")]
 
 
 # Application definition
@@ -71,6 +71,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'django.contrib.humanize',
     'crispy_forms',
     'textassembler_processor.apps.TextassemblerProcessorConfig',
     'textassembler_web.apps.TextassemblerWebConfig',

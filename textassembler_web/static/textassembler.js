@@ -46,7 +46,7 @@ function deleteForm(prefix, btn) {
 function addFilterRow(data, selected_filter, selected_filter_value='') {
     var newRow =
         "<div class='row form-row spacer'>" +
-        "<div class='col-2 filter_type_label'><label>" + data['name'] + "</label></div>" +
+        "<div class='col-2 filter_type_label'><label>&bull; " + data['name'] + "</label></div>" +
             "<div class='col-4'>" +
                 "<div class='input-group'>" +
                     "<div class='filter_opt_value'>";

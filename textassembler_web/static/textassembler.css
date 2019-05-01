@@ -79,10 +79,24 @@
     text-decoration: underline !important;
 }
 
+h1 {
+    text-align: center;
+    font-size: 30px;
+    color: #18453b;
+    text-shadow: 0.5px 0.5px #222;
+}
 
+h2 {
+    padding-top:0px;
+    padding-bottom: 0px;
+}
 /********
 * Search Form
 **********/
+.form-row label {
+    color: #18453b;
+    font-weight: bold;
+}
 .input-group-append, .add-form-row, .remove-form-row {
     width:20px;
 }
@@ -120,4 +134,34 @@
 }
 .error-field {
     border-color: red;
+}
+
+/*******
+* Search Results
+********/
+.extract {
+    padding-bottom: 30px;
+}
+.post-filter-val {
+    padding-bottom: 20px;
+}
+.post-filter-val {
+    display: block;
+}
+.result-count {
+font-weight: bold;
+}
+.title, .field-title, .post-filter-title {
+    font-weight: bold;
+}
+.extract {
+    padding-left: 20px;
+    display: inline-block;
+}
+.overview-title {
+    padding-left: 200px;
+}
+.badge{
+    background-color:#777;
+    color: white;
 }

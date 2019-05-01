@@ -1,8 +1,14 @@
 {% block nav %}
+{% load static %}
 <div id="navbar-wrapper">
     <ul class="menu">
         <li><a href="/">Search</a></li>
         <li><a href="/downloads">Downloads</a></li>
         <li id='user_logout'><span>{{ user }} (<a href='/logout' class='logout'>logout</a>)</span></li>
 </div>
+<span style='float:left;'>
+    <a href='https://www.lexisnexis.com'>
+        <img src="{% static 'LexisNexis.gif' %}" alt="LexisNexis(R)" style="width:200px;height:61px">
+    </a>
+</span>
 {% endblock %}
