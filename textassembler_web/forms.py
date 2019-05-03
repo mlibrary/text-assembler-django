@@ -27,17 +27,18 @@ class TextAssemblerWebForm(forms.Form):
             choices.append((opt["id"],opt["name"]))
 
         self.fields['search'] = forms.CharField(
-            label='Search Term',
+            label='Search Term / Query',
             error_messages={'required': 'Required field'},
             initial= search,
             widget=forms.TextInput(attrs={
                 'class':'form-control',
-                'placeholder':'Search term'
+                'placeholder':'Search term',
+                'multiline':'True'
             })
         )
         self.fields['filter_opts'] = forms.ChoiceField(
             choices=choices,
-            label="Available Filters",
+            label="Filters / Options",
             required=False,
             widget=forms.Select(attrs={'class':'filter_opts form-control'}),
         )

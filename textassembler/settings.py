@@ -61,6 +61,8 @@ else:
 
 ALLOWED_HOSTS = [host.strip() for host in configs.get("hosts", "ALLOWED_HOSTS").split(",")]
 
+MAINTAINER_EMAILS = [email.strip() for email in configs.get("general", "MAINTAINER_EMAILS").split(",")]
+
 
 # Application definition
 

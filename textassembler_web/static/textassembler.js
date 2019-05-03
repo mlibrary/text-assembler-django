@@ -46,8 +46,22 @@ function deleteForm(prefix, btn) {
 function addFilterRow(data, selected_filter, selected_filter_value='') {
     var newRow =
         "<div class='row form-row spacer'>" +
-        "<div class='col-2 filter_type_label'><label>&bull; " + data['name'] + "</label></div>" +
-            "<div class='col-4'>" +
+        "<div class='col-4 filter_type_label'><label>&bull; " + data['name'];
+
+    if (data['help'] != ''){
+        // Allow tables to be in popover content
+        $.fn.popover.Constructor.Default.whiteList.table = [];
+        $.fn.popover.Constructor.Default.whiteList.tr = [];
+        $.fn.popover.Constructor.Default.whiteList.td = [];
+        $.fn.popover.Constructor.Default.whiteList.div = [];
+        $.fn.popover.Constructor.Default.whiteList.tbody = [];
+        $.fn.popover.Constructor.Default.whiteList.thead = [];
+        newRow += "&nbsp;<a href='#' role='button' data-trigger='focus' data-html='true' data-toggle='popover' title='" + data['name'] +
+            "' data-content='" + data['help'] + "'>(?)</a>"
+    }
+
+    newRow += "</label></div>" +
+            "<div class='col-6'>" +
                 "<div class='input-group'>" +
                     "<div class='filter_opt_value'>";
 
@@ -101,6 +115,7 @@ function addFilterRow(data, selected_filter, selected_filter_value='') {
             "</div></div>";
     $(".search_filters").append(newRow);
     $(".sp").selectpicker();
+    $('[data-toggle="popover"]').popover();
     $("#id_filter_opts").val("");
 
 }

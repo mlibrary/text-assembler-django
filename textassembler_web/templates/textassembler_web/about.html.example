@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<h1>About</h1><hr/>
+
+<p>Text Assembler enables construction and bulk download of full text corpora derived from newspapers, newswires, web-based news publications, broadcast news transcripts, magazines, and legal and trade publications published between 1980 and the present. Consult the Lexis Nexis <a href="https://w3.nexis.com/sources/scripts/eslClient.pl?GSDTYPE=News">A-Z list of sources and dates</a> to orient yourself to available data. 
+
+<br /><br />In order to build a corpus, construct a search, review the search results, and queue all content matching your search criteria for download. Text Assembler outputs a ZIP file that contains an identical set of HTML of your search criteria, sorted in descending date order. Downloading is queued for nights and weekends. Please plan ahead to ensure sufficient time to retrieve results.
+<br /><br />Text Assembler and data provided through it can only be used for educational and research purposes of authorized users.  
+<br /><br /><strong>Uses that are not allowed:</strong>
+</p>
+<ul><li>You may not use the database or any part of the information comprised in the database content for commercial research, for example, research that is done under a funding or consultant contract, internship, or other relationship in which the results are delivered to a for-profit organization.</li>
+<li>You may not sell or otherwise re-distribute data to third parties without express permission.</li>
+<li>You may not engage in bulk reproduction or distribution of the licensed materials in any form.</li>
+</ul>
+<p><br />Under some circumstances, violation of these guidelines could lead to loss of your right to use the campus network, in accord with <a href="https://tech.msu.edu/about/guidelines-policies/aup/">MSU's Statement on Acceptable Use of Computing Systems</a>.
+
+<br /><br />For support using Text Assembler, contact <a href="https://staff.lib.msu.edu/chua/">Hui Hua Chua</a>. For technical support, contact <a href="mailto: schanzme@msu.edu">Megan Schanz</a>.
+
+
+{% endblock %}

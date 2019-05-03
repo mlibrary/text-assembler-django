@@ -5,16 +5,18 @@
 {% load humanize %}
 
 {% block content %}
-    <h1>Search</h1>
+    <h1>Search</h1><hr/>
     
+    <p><strong>Instructions:</strong> Construct your search applying filters as required to narrow your results. If preview results look appropriate, you may queue the search for download. Downloading is queued for nights and weekends. Please plan ahead to ensure sufficient time to retrieve results. For more information on how to construct more effective searches see <a href="#"  data-toggle="modal" data-target="#tipModal">these tips</a>.</p>
+
     <form method="post" novalidate>
         <input type='hidden' display="none" id='id_form-TOTAL_FORMS' value="1"/>
         {% csrf_token %}
         <div class="row form-row spacer">
-            <div class="col-2">
+            <div class="col-4">
                 <label>{{form.search.label}}</label>
             </div>
-            <div class="col-4">
+            <div class="col-6">
                 <div class="input-group">
                     {{form.search}}
                 </div>
@@ -22,10 +24,10 @@
             <span class='required'>&nbsp;*</span>
         </div>
         <div class="row form-row spacer">
-            <div class="col-2">
+            <div class="col-4">
                 <label>{{form.filter_opts.label}}</label>
             </div>
-            <div class="col-4">
+            <div class="col-6">
                 <div class="input-group">
                     {{form.filter_opts}}
                 </div>
@@ -34,7 +36,7 @@
         <div class="search_filters">
         </div>
         <div class="row spacer">
-            <div class="col-4 offset-2">
+            <div class="col-6 offset-4">
                 <button type="submit" class="btn btn-block btn-primary">Search</button>
             </div>
         </div>
@@ -52,19 +54,20 @@
     {% if error_message %}
     <br/><p class='error'>{{ error_message }}</p>
     {% endif %}
+    <hr/>
 
+    <!-- SEARCH RESULTS -->
     {% if search_results %}
         {% if search_results.value|length == 0 %}
             <br/>
-            <span class='result-count'>Your search returned 0 results. Please review your filter 
+            <span class='result-count'>Your search returned <strong>0</strong> results. Please review your filter 
             criteria and try again.</span>
         {% else %}
-            <br/>
-            <span class='result-count'>{{ search_results.count | intcomma }} result(s) found. Showing only the first {{search_results.value | length }} result(s).</span><br/><hr/>
-            <h2>Search Results</h2>
+            <h2 id='searchResultLbl'>Search Results</h2>
+            <span class='result-count'><strong>{{ search_results.count | intcomma }}</strong> result(s) found. Showing only the first <strong>{{search_results.value | length }}</strong> result(s).</span><br/>
             {% for result in search_results.value %}
                 <div class='result'>
-                    <span class='title'>{{ result.Title }}</span><br/>
+                    <span class='field-title'>Title: </span><span class='title'>{{ result.Title }}</span><br/>
                     <span class='field-title'>Date: </span><span class='date'>{{ result.Date|parse_iso|date:"F jS Y" }}</span>
                     <span class='field-title overview-title'>Overview: </span><span class='overview'>{{ result.Overview }}</span><br/>
                     {% for extract in result.Extracts %}
@@ -92,5 +95,50 @@
        {% endif %} 
     {% endif %}
 
-{% endblock %}
+    <!-- Modal -->
+    <div class="modal fade" id="tipModal" tabindex="-1" role="dialog" aria-labelledby="tipModalLabel" aria-hidden="true">
+      <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2 class="modal-title" id="tipModalLabel">Search Tips</h2>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <h3>Why Build Better Searches?</h3>
+            <p>As downloading is queued for nights and weekends, more effective searches can reduce the time for
+results to be returned to researchers.</p>
+            
+            <h2>Selecting Filters</h2>
+            <p>If no filters are provided, Text Assembler will search across all news sources in all languages for 
+            all time periods. This can provide a very large number of results which will take a significant amount 
+            of time to search.
+            <br/><br/>
+            In many cases, it will make sense to apply filters for only English language news or a date filter for 
+            within the past month or year. Each one of the available filter options provides a help link ("?") to 
+            give more insite as to what it will filter.
+            </p>
 
+            <h2>Building a Search Query</h2>
+            <p>
+            Queries using index fields instead of keyword searching retrieve more relevant results. Index searching is
+            particularly useful when search terms are ambiguous.<br/><br/>
+            For example: Amazon (company vs river) or ING (bank vs part of running, speaking, etc) 
+            <br/><br/>
+            You can construct your search using index fields to help prevent this. In some cases, the index field is 
+            already a separate filter. For example: company(amazon). The 'company' index field can be filtered via the 
+            search query, or using the Company filter option. But there are other index fields that are not available 
+            as separate filters such as: 'state' and 'country' (which filters by country or region name).<br/><br/>
+            Examples for these would be: state(indiana or michigan) country(middle east or iran).
+            </p>
+
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-primary" data-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+{% endblock %}

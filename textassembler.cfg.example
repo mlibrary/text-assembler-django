@@ -1,6 +1,7 @@
 [general]
 APP_NAME = Text Assembler
 TIME_ZONE = America/Detroit
+MAINTAINER_EMAILS = schanzme@msu.edu, schanzme@lib.msu.edu
 
 [database.default]
 ENGINE = django.db.backends.mysql

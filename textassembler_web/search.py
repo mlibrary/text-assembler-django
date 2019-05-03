@@ -8,6 +8,7 @@ from django.conf import settings
 import datetime
 from django.apps import apps
 from django.utils import timezone
+from .utilities import log_error
 
 class Search:
     
@@ -42,9 +43,8 @@ class Search:
             self.expiration_time = timezone.now() + datetime.timedelta(seconds=int(tokens['expires_in']))
 
         else:
-            logging.error("Error occured obtaining access token. Return code: {0}. Response:".format(access_token_response.status_code))
             results = access_token_response.json()
-            logging.error(results)
+            log_error("Error occured obtaining access token. Return code: {0}. Response:".format(access_token_response.status_code), results)
             if "error" in results and "message" in results["error"]:
                 return results["error"]["message"]
             else:
@@ -53,6 +53,27 @@ class Search:
         return ""
 
 
+    def refresh_throttle_data(self):
+        # Get the current number of searches and downloads per the current min/hr/day
+
+        self.requests_per_min = self.api_log.objects.filter(request_date__gte = timezone.now() - datetime.timedelta(minutes=1))
+        self.requests_per_hour = self.api_log.objects.filter(request_date__gte = timezone.now()- datetime.timedelta(hours=1))
+        self.requests_per_day = self.api_log.objects.filter(request_date__gte = timezone.now() - datetime.timedelta(days=1))
+
+        # Compare against the limits for min/hr/day
+        throttles = self.limits.objects.all()
+        if throttles.count() == 0:
+            log_error("No record exists in the database containing the throttling limitations!")
+            return False
+        if throttles.count() > 1:
+            log_error("More than one record exists in the database for the throttling limitations!")
+
+        self.throttles = throttles[0]
+
+        logging.info("Current limits: {0}/min, {1}/hr, {2}/day out of {3}/min, {4}/hr, {5}/day".format(
+            self.requests_per_min.count(), self.requests_per_hour.count(), self.requests_per_day.count(),
+            self.throttles.searches_per_minute, self.throttles.searches_per_hour, self.throttles.searches_per_day))
+
     def check_can_search(self):
         '''
         Checks the remaining searches available per min/hr/day to see if we are able to do any more
@@ -60,29 +81,12 @@ class Search:
         returns: bool can_search
         '''
 
-        # Get the current number of searches and downloads per the current min/hr/day
+        self.refresh_throttle_data()
 
-        requests_per_min = self.api_log.objects.filter(request_date__gte = timezone.now() - datetime.timedelta(minutes=1))
-        requests_per_hour = self.api_log.objects.filter(request_date__gte = timezone.now()- datetime.timedelta(hours=1))
-        requests_per_day = self.api_log.objects.filter(request_date__gte = timezone.now() - datetime.timedelta(days=1))
-
-        # Compare against the limits for min/hr/day
-        throttles = self.limits.objects.all()
-        if throttles.count() == 0:
-            logging.error("No record exists in the database containing the throttling limitations!")
-            return False
-        if throttles.count() > 1:
-            logging.error("More than one record exists in the database for the throttling limitations!")
-
-        throttles = throttles[0]
-
-        if requests_per_min.count() < throttles.searches_per_minute and requests_per_hour.count() < throttles.searches_per_hour and \
-            requests_per_day.count() < throttles.searches_per_day:
+        if self.requests_per_min.count() < self.throttles.searches_per_minute \
+            and self.requests_per_hour.count() < self.throttles.searches_per_hour and \
+            self.requests_per_day.count() < self.throttles.searches_per_day:
             return True
-
-        logging.info("Current limits: {0}/min, {1}/hr, {2}/day out of {3}/min, {4}/hr, {5}/day".format(
-            requests_per_min.count(),requests_per_hour.count(),requests_per_day.count(),
-            throttles.searches_per_minute,throttles.searches_per_hour,throttles.searches_per_day))
 
         return False
 
@@ -93,32 +97,13 @@ class Search:
         returns: (bool,bool) can_search, can_download
         '''
 
-        # Get the current number of searches and downloads per the current min/hr/day
-        
-        requests_per_min = self.api_log.objects.filter(request_date__gte = timezone.now() - datetime.timedelta(minutes=1))
-        requests_per_hour = self.api_log.objects.filter(request_date__gte = timezone.now()- datetime.timedelta(hours=1))
-        requests_per_day = self.api_log.objects.filter(request_date__gte = timezone.now() - datetime.timedelta(days=1))
+        self.refresh_throttle_data()
 
-
-        # Compare against the limits for min/hr/day
-        throttles = self.limits.objects.all()
-        if throttles.count() == 0:
-            logging.error("No record exists in the database containing the throttling limitations!")
-            return False
-        if throttles.count() > 1:
-            logging.error("More than one record exists in the database for the throttling limitations!")
-
-        throttles = throttles[0]
-
-        if requests_per_min.filter(is_download=True).count() < throttles.downloads_per_minute \
-            and requests_per_hour.filter(is_download=True).count() < throttles.downloads_per_hour \
-            and requests_per_day.filter(is_download=True).count() < throttles.downloads_per_day:
+        if self.requests_per_min.filter(is_download=True).count() < self.throttles.downloads_per_minute \
+            and self.requests_per_hour.filter(is_download=True).count() < self.throttles.downloads_per_hour \
+            and self.requests_per_day.filter(is_download=True).count() < self.throttles.downloads_per_day:
             return True
         
-        logging.info("Current limits: {0}/min, {1}/hr, {2}/day out of {3}/min, {4}/hr, {5}/day".format(
-            requests_per_min.count(),requests_per_hour.count(),requests_per_day.count(),
-            throttles.searches_per_minute,throttles.searches_per_hour,throttles.searches_per_day))
-
         return False 
 
     def get_time_until_next_search(self):
@@ -126,35 +111,20 @@ class Search:
         Gets the number of seconds until we can perform the next search
         '''
 
-        # Get the current number of searches and downloads per the current min/hr/day
-        requests_per_min = self.api_log.objects.filter(request_date__gte = timezone.now() - datetime.timedelta(minutes=1))
-        requests_per_hour = self.api_log.objects.filter(request_date__gte = timezone.now()- datetime.timedelta(hours=1))
-        requests_per_day = self.api_log.objects.filter(request_date__gte = timezone.now() - datetime.timedelta(days=1))
-
-
-        # Compare against the limits for min/hr/day
-        throttles = self.limits.objects.all()
-        if throttles.count() == 0:
-            logging.error("No record exists in the database containing the throttling limitations!")
-            return False
-        if throttles.count() > 1:
-            logging.error("More than one record exists in the database for the throttling limitations!")
-
-        throttles = throttles.first()
+        self.refresh_throttle_data()
+        
         # Available now
-        if requests_per_min.count() < throttles.searches_per_minute and requests_per_hour.count() < throttles.searches_per_hour \
-            and requests_per_day.count() < throttles.searches_per_day:
+        if self.requests_per_min.count() < self.throttles.searches_per_minute  \
+            and self.requests_per_hour.count() < self.throttles.searches_per_hour \
+            and self.requests_per_day.count() < self.throttles.searches_per_day:
             return 0
 
-        logging.info("Current limits: {0}/min, {1}/hr, {2}/day out of {3}/min, {4}/hr, {5}/day".format(
-            requests_per_min.count(),requests_per_hour.count(),requests_per_day.count(),
-            throttles.searches_per_minute,throttles.searches_per_hour,throttles.searches_per_day))
-
-        if requests_per_day.count() >= throttles.searches_per_day:
+        # Calculate
+        if self.requests_per_day.count() >= self.throttles.searches_per_day:
             return ((timezone.now() + datetime.timedelta(days=1)) - timezone.now()).total_seconds()
-        if requests_per_hour.count() >= throttles.searches_per_hour:
+        if self.requests_per_hour.count() >= self.throttles.searches_per_hour:
             return ((timezone.now() + datetime.timedelta(hours=1)) - timezone.now()).total_seconds()
-        if requests_per_min.count() >= throttles.searches_per_minute:
+        if self.requests_per_min.count() >= self.throttles.searches_per_minute:
             return ((timezone.now() + datetime.timedelta(minutes=1)) - timezone.now()).total_seconds()
 
     def api_call(self, req_type='GET', resource='News', params = {}):
@@ -199,8 +169,7 @@ class Search:
             return results
 
         else:
-            logging.error("Call to {0} failed with code {1}. Response: ".format(url, resp.status_code))
-            logging.error(results)
+            log_error("Call to {0} failed with code {1}. Response: ".format(url, resp.status_code), results)
             if "error" in results and "message" in results["error"]:
                 return {"error_message":results["error"]["message"]}
             else:

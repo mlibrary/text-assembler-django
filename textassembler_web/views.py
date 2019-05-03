@@ -9,8 +9,14 @@ from django.conf import settings
 from django.db import connections
 from .search import Search
 from .filters import Filters
+from .utilities import log_error
 import json
+import logging
 
+""" ------------------------------
+    Search Page
+    ------------------------------
+""" 
 def search(request):
     filter_data = get_filter_opts()
     set_filters = {}
@@ -44,9 +50,13 @@ def search(request):
                     response['error_message'] = results["error_message"]
                 
             except Exception as e:
-                # TODO probably don't want to print stack trace to page, log error and display
-                # generic message if not in debug mode
-                response["error_message"] = "{0} on line {1} of {2}: {3}\n{4}".format(type(e).__name__, sys.exc_info()[-1].tb_lineno, os.path.basename(__file__), e, traceback.format_exc())
+                error = "{0} on line {1} of {2}: {3}\n{4}".format(type(e).__name__, sys.exc_info()[-1].tb_lineno, os.path.basename(__file__), e, traceback.format_exc())
+                log_error(error, json.dumps(dict(request.POST)))
+                
+                if settings.DEBUG:
+                    response["error_message"] = error
+                else:
+                    response["error_message"] = "An unexpected error has occured."
 
     elif request.method == 'POST' and not form.is_valid():
         for field in form.errors:
@@ -75,3 +85,17 @@ def get_filter_opts():
 def get_filter_val_input(request, filter_type):
     filters = Filters()
     return JsonResponse(filters.getFilterValues(filter_type))
+
+""" ------------------------------
+    My Searches Page
+    ------------------------------
+""" 
+def mysearches(request):
+    return render(request, 'textassembler_web/mysearches.html', {})
+
+""" ------------------------------
+    About Page
+    ------------------------------
+""" 
+def about(request):
+    return render(request, 'textassembler_web/about.html', {})

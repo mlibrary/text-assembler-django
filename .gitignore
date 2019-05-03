@@ -7,6 +7,7 @@ activate.sh
 textassembler_web/templates/base.html
 textassembler_web/templates/header.html
 textassembler_web/templates/footer.html
+textassembler_web/templates/textassembler_web/about.html
 textassembler_web/static/*
 !textassembler_web/static/MSU.css
 !textassembler_web/static/textassembler.css

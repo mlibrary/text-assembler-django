@@ -139,6 +139,9 @@ h2 {
 /*******
 * Search Results
 ********/
+#searchResultLbl {
+    margin-bottom: 2px;
+}
 .extract {
     padding-bottom: 30px;
 }
@@ -149,9 +152,9 @@ h2 {
     display: block;
 }
 .result-count {
-font-weight: bold;
+    margin-bottom: 10px;
 }
-.title, .field-title, .post-filter-title {
+.field-title, .post-filter-title {
     font-weight: bold;
 }
 .extract {
@@ -165,3 +168,22 @@ font-weight: bold;
     background-color:#777;
     color: white;
 }
+.large-popover {
+    width:500px;
+    max-width:500px;
+}
+.popover {
+    max-width: 500px;
+}
+
+.popover-table {
+    border-collapse: collapse;
+    width:95%;
+}
+.popover-table tr tr:first-child, .popover-table tr td:first-child {
+    width:30%;
+}
+.popover-table td, .popover-table th {
+    border: 1px solid black;
+    padding: 2px;
+} 
