@@ -31,7 +31,5 @@ Notes
 UI TODO
 -------
 * Authentication
-* Display results
-* Apply filters
 * Display Post Filters
-* Add instruction blurbs
+* Save searches
