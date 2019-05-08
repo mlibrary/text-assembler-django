@@ -56,7 +56,7 @@ function addFilterRow(data, selected_filter, selected_filter_value='') {
         $.fn.popover.Constructor.Default.whiteList.div = [];
         $.fn.popover.Constructor.Default.whiteList.tbody = [];
         $.fn.popover.Constructor.Default.whiteList.thead = [];
-        newRow += "&nbsp;<a href='#' role='button' data-trigger='focus' data-html='true' data-toggle='popover' title='" + data['name'] +
+        newRow += "&nbsp;<a href='' role='button' onClick='return false;' data-trigger='focus' data-html='true' data-toggle='popover' title='" + data['name'] +
             "' data-content='" + data['help'] + "'>(?)</a>"
     }
 
@@ -178,4 +178,5 @@ $( document ).ready(function() {
         }
     }
     $(".sp").selectpicker();
+    $('[data-toggle="popover"]').popover();
 });

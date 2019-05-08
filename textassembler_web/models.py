@@ -9,6 +9,7 @@ class sources(models.Model):
 class available_formats(models.Model):
     format_id = models.AutoField(primary_key=True)
     format_name = models.CharField(max_length=20)
+    help_text = models.CharField(max_length=255)
 
 class searches(models.Model):
     search_id = models.AutoField(primary_key=True)

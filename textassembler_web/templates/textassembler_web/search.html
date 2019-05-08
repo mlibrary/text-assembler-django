@@ -91,7 +91,9 @@
                     <div id='advanced_options' class='collapse'>
                         {% for format in available_formats %}
                         <div class='input-group checkbox'>
-                            <label><input type='checkbox' name='{{ format.format_id }}' {% if forloop.first %} checked {% endif %}/> {{format.format_name }}</label>
+                            <label><input type='checkbox' name='{{ format.format_id }}' {% if forloop.first %} checked {% endif %}/>
+                                {{ format.format_name }}&nbsp;<a href='#' role='button' onClick='return false;' data-trigger='focus' data-html='true' data-toggle='popover' title='{{ format.format_name }}' data-content='{{ format.help_text }}'>(?)</a>
+                            </label>
                         </div>
                         {% endfor %}
                     </div>
