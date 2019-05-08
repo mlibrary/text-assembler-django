@@ -56,6 +56,6 @@ class Migration(migrations.Migration):
         ),
         migrations.RunSQL(
             """INSERT INTO textassembler_web_available_formats (format_name) 
-            VALUES ('html'),('txt'),('txt_only');"""
+            VALUES ('HTML'),('TXT'),('TXT Only');"""
         ),
     ]

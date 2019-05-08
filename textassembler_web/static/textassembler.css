@@ -90,6 +90,16 @@ h2 {
     padding-top:0px;
     padding-bottom: 0px;
 }
+
+input[type=checkbox], input[type=radio] {
+    margin-right: 5px;
+}
+
+.input-group{
+    line-height: 1em;
+    padding-bottom: 5px;
+}
+
 /********
 * Search Form
 **********/

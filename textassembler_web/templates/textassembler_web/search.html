@@ -37,7 +37,7 @@
         </div>
         <div class="row spacer">
             <div class="col-6 offset-4">
-                <button type="submit" class="btn btn-block btn-primary">Search</button>
+                <button type="submit" class="btn btn-block btn-primary">Preview Search</button>
             </div>
         </div>
         <input type="hidden" id="post_data" value="{{ post_data }}" />
@@ -63,8 +63,45 @@
             <span class='result-count'>Your search returned <strong>0</strong> results. Please review your filter 
             criteria and try again.</span>
         {% else %}
-            <h2 id='searchResultLbl'>Search Results</h2>
-            <span class='result-count'><strong>{{ search_results.count | intcomma }}</strong> result(s) found. Showing only the first <strong>{{search_results.value | length }}</strong> result(s).</span><br/>
+            <h2>Queue Search For Full Download</h2>
+            <p>Be sure to review the preview of the results below to ensure that you are happy with the filters before queueing the full seach.</p>
+            <div class='queue-search'>
+                 <form method="post" novalidate>
+                    {% csrf_token %}
+                    <div class='input-group radio'>
+                        <label><input type='radio' name='use_filter' value='existing' data-toggle="collapse" data-target='#post_filters.show' checked/>Use existing filters ({{ search_results.count | intcomma }} results)</label>
+                    </div>
+                    {% if search_results.postFilters|length > 0 %}
+                        <div class='input-group radio'>
+                            <label><input type='radio' name='use_filter' id='use_suggested' data-toggle="collapse" data-target='#post_filters:not(.show)' value='suggested'/>Select an additional suggested facet</label>
+                        </div>
+                        <div id='post_filters' class='collapse col-6'>
+                            <select name='post_filters' class='sp' multiple data-live-search='true' data-width='100%'>
+                           {% for filterName, filterValues in search_results.postFilters.items %}
+                                <optgroup label='{{ filterName }}'>
+                                    {% for valueName, value in filterValues.items %}
+                                        <option value='{{ value.URL }}'>{{ valueName }} ({{ value.Count | intcomma }})</span></option>
+                                    {% endfor %}
+                                </optgroup>
+                            {% endfor %} 
+                            </select>
+                        </div>
+                    {% endif %}
+                    <a href='#' id='advanced_options_link' data-toggle="collapse" data-target='#advanced_options'>(Select download formats)</a>
+                    <div id='advanced_options' class='collapse'>
+                        {% for format in available_formats %}
+                        <div class='input-group checkbox'>
+                            <label><input type='checkbox' name='{{ format.format_id }}' {% if forloop.first %} checked {% endif %}/> {{format.format_name }}</label>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    <button type="submit" class="btn btn-block btn-primary col-6 offset-4">Submit Search</button>
+                </form>
+            </div>
+            <hr/>
+
+            <h2 id='searchResultLbl'>Search Results Sample</h2>
+            <span class='result-count'><strong>{{ search_results.count | intcomma }}</strong> result(s) found. Showing only the first <strong>{{search_results.value | length }}</strong> result(s).</span><br/><br/>
             {% for result in search_results.value %}
                 <div class='result'>
                     <span class='field-title'>Title: </span><span class='title'>{{ result.Title }}</span><br/>
@@ -77,21 +114,6 @@
                 </div>
             {% endfor %}
 
-            <!-- Post Filters -->
-            <hr/>
-            <h2 class='avail-post-filters'>Facets:</h2>
-            {% for filterName, filterValues in search_results.postFilters.items %}
-                <div class='post-filter'>
-                    <span class='post-filter-title'>{{ filterName }}
-                        <button type="button" class="btn btn-info btn-sm" data-toggle="collapse" data-target="#postFilterGroup{{forloop.counter}}">Show/Hide</button>
-                    </span>
-                    <span class='post-filter-val collapse' id='postFilterGroup{{forloop.counter}}'>
-                    {% for valueName, value in filterValues.items %}
-                            {{ valueName }} <span class='badge'>{{ value.Count | intcomma }} </span>{% if not forloop.last %} , {% endif %}
-                    {% endfor %}
-                    </span>
-                </div>
-            {% endfor %}
        {% endif %} 
     {% endif %}
 

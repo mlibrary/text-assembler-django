@@ -177,4 +177,5 @@ $( document ).ready(function() {
             displayFilterValues(filter,values);
         }
     }
+    $(".sp").selectpicker();
 });

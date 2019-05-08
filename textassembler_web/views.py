@@ -10,6 +10,7 @@ from django.db import connections
 from .search import Search
 from .filters import Filters
 from .utilities import log_error
+from .models import available_formats
 import json
 import logging
 
@@ -48,6 +49,8 @@ def search(request):
                     response['search_results'] = results
                 if "error_message" in results:
                     response['error_message'] = results["error_message"]
+
+                response['available_formats'] = available_formats.objects.all()
                 
             except Exception as e:
                 error = "{0} on line {1} of {2}: {3}\n{4}".format(type(e).__name__, sys.exc_info()[-1].tb_lineno, os.path.basename(__file__), e, traceback.format_exc())
