@@ -79,6 +79,10 @@
     text-decoration: underline !important;
 }
 
+.lmargin-10 {
+    margin-left: 10px;
+}
+
 h1 {
     text-align: center;
     font-size: 30px;
@@ -196,4 +200,7 @@ input[type=checkbox], input[type=radio] {
 .popover-table td, .popover-table th {
     border: 1px solid black;
     padding: 2px;
+}
+#post_filters {
+    flex-wrap: nowrap;
 } 

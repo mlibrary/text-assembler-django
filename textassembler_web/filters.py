@@ -22,10 +22,14 @@ class Filters:
         HTML elements, but ensure that all quotes are double quotes (") or the JS will
         have issues rendering it.
         '''
+        # TODO -- multiple filters for same field not working. if there are other filters as well.
+        # Ex: 1 filter for lang, 2 filters for source (but 2 filters for source alone will work)
+        # Error: statements can only disjoin equality comparisons
         return [{"id":"Language", "name":"Language"}, # TODO -- not allowing multiple filters
                 {"id":"Source_Id", "name":"Source"},
-                {"id":"Date", "name":"Date"},
-                {"id":"NegativeNewsType", "name":"Negative News Type"}, # TODO -- not working
+                {"id":"Date", "name":"Date Range"},
+                {"id":"year(Date)", "name":"Year"},
+                {"id":"NegativeNews", "name":"Negative News Type"},
                 {"id":"GroupDuplicates", "name":"Group Duplicates"},
                 {"id":"SearchType", "name": "Search Type"},
                 {"id":"Location", "name": "Location"},
@@ -40,7 +44,11 @@ class Filters:
 
     def getFilterValues(self, filter_type):
         name = self.getAvailableFilters()
-        name = [x['name'] for x in name if x['id'] == filter_type][0]
+        found_filters = [x['name'] for x in name if x['id'] == filter_type]
+        if len(found_filters) == 1:
+            name = found_filters[0]
+        else:
+            name = filter_type
 
         if filter_type == 'Language':
             return {'name':name, 'type':'select', 
@@ -70,7 +78,7 @@ class Filters:
                 {'val':'Czech', 'name':'Czech'},
                 {'val':'Catalan', 'name':'Catalan'}]}
 
-        elif filter_type == 'NegativeNewsType':
+        elif filter_type == 'NegativeNewsType' or filter_type == 'NegativeNews':
             return {'name':name, 'type':'select', 
                 'help':'Whether or not the news article is considered negative in either the personal or business context',
                 'choices':[
@@ -142,7 +150,7 @@ class Filters:
         elif filter_type == 'Company':
             return {"name": name, "help": "The company or companies associated with the news article", "type":"text"}
 
-        elif filter_type == 'Publication Type':
+        elif filter_type == 'PublicationType':
             return {"name": name, "help": "The publication type associated with the news article", "type":"text"}
 
         elif filter_type == 'Publisher':
@@ -158,7 +166,10 @@ class Filters:
             return {"name": name, "type":"text"}
 
     def getEnumNamespace(self, filter_type):
-        if filter_type in ['Language','NegativeNewsType','GroupDuplicates','SearchType']:
+        # handle special case for post filter negative news type
+        if filter_type in ['NegativeNewsType','NegativeNews']:
+            return 'LexisNexis.ServicesApi.NegativeNewsType'
+        if filter_type in ['Language','GroupDuplicates','SearchType']:
             return 'LexisNexis.ServicesApi.' + filter_type
         else:
             return ''

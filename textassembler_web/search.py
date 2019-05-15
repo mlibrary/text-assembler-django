@@ -201,13 +201,18 @@ class Search:
 
             else:
                 if len(values) == 1:
-                    filters += key.replace('_','/') + " eq " + namespace + "'" + values[0] + "' "
+                    if isinstance(values[0], int) or self.string_is_int(values[0]):
+                        filters += key.replace('_','/') + " eq " + namespace + str(values[0]) + " "
+                    else:
+                        filters += key.replace('_','/') + " eq " + namespace + "'" + values[0] + "' "
                 else:
                     for value in values:
-                        filters += key.replace('_','/') + " eq " + namespace + "'" + value + "' or "
+                        if isinstance(value, int) or self.string_is_int(value):
+                            filters += key.replace('_','/') + " eq " + namespace + str(value) + " or "
+                        else:
+                            filters += key.replace('_','/') + " eq " + namespace + "'" + value + "' or "
                     filters = filters[:-4] # remove the last OR
 
-        print(filters)
 
         params = {"$search":term, "$expand": "PostFilters"}
         if len(filters) > 0:
@@ -215,3 +220,9 @@ class Search:
 
         return self.api_call(resource='News', params=params)
 
+    def string_is_int(self,s):
+        try: 
+            int(s)
+            return True
+        except ValueError:
+            return False

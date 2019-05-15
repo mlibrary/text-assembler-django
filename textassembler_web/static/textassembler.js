@@ -48,7 +48,7 @@ function addFilterRow(data, selected_filter, selected_filter_value='') {
         "<div class='row form-row spacer'>" +
         "<div class='col-4 filter_type_label'><label>&bull; " + data['name'];
 
-    if (data['help'] != ''){
+    if (data['help'] && data['help'] != ''){
         // Allow tables to be in popover content
         $.fn.popover.Constructor.Default.whiteList.table = [];
         $.fn.popover.Constructor.Default.whiteList.tr = [];

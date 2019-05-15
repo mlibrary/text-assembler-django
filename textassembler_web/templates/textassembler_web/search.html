@@ -37,11 +37,10 @@
         </div>
         <div class="row spacer">
             <div class="col-6 offset-4">
-                <button type="submit" class="btn btn-block btn-primary">Preview Search</button>
+                <button type="submit" name='preview-search' class="btn btn-block btn-primary">Preview Search</button>
             </div>
         </div>
         <input type="hidden" id="post_data" value="{{ post_data }}" />
-    </form>
 
     {% for field in form %}
         {% if field.errors %}
@@ -66,38 +65,37 @@
             <h2>Queue Search For Full Download</h2>
             <p>Be sure to review the preview of the results below to ensure that you are happy with the filters before queueing the full seach.</p>
             <div class='queue-search'>
-                 <form method="post" novalidate>
-                    {% csrf_token %}
                     <div class='input-group radio'>
                         <label><input type='radio' name='use_filter' value='existing' data-toggle="collapse" data-target='#post_filters.show' checked/>Use existing filters ({{ search_results.count | intcomma }} results)</label>
                     </div>
                     {% if search_results.postFilters|length > 0 %}
                         <div class='input-group radio'>
-                            <label><input type='radio' name='use_filter' id='use_suggested' data-toggle="collapse" data-target='#post_filters:not(.show)' value='suggested'/>Select an additional suggested facet</label>
+                            <label><input type='radio' name='use_filter' id='use_suggested' data-toggle="collapse" data-target='#post_filters:not(.show)' value='suggested'/>Select additional filter(s)&nbsp;<a href='' role='button' onClick='return false;' data-trigger='focus' data-html='true' data-toggle='popover' title='Additional Filters' data-content='These are suggestions provided by LexisNexis to help narrow down your search further. They are grouped by the field they filter on and show how many results you could expect by adding that filter. You can select one or more of these and either submit your search directly or refresh the preview of the results with the new filters. <strong>Note that the filter values populated may appear in code instead of plain text.</strong>'>(?)</a></label>
                         </div>
-                        <div id='post_filters' class='collapse col-6'>
+                        <div id='post_filters' class='collapse form-row col-6'>
                             <select name='post_filters' class='sp' multiple data-live-search='true' data-width='100%'>
                            {% for filterName, filterValues in search_results.postFilters.items %}
                                 <optgroup label='{{ filterName }}'>
                                     {% for valueName, value in filterValues.items %}
-                                        <option value='{{ value.URL }}'>{{ valueName }} ({{ value.Count | intcomma }})</span></option>
+                                        <option value='{{ filterName }}||{{ value.Value }}'>{{ valueName }} ({{ value.Count | intcomma }})</span></option>
                                     {% endfor %}
                                 </optgroup>
                             {% endfor %} 
                             </select>
+                            <button type="submit" name='add-filters' class="btn btn-block btn-primary col-5 lmargin-10">Refresh Result Preview</button>
                         </div>
                     {% endif %}
                     <a href='#' id='advanced_options_link' data-toggle="collapse" data-target='#advanced_options'>(Select download formats)</a>
                     <div id='advanced_options' class='collapse'>
                         {% for format in available_formats %}
                         <div class='input-group checkbox'>
-                            <label><input type='checkbox' name='{{ format.format_id }}' {% if forloop.first %} checked {% endif %}/>
+                            <label><input type='checkbox' name='selected-formats' value='{{ format.format_id }}' {% if forloop.first %} checked {% endif %}/>
                                 {{ format.format_name }}&nbsp;<a href='#' role='button' onClick='return false;' data-trigger='focus' data-html='true' data-toggle='popover' title='{{ format.format_name }}' data-content='{{ format.help_text }}'>(?)</a>
                             </label>
                         </div>
                         {% endfor %}
                     </div>
-                    <button type="submit" class="btn btn-block btn-primary col-6 offset-4">Submit Search</button>
+                    <button type="submit" name='submit-search' class="btn btn-block btn-primary col-6 offset-4">Submit Search</button>
                 </form>
             </div>
             <hr/>

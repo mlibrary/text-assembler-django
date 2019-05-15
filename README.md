@@ -31,5 +31,9 @@ Notes
 UI TODO
 -------
 * Authentication
-* Display Post Filters
-* Save searches
+* Send the 'save' options back to the form in the event of failure to repopulate the form
+    * what should the screen show when the save is sucessful? cleared form?
+* Fix issue with filters where if there are multiple filter fields and multiple values for the
+  same field, it fails.
+    * Ex: 1 lang filter and 2 year filters will fail, but 2 year filters alone is fine.
+    * see TODO in filters.py for error details
