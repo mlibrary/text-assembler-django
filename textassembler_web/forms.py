@@ -18,9 +18,18 @@ class TextAssemblerWebForm(forms.Form):
         self.helper.add_input(Submit('submit', 'Search'))
 
     def set_form_action(self):
+        '''
+        Call the search function in views.py on form-submit
+        '''
         self.helper.form_action = reverse("search")
 
     def set_fields(self, filter_data, search = ''):
+        '''
+        Add fields:
+        * Search Term
+        * Filters
+        The individual filter fields will be added dynamically by the JS
+        '''
         choices = [('','Select...')]
 
         for opt in filter_data:

@@ -13,6 +13,9 @@ from .utilities import log_error
 class Search:
     
     def __init__(self):
+        '''
+        Initialize the object and authenticate against the API
+        '''
         self.limits = apps.get_model('textassembler_processor','limits')
         self.api_log = apps.get_model('textassembler_processor','api_log')
         self.access_token = None
@@ -25,6 +28,11 @@ class Search:
         self.authenticate()
 
     def authenticate(self):
+        '''
+        Authenticate against the LexisNexis API to obtain an access token, if we already have one
+        that has not expired, do nothing.
+        '''
+
         # Do not get a new token since the current one is still valid 
         if self.access_token is not None and self.expiration_time is not None and timezone.now() <= self.expiration_time:
             return 
@@ -54,6 +62,10 @@ class Search:
 
 
     def refresh_throttle_data(self):
+        '''
+        Get the current throttle data from the database
+        '''
+
         # Get the current number of searches and downloads per the current min/hr/day
 
         self.requests_per_min = self.api_log.objects.filter(request_date__gte = timezone.now() - datetime.timedelta(minutes=1))
@@ -193,34 +205,46 @@ class Search:
             if filters != '':
                 filters += " and "
 
-            # Handle dates separately
+            # Handle dates separately since they have 2 values (start date and end date)
             if key == 'Date':
+                filters += " ("
                 for i in range(0,len(values),2):
                     filters += key.replace('_','/') + " " + values[i] + " " + values[i+1] + " and "
-                filters = filters[:-5]
+                filters = filters[:-5] # remove the last AND
+                filters += ")"
 
             else:
                 if len(values) == 1:
+                    # The API expects strings to have single quoates around the values
                     if isinstance(values[0], int) or self.string_is_int(values[0]):
                         filters += key.replace('_','/') + " eq " + namespace + str(values[0]) + " "
                     else:
                         filters += key.replace('_','/') + " eq " + namespace + "'" + values[0] + "' "
                 else:
+                    filters += " ("
                     for value in values:
+                        # The API expects strings to have single quoates around the values
                         if isinstance(value, int) or self.string_is_int(value):
                             filters += key.replace('_','/') + " eq " + namespace + str(value) + " or "
                         else:
                             filters += key.replace('_','/') + " eq " + namespace + "'" + value + "' or "
                     filters = filters[:-4] # remove the last OR
+                    filters += ")"
 
-
+        # Always provide the $exand=PostFilters so we can provide them to the UI
         params = {"$search":term, "$expand": "PostFilters"}
+
         if len(filters) > 0:
             params['$filter'] = filters
 
         return self.api_call(resource='News', params=params)
 
     def string_is_int(self,s):
+        '''
+        Check if the string contains an integer since isinstance will return
+        false for strings with an integer.
+        '''
+
         try: 
             int(s)
             return True

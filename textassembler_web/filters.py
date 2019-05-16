@@ -22,11 +22,9 @@ class Filters:
         HTML elements, but ensure that all quotes are double quotes (") or the JS will
         have issues rendering it.
         '''
-        # TODO -- multiple filters for same field not working. if there are other filters as well.
-        # Ex: 1 filter for lang, 2 filters for source (but 2 filters for source alone will work)
-        # Error: statements can only disjoin equality comparisons
-        return [{"id":"Language", "name":"Language"}, # TODO -- not allowing multiple filters
-                {"id":"Source_Id", "name":"Source"},
+
+        return [{"id":"Language", "name":"Language"}, # TODO -- not allowing multiple filters, talk to LN
+                {"id":"Source_Id", "name":"Source"}, # TODO -- not allowing multiple filters, talk to LN
                 {"id":"Date", "name":"Date Range"},
                 {"id":"year(Date)", "name":"Year"},
                 {"id":"NegativeNews", "name":"Negative News Type"},
@@ -43,6 +41,12 @@ class Filters:
                 {"id":"People", "name":"People"}]
 
     def getFilterValues(self, filter_type):
+        '''
+        Get the data for the given filter for the UI.
+        This includes the data type, help text, and available options
+        where applicable.
+        '''
+
         name = self.getAvailableFilters()
         found_filters = [x['name'] for x in name if x['id'] == filter_type]
         if len(found_filters) == 1:
@@ -166,6 +170,10 @@ class Filters:
             return {"name": name, "type":"text"}
 
     def getEnumNamespace(self, filter_type):
+        '''
+        Retrieve the LexisNexis namespace that should be associated with a filter value
+        when calling the API
+        '''
         # handle special case for post filter negative news type
         if filter_type in ['NegativeNewsType','NegativeNews']:
             return 'LexisNexis.ServicesApi.NegativeNewsType'
