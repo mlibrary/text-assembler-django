@@ -36,7 +36,8 @@ def search(request):
 
     response = {
         "form": form,
-        "error_message": ""
+        "error_message": "",
+        "available_formats":available_formats.objects.all()
     }
 
     # Parse the POST data
@@ -62,6 +63,7 @@ def search(request):
 
     print(set_filters)
 
+
     # Validate any data necessary from the post data
     for key, values in set_filters.items():
         ## Make sure Year is an integer
@@ -69,9 +71,15 @@ def search(request):
             for value in values:
                 if not string_is_int(value) or isinstance(value,int):
                     response['error_message'] += "The 'Year' field requires only numeric input, provided: {0}.".format(value);
+    if 'Date' in set_filters and 'year(Date)' in set_filters:
+        response['error_message'] += "Please you either the year filter or the range filter for dates, but not a combination of both."
     
     # Send the set filters back to the form to pre-populate the fields
     response["post_data"] = json.dumps(set_filters)
+
+    # Set the last result data to be used in event of form failure to prevent another call to LN API
+    if 'result_data' in request.POST and len(request.POST['result_data']) > 0:
+        response["result_data"] = json.loads(request.POST['result_data'])
 
     if request.method == 'POST' and form.is_valid() and response['error_message'] == '':
         
@@ -89,35 +97,49 @@ def search(request):
                             results['count'] = results['@odata.count']
                             results['postFilters'] = clean_post_filters(results['value'])
                             response['search_results'] = results
+                            response["search_results_json"] = json.dumps(results) # used in the event of failure after search
                         if "error_message" in results:
                             response['error_message'] = results["error_message"]
 
-                        response['available_formats'] = available_formats.objects.all()
 
 
                     elif "submit-search" in dict(request.POST):
                         '''
                         Submit Search button selected
                         '''
-                        # Save the search record
-                        search_obj = searches(userid = request.user, query=clean["search"])
+                        # Perform any validation before saving
+                        if len(set_formats) == 0:
+                            response["error_message"] = "At least one download format must be selected."
+                            # Set the result data with the previous results if an error occurs
+                            # only do this if there are not already results since we don't want to overwrite those
+                            if "result_data" in response and 'search_results' not in response:
+                                response['search_results'] = response['result_data']
+                            
+                        if response["error_message"] == "":
+                            # Save the search record
+                            search_obj = searches(userid = request.user, query=clean["search"])
 
-                        search_obj.save()
+                            search_obj.save()
 
-                        # Save the selected filters
-                        for k,v in set_filters.items():
-                            for val in v:
-                                filter_obj = filters(search_id = search_obj, filter_name = k, filter_value = val)
-                                filter_obj.save()
+                            # Save the selected filters
+                            for k,v in set_filters.items():
+                                if k == "Date":
+                                    for i in range(0,len(values),2):
+                                        filter_obj = filters(search_id = search_obj, filter_name = k, filter_value = v[i] + " " + v[i+1])
+                                        filter_obj.save()
+                                else:
+                                    for val in v:
+                                        filter_obj = filters(search_id = search_obj, filter_name = k, filter_value = val)
+                                        filter_obj.save()
 
-                        # Save the selected download formats                    
-                        for set_format in set_formats:
-                            format_item = available_formats.objects.get(format_id=set_format)
-                            format_obj = download_formats(search_id = search_obj, format_id = format_item)
-                            format_obj.save()
+                            # Save the selected download formats
+                            for set_format in set_formats:
+                                format_item = available_formats.objects.get(format_id=set_format)
+                                format_obj = download_formats(search_id = search_obj, format_id = format_item)
+                                format_obj.save()
 
-                        # TODO -- decide what to display on page after saving search, or if saving fails!
-                        response['saved'] = True
+                            response = redirect('/mysearches')
+                            return response
  
                 except Exception as e:
                     error = "{0} on line {1} of {2}: {3}\n{4}".format(type(e).__name__, sys.exc_info()[-1].tb_lineno, os.path.basename(__file__), e, traceback.format_exc())
@@ -127,6 +149,11 @@ def search(request):
                         response["error_message"] = error
                     else:
                         response["error_message"] = "An unexpected error has occured."
+
+                    # Set the result data with the previous results if an error occurs
+                    # only do this if there are not already results since we don't want to overwrite those
+                    if "result_data" in response and 'search_results' not in response:
+                        response['search_results'] = response['result_data']
     
     elif request.method == 'POST' and not form.is_valid():
         # If there are any form errors, add them to the fields to they highlight the issues
@@ -207,7 +234,83 @@ def mysearches(request):
     '''
     Render the My Searches page
     '''
-    return render(request, 'textassembler_web/mysearches.html', {})
+    response = {}
+
+    response["headings"] = ["Date Submitted", "Query", "Progress", "Actions"]
+
+    all_user_searches = searches.objects.all().filter(userid=request.user).order_by('-date_submitted')
+
+    for search in all_user_searches:
+        search = set_search_info(search)
+
+    response["searches"] = all_user_searches
+
+    return render(request, 'textassembler_web/mysearches.html', response)
+
+def set_search_info(search):
+    '''
+    Add additional information to each search result object for the page to use when rendering
+    '''
+
+    # Add actions for Download and Delete 
+    actions = []
+
+    delete = {
+         "method": "POST",
+         "label": "Delete",
+         "action": "delete",
+         "class": "btn-primary",
+         "args": str(search.search_id)
+        }
+    download = {
+         "method": "POST",
+         "label": "Download",
+         "action": "download",
+         "class": "btn-primary",
+         "args": str(search.search_id)
+        }
+
+    if search.date_completed_compression != None:
+        actions.append(download)
+    actions.append(delete)
+    search.actions = actions
+
+    # Build progress data
+    search.filters = filters.objects.filter(search_id=search.search_id)
+    formats = download_formats.objects.filter(search_id=search.search_id) 
+    search.download_formats = []
+
+    for f in formats:
+        search.download_formats.append(available_formats.objects.get(format_id=f.format_id.format_id))
+
+    search.status = "Queued"
+    if search.date_started != None:
+        search.status = "In Progress"
+    if search.date_started_compression != None:
+        search.status = "Preparing Results for Download"
+    if search.date_completed_compression != None:
+        search.status = "Completed"
+
+    if search.num_results_in_search == None or search.num_results_in_search == 0:
+        search.percent_complete = 0
+    else:
+        search.percent_complete = round(search.num_results_downloaded / search.num_results_in_search,0)
+
+    # TODO if the search is complete, show the date that the search will be deleted
+
+    return search
+
+def delete_search(request, search_id):
+    '''
+    TODO -- needs to remove the search from the database, delete files on the server
+    '''
+    pass
+
+def download_search(request, search_id):
+    '''
+    TODO -- need to download files from the server for the search
+    '''
+    pass
 
 """ ------------------------------
     About Page

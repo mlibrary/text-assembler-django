@@ -169,12 +169,14 @@ $(document).on('change', '#id_filter_opts', function(e) {
 Handle POST data to pre-populate the filters
 */
 $( document ).ready(function() {
-    post_data = $("#post_data")[0].value;
-    if (post_data) {
-        post_data = JSON.parse(post_data);
-        for (filter in post_data) {
-            values = post_data[filter];
-            displayFilterValues(filter,values);
+    if ($("#post_data")[0] != undefined){
+        post_data = $("#post_data")[0].value;
+        if (post_data) {
+            post_data = JSON.parse(post_data);
+            for (filter in post_data) {
+                values = post_data[filter];
+                displayFilterValues(filter,values);
+            }
         }
     }
     $(".sp").selectpicker();

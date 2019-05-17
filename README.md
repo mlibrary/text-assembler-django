@@ -34,3 +34,13 @@ UI TODO
 * Send the 'save' options back to the form in the event of failure to repopulate the form
     * what should the screen show when the save is sucessful? cleared form?
 * Contact LN about multiple values not allowed in Language and Source fields for search
+* Show time remaining until next search available for when we run out of them for UI searches
+* If the API returns an error, distinguish that in the error message so users know it was from LN 
+  and not Text Assembler
+
+Nice to Have
+-------------
+* Sortable My Searches grid
+* email settings, email domain to notify users. ex: EMAIL_DOMAIN = msu.edu, will email to [user]@msu.edu
+    * if not set, then emails will not be sent to users
+* Display / calculate the estimated completion time of searches (search page and my searches page)

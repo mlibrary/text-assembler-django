@@ -41,6 +41,7 @@
             </div>
         </div>
         <input type="hidden" id="post_data" value="{{ post_data }}" />
+        <input type="hidden" id="result_data" name='result_data' value="{{ search_results_json }}" />
 
     {% for field in form %}
         {% if field.errors %}
@@ -101,7 +102,7 @@
             <hr/>
 
             <h2 id='searchResultLbl'>Search Results Sample</h2>
-            <span class='result-count'><strong>{{ search_results.count | intcomma }}</strong> result(s) found. Showing only the first <strong>{{search_results.value | length }}</strong> result(s).</span><br/><br/>
+            <span class='result-count'><strong>{{ search_results.count | intcomma }}</strong> result(s) found. Showing only the first <strong>{{ search_results.value | length }}</strong> result(s).</span><br/><br/>
             {% for result in search_results.value %}
                 <div class='result'>
                     <span class='field-title'>Title: </span><span class='title'>{{ result.Title }}</span><br/>

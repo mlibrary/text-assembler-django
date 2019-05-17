@@ -1,8 +1,71 @@
 {% extends 'base.html' %}
 
+{% load humanize %}
+
 {% block content %}
 
-<h1>My Searches</h1><hr/>
+<h1>My Searches</h1>
 
+<table class="table">
+    <thead><tr>
+    {% for h in headings %}
+        <th scop='col' class="{{ h|lower|slugify }}-column">{{ h }}</th>
+    {% endfor %}
+    </tr></thead>
+    <tbody>
+        {% for s in searches %}
+        <tr>
+            <td class="search-column {{ headings.0|lower|slugify }}-column">{{ s.date_submitted }}</td>
+            <td class="search-column {{ headings.1|lower|slugify }}-column">
+                {{ s.query }}
+                <a href='' role='button' onClick='return false;' data-trigger='focus' data-html='true' data-toggle='popover'
+                    title="Query Details"
+                    data-content='<strong>Filters:</strong><br/>
+                        {% if s.filters|length == 0 %}
+                            None
+                        {% endif %}
+                        {% for f in s.filters %}
+                            {{ f.filter_name }} = {{ f.filter_value }}<br/>
+                        {% endfor %}
+                        <br/>
+                        <strong>Download Formats Selected</strong></br>
+                        {% if s.download_formats|length == 0 %}
+                            None
+                        {% endif %}
+                        {% for f in s.download_formats %}
+                            {{ f.format_name }}<br/>
+
+                        {% endfor %}
+                    '>
+                    (details)
+                </a>
+            </td>
+            <td class="search-column {{ headings.2|lower|slugify }}-column">
+                Status: {{ s.status }}
+                <a href='' role='button' onClick='return false;' data-trigger='focus' data-html='true' data-toggle='popover' 
+                    title="Progress Details" 
+                    data-content='Downloaded {{ s.num_results_downloaded | intcomma }} out of {{ s.num_results_in_search |intcomma }} results<br/>
+                        Last Progress Made: {{ s.update_date }}<br/>
+                        Total Run Time: {{ s.run_time_mins }} minutes<br/>'>
+                    (details)
+                </a><br/>
+                <div class="progress">
+                    <div class="progress-bar" role="progressbar" style="width: {{ s.percent_complete }}%;" aria-valuenow="{{ s.percent_complete }}" aria-valuemin="0" aria-valuemax="100">{{ s.percent_complete }}%</div>
+                </div>
+            </td>
+            <td class="search-column {{ headings.3|lower|slugify }}-column">
+
+            {% for a in s.actions %}
+                <form method="{{ a.method }}" action="{% url a.action a.args %}"><button type="submit" class="btn {{ a.class }}"                
+                {% if a.label == "Delete"  %} onclick='return confirm("Delete the search and any results it may have?")' 
+                {% endif %}>{{ a.label }}
+                </button></form>
+            {% endfor %}
+
+            </td>
+         </tr>
+         {% endfor %}
+    </tbody>
+</table>
 
 {% endblock %}
