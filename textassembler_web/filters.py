@@ -6,7 +6,6 @@ import requests
 import json
 from django.conf import settings
 import datetime
-from .search import Search
 from .models import sources
 
 class Filters:

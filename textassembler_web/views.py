@@ -7,13 +7,14 @@ import sys
 import os
 from django.conf import settings
 from django.db import connections
-from .search import Search
+from .ln_api import LN_API
 from .filters import Filters
 from .utilities import log_error
 from .models import available_formats, download_formats, searches, filters
 import json
 import logging
 from django.utils import timezone
+import shutil
 
 """ ------------------------------
     Search Page
@@ -91,7 +92,7 @@ def search(request):
                         '''
                         Preview Search button selected
                         '''
-                        search_api = Search()
+                        search_api = LN_API()
                         results = search_api.search(clean["search"], set_filters)
                         if "value" in results:
                             results['count'] = results['@odata.count']
@@ -294,7 +295,8 @@ def set_search_info(search):
     if search.num_results_in_search == None or search.num_results_in_search == 0:
         search.percent_complete = 0
     else:
-        search.percent_complete = round(search.num_results_downloaded / search.num_results_in_search,0)
+        logging.debug(round((search.num_results_downloaded / search.num_results_in_search) * 100,0))
+        search.percent_complete = round((search.num_results_downloaded / search.num_results_in_search) * 100,0)
 
     # TODO if the search is complete, show the date that the search will be deleted
 
@@ -302,15 +304,44 @@ def set_search_info(search):
 
 def delete_search(request, search_id):
     '''
-    TODO -- needs to remove the search from the database, delete files on the server
+    Will remove the search from the database and delete files on the server
     '''
-    pass
+
+    search = searches.objects.get(search_id=search_id)
+    loging.info("Deleting search: {0}. {1}".format(search_id, search))
+
+    # delete files on the server
+    ## verify the storage location is accessibly
+    if not os.access(settings.STORAGE_LOCATION, os.W_OK) or not os.path.isdir(settings.STORAGE_LOCATION):
+        log_error("Could not delete files for search {0} due to storage location being inaccessible or not writable. {1}".format(search_id, settings.STORAGE_LOCATION), search)
+
+    else:
+        save_location = os.path.join(settings.STORAGE_LOCATION,search_id)
+        zip_path = save_location + ".zip"
+
+        if os.path.isdir(save_location):
+            try:
+                shutil.rmtree(save_location)
+            except Exception as e1:
+                log_error("Could not delete files for search {0}. {1}".format(search_id,e1), search)
+        if os.path.exists(zip_path):
+            try:
+                os.remove(zip_path)
+            except Exception as e2:
+                log_error("Could not delete the zipped file for search {0}. {1}".format(search_id, e2), search)
+    
+
+    # delete the records from the database regardless of if we can delete the files
+    search.delete()
+
+    return redirect(mysearches)
 
 def download_search(request, search_id):
     '''
     TODO -- need to download files from the server for the search
     '''
-    pass
+    print(search_id)
+    return redirect(mysearches)
 
 """ ------------------------------
     About Page

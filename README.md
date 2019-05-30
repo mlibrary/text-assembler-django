@@ -24,6 +24,21 @@ Copy all of the .example files (find . -name '*.example') and make necessary cha
 Running commands from cron with virtualenv
 ta_env/bin/python manage.py update_sources
 
+Installing the Text Assembler service to process the queue:
+```
+cp init.d/textassemblerd /etc/init.d/
+systemctl daemon-reload
+systemctl enable textassemblerd
+systemctl start textassemblerd
+```
+
+Need Gluster version to match version on gluster share (gluster --version)
+```
+sudo add-apt-repository ppa:gluster/glusterfs-5
+sudo apt-get update
+sudo aptitude install glusterfs-client
+```
+
 Notes
 --------------
 
@@ -37,6 +52,8 @@ UI TODO
 * Show time remaining until next search available for when we run out of them for UI searches
 * If the API returns an error, distinguish that in the error message so users know it was from LN 
   and not Text Assembler
+* handle failed searches in My Searches page
+* Build service for compression processor
 
 Nice to Have
 -------------

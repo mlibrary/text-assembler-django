@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand, CommandError
-from textassembler_web.search import Search
+from textassembler_web.ln_api import LN_API
 from django.apps import apps
 from django.db import transaction
 import time
@@ -13,7 +13,7 @@ class Command(BaseCommand):
         logging.info("Starting refresh of LexisNexis searchable sources.")
 
         # Get all the sources
-        self.api = Search()
+        self.api = LN_API()
         skip = 0
 
         self.wait_for_search(self.api)

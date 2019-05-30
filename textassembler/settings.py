@@ -40,12 +40,18 @@ configs = load_configs(SECURE_SETTINGS)
 # App Name
 APP_NAME = configs.get("general","APP_NAME")
 
+# Storage location where search results will be saved
+STORAGE_LOCATION = configs.get("general","STORAGE_LOCATION")
+
 # LexisNexis Configs
 LN_TOKEN_URL = configs.get("lexisnexis","TOKEN_URL")
 LN_CLIENT_ID = configs.get("lexisnexis","CLIENT_ID")
 LN_CLIENT_SECRET = configs.get("lexisnexis","CLIENT_SECRET")
 LN_SCOPE = configs.get("lexisnexis","SCOPE")
 LN_API_URL = configs.get("lexisnexis","API_URL")
+LN_DOWNLOAD_PER_CALL = int(configs.get("lexisnexis","DOWNLOAD_PER_CALL"))
+LN_MAX_RETRY = int(configs.get("lexisnexis","MAX_RETRY"))
+LN_TIMEOUT = int(configs.get("lexisnexis","TIMEOUT_SECONDS"))
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = configs.get("secretkey", "SECRET_KEY")

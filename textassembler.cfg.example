@@ -2,6 +2,7 @@
 APP_NAME = Text Assembler
 TIME_ZONE = America/Detroit
 MAINTAINER_EMAILS = schanzme@msu.edu, schanzme@lib.msu.edu
+STORAGE_LOCATION = /mnt/textassembler
 
 [database.default]
 ENGINE = django.db.backends.mysql
@@ -27,4 +28,6 @@ CLIENT_ID = client_id
 CLIENT_SECRET = secret
 SCOPE = http://oauth.lexisnexis.com/all
 API_URL = https://services-api.lexisnexis.com/v1/
-
+DOWNLOAD_PER_CALL = 10
+MAX_RETRY = 3
+TIMEOUT_SECONDS = 30

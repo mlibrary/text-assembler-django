@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 
 {% load humanize %}
+{% load custom_tags %}
 
 {% block content %}
 
@@ -46,9 +47,9 @@
                     title="Progress Details" 
                     data-content='Downloaded {{ s.num_results_downloaded | intcomma }} out of {{ s.num_results_in_search |intcomma }} results<br/>
                         Last Progress Made: {{ s.update_date }}<br/>
-                        Total Run Time: {{ s.run_time_mins }} minutes<br/>'>
-                    (details)
-                </a><br/>
+                        Total Run Time: {% seconds_to_dhms s.run_time_seconds %} <br/>'>
+                    (details)</a>
+                <br/>
                 <div class="progress">
                     <div class="progress-bar" role="progressbar" style="width: {{ s.percent_complete }}%;" aria-valuenow="{{ s.percent_complete }}" aria-valuemin="0" aria-valuemax="100">{{ s.percent_complete }}%</div>
                 </div>
@@ -56,7 +57,9 @@
             <td class="search-column {{ headings.3|lower|slugify }}-column">
 
             {% for a in s.actions %}
-                <form method="{{ a.method }}" action="{% url a.action a.args %}"><button type="submit" class="btn {{ a.class }}"                
+                <form method="{{ a.method }}" action="{% url a.action a.args %}">
+                    {% csrf_token %} 
+                    <button type="submit" class="btn {{ a.class }}"                
                 {% if a.label == "Delete"  %} onclick='return confirm("Delete the search and any results it may have?")' 
                 {% endif %}>{{ a.label }}
                 </button></form>

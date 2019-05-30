@@ -10,7 +10,7 @@ from django.apps import apps
 from django.utils import timezone
 from .utilities import log_error
 
-class Search:
+class LN_API:
     
     def __init__(self):
         '''
@@ -35,7 +35,7 @@ class Search:
 
         # Do not get a new token since the current one is still valid 
         if self.access_token is not None and self.expiration_time is not None and timezone.now() <= self.expiration_time:
-            return 
+            return ""
 
         logging.info("Obtaining new access token")
         data = {'grant_type': 'client_credentials',
@@ -43,7 +43,8 @@ class Search:
 
         access_token_response = requests.post(settings.LN_TOKEN_URL, 
             data=data, verify=True, 
-            auth=(settings.LN_CLIENT_ID, settings.LN_CLIENT_SECRET))
+            auth=(settings.LN_CLIENT_ID, settings.LN_CLIENT_SECRET),
+            timeout=settings.LN_TIMEOUT)
 
         if access_token_response.status_code == requests.codes.ok:
             tokens = access_token_response.json()
@@ -61,7 +62,7 @@ class Search:
         return ""
 
 
-    def refresh_throttle_data(self):
+    def refresh_throttle_data(self, display=False):
         '''
         Get the current throttle data from the database
         '''
@@ -82,9 +83,17 @@ class Search:
 
         self.throttles = throttles[0]
 
-        logging.info("Current limits: {0}/min, {1}/hr, {2}/day out of {3}/min, {4}/hr, {5}/day".format(
-            self.requests_per_min.count(), self.requests_per_hour.count(), self.requests_per_day.count(),
-            self.throttles.searches_per_minute, self.throttles.searches_per_hour, self.throttles.searches_per_day))
+        if display:
+            logging.info("Current search limits: {0}/min, {1}/hr, {2}/day out of {3}/min, {4}/hr, {5}/day".format(
+                self.requests_per_min.count(), self.requests_per_hour.count(), self.requests_per_day.count(),
+                self.throttles.searches_per_minute, self.throttles.searches_per_hour, self.throttles.searches_per_day))
+            
+            logging.info("Current download limits: {0}/min, {1}/hr, {2}/day out of {3}/min, {4}/hr, {5}/day".format(
+                self.requests_per_min.filter(is_download=True).count(), 
+                self.requests_per_hour.filter(is_download=True).count(), 
+                self.requests_per_day.filter(is_download=True).count(),
+                self.throttles.downloads_per_minute, self.throttles.downloads_per_hour, 
+                self.throttles.downloads_per_day))
 
     def check_can_search(self):
         '''
@@ -93,7 +102,7 @@ class Search:
         returns: bool can_search
         '''
 
-        self.refresh_throttle_data()
+        self.refresh_throttle_data(True)
 
         if self.requests_per_min.count() < self.throttles.searches_per_minute \
             and self.requests_per_hour.count() < self.throttles.searches_per_hour and \
@@ -109,7 +118,7 @@ class Search:
         returns: (bool,bool) can_search, can_download
         '''
 
-        self.refresh_throttle_data()
+        self.refresh_throttle_data(True)
 
         if self.requests_per_min.filter(is_download=True).count() < self.throttles.downloads_per_minute \
             and self.requests_per_hour.filter(is_download=True).count() < self.throttles.downloads_per_hour \
@@ -138,6 +147,27 @@ class Search:
             return ((timezone.now() + datetime.timedelta(hours=1)) - timezone.now()).total_seconds()
         if self.requests_per_min.count() >= self.throttles.searches_per_minute:
             return ((timezone.now() + datetime.timedelta(minutes=1)) - timezone.now()).total_seconds()
+    
+    def get_time_until_next_download(self):
+        '''
+        Gets the number of seconds until we can perform the next download
+        '''
+
+        self.refresh_throttle_data()
+        
+        # Available now
+        if self.requests_per_min.filter(is_download=True).count() < self.throttles.downloads_per_minute  \
+            and self.requests_per_hour.filter(is_download=True).count() < self.throttles.downloads_per_hour \
+            and self.requests_per_day.filter(is_download=True).count() < self.throttles.downloads_per_day:
+            return 0
+
+        # Calculate
+        if self.requests_per_day.filter(is_download=True).count() >= self.throttles.downloads_per_day:
+            return ((timezone.now() + datetime.timedelta(days=1)) - timezone.now()).total_seconds()
+        if self.requests_per_hour.filter(is_download=True).count() >= self.throttles.downloads_per_hour:
+            return ((timezone.now() + datetime.timedelta(hours=1)) - timezone.now()).total_seconds()
+        if self.requests_per_min.filter(is_download=True).count() >= self.throttles.downloads_per_minute:
+            return ((timezone.now() + datetime.timedelta(minutes=1)) - timezone.now()).total_seconds()
 
     def api_call(self, req_type='GET', resource='News', params = {}):
         '''
@@ -163,14 +193,14 @@ class Search:
         url = self.api_url + resource
     
         if req_type == "GET":
-            resp = requests.get(url, params=params, headers=headers)
+            resp = requests.get(url, params=params, headers=headers, timeout=settings.LN_TIMEOUT)
         if req_type == "POST":
-            resp = requests.post(url, params=params, headers=headers)
+            resp = requests.post(url, params=params, headers=headers, timeout=settings.LN_TIMEOUT)
 
         # Log the API call
         result_count =  resp.json()["@odata.count"] if resp.status_code == requests.codes.ok and "@odata.count" in resp.json().keys() else 0
         self.api_log.objects.create(
-            request_url = url,
+            request_url = resp.url,
             request_type = req_type,
             response_code = resp.status_code,
             num_results = result_count,
@@ -189,6 +219,28 @@ class Search:
 
 
     def search(self, term = "", set_filters = {}):
+        filters = self.convert_filters_to_query_string(set_filters)
+
+        # Always provide the $exand=PostFilters so we can provide them to the UI
+        params = {"$search":term, "$expand": "PostFilters"}
+
+        if len(filters) > 0:
+            params['$filter'] = filters
+
+        return self.api_call(resource='News', params=params)
+
+    def download(self, term = "", set_filters = {}, download_cnt=10, skip=0):
+        filters = self.convert_filters_to_query_string(set_filters)
+
+        # Always provide the $exand=Document so we get the full text result
+        params = {"$search":term, "$expand": "Document", "$skip": skip}
+
+        if len(filters) > 0:
+            params['$filter'] = filters
+
+        return self.api_call(resource='News', params=params)
+
+    def convert_filters_to_query_string(self, set_filters = {}):
         '''
         Processes the filters and turns them into parameters for the API.
         Filters from the same field will be treated as AND
@@ -231,13 +283,8 @@ class Search:
                     filters = filters[:-4] # remove the last OR
                     filters += ")"
 
-        # Always provide the $exand=PostFilters so we can provide them to the UI
-        params = {"$search":term, "$expand": "PostFilters"}
+        return filters
 
-        if len(filters) > 0:
-            params['$filter'] = filters
-
-        return self.api_call(resource='News', params=params)
 
     def string_is_int(self,s):
         '''

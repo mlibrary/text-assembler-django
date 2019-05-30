@@ -25,7 +25,17 @@ class searches(models.Model):
     date_started_compression = models.DateTimeField(null=True) # need to track separately since this can take a while with long searches
     date_completed_compression = models.DateTimeField(null=True) # date the compression of all the search results completed
     user_notified = models.BooleanField(default=False) # flag indicating if the user has been send the email notification yet
-    run_time_mins = models.IntegerField(default=0) # number of minutes the download has been actively running (not including waiting in queue)
+    run_time_seconds = models.IntegerField(default=0) # number of seconds the download has been actively running (not including waiting in queue)
+    retry_count = models.IntegerField(default=0) # number of times a call to the API failed
+    errror_message = models.TextField(null=True)
+    failed_date = models.DateTimeField(null=True) # date the search failed
+
+    def __str__(self):
+        return "(ID: {0}) userid: {1}. Date Submitted: {2}. Date Started: {3}. Date Completed: {4}. Number of Results Downloaded: {5}. Query: {6}".format(self.search_id, self.userid, 
+            self.date_submitted, 
+            self.date_started, 
+            self.date_completed, 
+            str(self.num_results_downloaded), self.query)
 
 class filters(models.Model):
     search_id = models.ForeignKey("searches", models.CASCADE)
