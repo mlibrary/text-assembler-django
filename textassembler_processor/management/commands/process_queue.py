@@ -32,6 +32,7 @@ class Command(BaseCommand):
         logging.info("Starting queue processing.")
         self.api = LN_API()
         while not self.terminate:
+            time.sleep(1) # take a quick break!
             try:
                 try:
                     # check that there are items in the queue to process

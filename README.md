@@ -62,7 +62,7 @@ TODO
 * If the API returns an error, distinguish that in the error message so users know it was from LN 
   and not Text Assembler
 * handle failed searches in My Searches page
-* Lint
+* Lint (pylint3 --max-line-length=160 --load-plugins=pylint_django --extension-pkg-whitelist=lxml)
 * Unit Tests
 * Accessibility scan
 

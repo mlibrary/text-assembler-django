@@ -4,6 +4,7 @@ from django.apps import apps
 from django.conf import settings
 import logging
 import signal
+import time
 import os
 import zipfile
 from django.utils import timezone
@@ -27,6 +28,7 @@ class Command(BaseCommand):
     
         logging.info("Starting compression processing.")
         while not self.terminate:
+            time.sleep(1) # take a quick break!
             try: 
                 # check that there are items in the queue to process
                 # that have completed downloading results and haven't already completed compression
@@ -96,6 +98,7 @@ class Command(BaseCommand):
 
                 # save the search record
                 self.cur_search.save()
+
             
             except Exception as e:
                 # This scenario shouldn't happen, but handling it just in case
