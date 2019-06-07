@@ -52,7 +52,7 @@ Notes
 --------------
 
 
-UI TODO
+TODO
 -------
 * Authentication
 * Send the 'save' options back to the form in the event of failure to repopulate the form
@@ -62,7 +62,9 @@ UI TODO
 * If the API returns an error, distinguish that in the error message so users know it was from LN 
   and not Text Assembler
 * handle failed searches in My Searches page
-* Build service for compression processor
+* Lint
+* Unit Tests
+* Accessibility scan
 
 Nice to Have
 -------------

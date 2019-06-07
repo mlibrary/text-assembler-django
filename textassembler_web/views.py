@@ -265,7 +265,7 @@ def set_search_info(search):
          "method": "POST",
          "label": "Delete",
          "action": "delete",
-         "class": "btn-primary",
+         "class": "btn-danger",
          "args": str(search.search_id)
         }
     download = {
@@ -313,7 +313,7 @@ def delete_search(request, search_id):
     '''
     # TODO - put this in a try-catch block and have error show on page like in download
     search = searches.objects.get(search_id=search_id)
-    loging.info("Deleting search: {0}. {1}".format(search_id, search))
+    logging.info("Deleting search: {0}. {1}".format(search_id, search))
 
     # delete files on the server
     ## verify the storage location is accessibly

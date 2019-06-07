@@ -204,3 +204,9 @@ input[type=checkbox], input[type=radio] {
 #post_filters {
     flex-wrap: nowrap;
 } 
+/*******
+* My Searches
+********/
+.action-btn {
+    padding-bottom: 5px;
+}

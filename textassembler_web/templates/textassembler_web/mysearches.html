@@ -61,7 +61,7 @@
             <td class="search-column {{ headings.3|lower|slugify }}-column">
 
             {% for a in s.actions %}
-                <form method="{{ a.method }}" action="{% url a.action a.args %}">
+                <form method="{{ a.method }}" action="{% url a.action a.args %}" class='action-btn'>
                     {% csrf_token %} 
                     <button type="submit" class="btn {{ a.class }}"                
                 {% if a.label == "Delete"  %} onclick='return confirm("Delete the search and any results it may have?")' 
