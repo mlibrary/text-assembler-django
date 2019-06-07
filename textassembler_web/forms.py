@@ -52,4 +52,4 @@ class TextAssemblerWebForm(forms.Form):
             widget=forms.Select(attrs={'class':'filter_opts form-control'}),
         )
 
-            
+

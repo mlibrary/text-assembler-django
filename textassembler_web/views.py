@@ -21,7 +21,7 @@ from django.core.exceptions import PermissionDenied
 """ ------------------------------
     Search Page
     ------------------------------
-""" 
+"""
 def search(request):
     '''
     Render the search page
@@ -52,7 +52,7 @@ def search(request):
         set_formats = dict(request.POST)['selected-formats']
     if "post_filters" in dict(request.POST):
         set_post_filters = dict(request.POST)['post_filters']
-    
+
     # Add post filters to set_filters
     for post_filter in set_post_filters:
         name = post_filter.split("||")[0]
@@ -76,7 +76,7 @@ def search(request):
                     response['error_message'] += "The 'Year' field requires only numeric input, provided: {0}.".format(value);
     if 'Date' in set_filters and 'year(Date)' in set_filters:
         response['error_message'] += "Please you either the year filter or the range filter for dates, but not a combination of both."
-    
+
     # Send the set filters back to the form to pre-populate the fields
     response["post_data"] = json.dumps(set_filters)
 
@@ -85,9 +85,9 @@ def search(request):
         response["result_data"] = json.loads(request.POST['result_data'])
 
     if request.method == 'POST' and form.is_valid() and response['error_message'] == '':
-        
+
         clean = form.cleaned_data
-   
+
         if clean["search"]  != "":
                 try:
                     if "preview-search" in dict(request.POST) or "add-filters" in dict(request.POST):
@@ -117,7 +117,7 @@ def search(request):
                             # only do this if there are not already results since we don't want to overwrite those
                             if "result_data" in response and 'search_results' not in response:
                                 response['search_results'] = response['result_data']
-                            
+
                         if response["error_message"] == "":
                             # Save the search record
                             search_obj = searches(userid = request.user, query=clean["search"])
@@ -143,11 +143,11 @@ def search(request):
 
                             response = redirect('/mysearches')
                             return response
- 
+
                 except Exception as e:
                     error = "Error occured while processing search request. {0} on line {1} of {2}: {3}\n{4}".format(type(e).__name__, sys.exc_info()[-1].tb_lineno, os.path.basename(__file__), e, traceback.format_exc())
                     log_error(error, json.dumps(dict(request.POST)))
-                    
+
                     if settings.DEBUG:
                         response["error_message"] = error
                     else:
@@ -157,12 +157,12 @@ def search(request):
                     # only do this if there are not already results since we don't want to overwrite those
                     if "result_data" in response and 'search_results' not in response:
                         response['search_results'] = response['result_data']
-    
+
     elif request.method == 'POST' and not form.is_valid():
         # If there are any form errors, add them to the fields to they highlight the issues
         for field in form.errors:
             form[field].field.widget.attrs['class'] += ' error-field'
-        
+
 
     return render(request, "textassembler_web/search.html", response)
 
@@ -220,10 +220,10 @@ def get_filter_val_input(request, filter_type):
 
 def string_is_int(s):
     '''
-    Check if the string contains an integer (because checking isinstance will return false for 
+    Check if the string contains an integer (because checking isinstance will return false for
     a string variable containing an integer.
     '''
-    try: 
+    try:
         int(s)
         return True
     except ValueError:
@@ -232,14 +232,14 @@ def string_is_int(s):
 """ ------------------------------
     My Searches Page
     ------------------------------
-""" 
+"""
 def mysearches(request):
     '''
     Render the My Searches page
     '''
     response = {}
     response["headings"] = ["Date Submitted", "Query", "Progress", "Actions"]
-    
+
     if "error_message" in request.session:
         response["error_message"] = request.session["error_message"]
         request.session["error_message"] = "" # clear it out so it won't show on refresh
@@ -258,7 +258,7 @@ def set_search_info(search):
     Add additional information to each search result object for the page to use when rendering
     '''
 
-    # Add actions for Download and Delete 
+    # Add actions for Download and Delete
     actions = []
 
     delete = {
@@ -283,7 +283,7 @@ def set_search_info(search):
 
     # Build progress data
     search.filters = filters.objects.filter(search_id=search.search_id)
-    formats = download_formats.objects.filter(search_id=search.search_id) 
+    formats = download_formats.objects.filter(search_id=search.search_id)
     search.download_formats = []
 
     for f in formats:
@@ -334,7 +334,7 @@ def delete_search(request, search_id):
                 os.remove(zip_path)
             except Exception as e2:
                 log_error("Could not delete the zipped file for search {0}. {1}".format(search_id, e2), search)
-    
+
 
     # delete the records from the database regardless of if we can delete the files
     search.delete()
@@ -346,7 +346,7 @@ def download_search(request, search_id):
     need to download files from the server for the search
     '''
     error_message = ""
-    try: 
+    try:
         # make sure the search documents requested are for the user that made the search (HTTP 403)
         search = searches.objects.filter(search_id=search_id)
         if len(search) == 1:
@@ -395,7 +395,7 @@ def find_zip_file(search_id):
 """ ------------------------------
     About Page
     ------------------------------
-""" 
+"""
 def about(request):
     '''
     Render the About page
