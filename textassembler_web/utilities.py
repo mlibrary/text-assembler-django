@@ -12,7 +12,8 @@ import re
 def log_error(error_message, json_data = None):
     # Print both the error and and POST data to the error log
     logging.error(error_message)
-    logging.error(json_data)
+    if json_data != None:
+        logging.error(json_data)
 
     if len(settings.MAINTAINER_EMAILS) == 0:
         return

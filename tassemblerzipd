@@ -6,9 +6,9 @@ sig_term() {
 
 trap sig_term SIGINT SIGTERM
 
-TEXTASSEMBLERD_LOG=/var/log/apache2/textassemblerd.log
+TASSEMBLERZIPD_LOG=/var/log/apache2/tassemblerzipd.log
 SCRIPT_LOCATION="$( dirname "${BASH_SOURCE[0]}" )"
-$SCRIPT_LOCATION/ta_env/bin/python $SCRIPT_LOCATION/manage.py process_queue 1>> $TEXTASSEMBLERD_LOG 2>&1 &
+$SCRIPT_LOCATION/ta_env/bin/python $SCRIPT_LOCATION/manage.py compress_searches 1>> $TASSEMBLERZIPD_LOG 2>&1 &
 MANAGE_PID=$!
 wait $MANAGE_PID
 

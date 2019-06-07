@@ -7,6 +7,10 @@
 
 <h1>My Searches</h1>
 
+{% if error_message %}
+<br/><p class='error'>{{ error_message }}</p>
+{% endif %}
+
 <table class="table">
     <thead><tr>
     {% for h in headings %}

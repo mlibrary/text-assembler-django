@@ -19,7 +19,9 @@ class Command(BaseCommand):
         signal.signal(signal.SIGTERM, self.sig_term)
 
         self.terminate = False
+        self.error = False
         self.cur_search = None
+        self.retry = False
 
         # Grab the necessary models
         self.searches = apps.get_model('textassembler_web','searches')
@@ -31,10 +33,20 @@ class Command(BaseCommand):
         self.api = LN_API()
         while not self.terminate:
             try:
-                # check that there are items in the queue to process
-                queue = self.searches.objects.filter(date_completed__isnull=True, failed_date__isnull=True).order_by('-update_date')
-                if len(queue) == 0:
-                    continue # nothing to process
+                try:
+                    # check that there are items in the queue to process
+                    queue = self.searches.objects.filter(date_completed__isnull=True, failed_date__isnull=True).order_by('-update_date')
+                    if len(queue) == 0:
+                        self.retry = False
+                        continue # nothing to process
+                except OperationalError as ex:
+                    log_error("Queue Processor failed to retrieve the search queue. {0}".format(ex))
+                    if not self.retry:
+                        time.sleep(10) # wait 10 seconds and re-try
+                        self.retry = True
+                        continue
+                    else:
+                        self.terminate = True
                 
                 # verify the storage location is accessibly
                 if not os.access(settings.STORAGE_LOCATION, os.W_OK) or not os.path.isdir(settings.STORAGE_LOCATION):   
@@ -44,6 +56,7 @@ class Command(BaseCommand):
                     if not os.access(settings.STORAGE_LOCATION, os.W_OK) or not os.path.isdir(settings.STORAGE_LOCATION):
                         log_error("Stopping. Queue Processor failed due to storage location being inaccessible or not writable. {0}".format(settings.STORAGE_LOCATION))
                         self.terminate = True
+                        self.error = True
                         continue
 
                 # Update / validate authentication with the API
@@ -56,6 +69,7 @@ class Command(BaseCommand):
                     if response != "":
                         log_error("Stopping. Queue Processor failed to authenticate against LexisNexis API. Response: {0}".format(response))
                         self.terminate = True
+                        self.error = True
                         continue
                     continue
 
@@ -71,11 +85,24 @@ class Command(BaseCommand):
                 # get the next item from the queue
                 ## we are doing this again in case the search has been deleted
                 ## while waiting for the API to be available
-                queue = self.searches.objects.filter(date_completed__isnull=True, failed_date__isnull=True).order_by('-update_date')
-                if len(queue) > 0:
-                    self.cur_search = queue[0]
-                else:
-                    continue # nothing to process
+                try:
+                    queue = self.searches.objects.filter(date_completed__isnull=True, failed_date__isnull=True).order_by('-update_date')
+                    if len(queue) > 0:
+                        self.cur_search = queue[0]
+                        self.retry = False
+                    else:
+                        self.retry = False
+                        continue # nothing to process
+                except OperationalError as ex:
+                    log_error("Queue Processor failed to retrieve the search queue. {0}".format(ex))
+                    if not self.retry:
+                        time.sleep(10) # wait 10 seconds and re-try
+                        self.retry = True
+                        continue
+                    else:
+                        self.terminate = True
+
+                logging.info("Downloading items for search: {0}. Skip Value: {1}.".format(self.cur_search.search_id, self.cur_search.skip_value))
 
                 # check if this is a new search and set the start time
                 if self.cur_search.date_started == None: self.cur_search.date_started = timezone.now()
@@ -105,6 +132,8 @@ class Command(BaseCommand):
                 ## save the results to the server
                 save_location = os.path.join(settings.STORAGE_LOCATION,str(self.cur_search.search_id))
                 for result in results["value"]:
+                    if self.terminate:
+                        break
                     if "Document" not in result or "Content" not in result["Document"] or "ResultId" not in result:
                         log_error("WARNING: Could not parse result value from search for ID: {0}.".format(self.cur_search.search_id), json.dumps(result))
                         continue
@@ -129,20 +158,26 @@ class Command(BaseCommand):
                         error = "{0} on line {1} of {2}: {3}\n{4}".format(type(ex).__name__, sys.exc_info()[-1].tb_lineno, os.path.basename(__file__), ex, traceback.format_exc())
                         log_error("Failed to save downloaded results to the server. {0}".format(error))
                         self.terminate = True
+                        self.error = True
                         continue # not adding to retry count since it wasn't a problem with the search
 
-                ## update the search in the database
-                self.cur_search.skip_value = self.cur_search.skip_value + settings.LN_DOWNLOAD_PER_CALL
-                self.cur_search.update_date = timezone.now()
-                self.cur_search.run_time_seconds = self.cur_search.run_time_seconds + int(round(time.time() - start_time,0))
-                self.cur_search.num_results_in_search = results['@odata.count'] 
-                self.cur_search.num_results_downloaded = self.cur_search.num_results_downloaded + len(results["value"])
-                ## check if the search is complete
-                if self.cur_search.num_results_downloaded >= self.cur_search.num_results_in_search:
-                    self.cur_search.date_completed = timezone.now()
+                if not self.error: 
+                    # not including self.terminate since we would want to cleanly save
+                    # the record before terminating the service. We only want to skip this 
+                    # step if the termination was due to a failure
 
-                ## save the search record
-                self.cur_search.save()
+                    ## update the search in the database
+                    self.cur_search.skip_value = self.cur_search.skip_value + settings.LN_DOWNLOAD_PER_CALL
+                    self.cur_search.update_date = timezone.now()
+                    self.cur_search.run_time_seconds = self.cur_search.run_time_seconds + int(round(time.time() - start_time,0))
+                    self.cur_search.num_results_in_search = results['@odata.count'] 
+                    self.cur_search.num_results_downloaded = self.cur_search.num_results_downloaded + len(results["value"])
+                    ## check if the search is complete
+                    if self.cur_search.num_results_downloaded >= self.cur_search.num_results_in_search:
+                        self.cur_search.date_completed = timezone.now()
+
+                    ## save the search record
+                    self.cur_search.save()
 
             
             except Exception as e:

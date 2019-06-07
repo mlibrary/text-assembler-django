@@ -1,4 +1,4 @@
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, Http404
 from django.shortcuts import render, redirect
 from .forms import TextAssemblerWebForm
 import logging
@@ -15,6 +15,8 @@ import json
 import logging
 from django.utils import timezone
 import shutil
+from django.core.exceptions import PermissionDenied
+
 
 """ ------------------------------
     Search Page
@@ -143,7 +145,7 @@ def search(request):
                             return response
  
                 except Exception as e:
-                    error = "{0} on line {1} of {2}: {3}\n{4}".format(type(e).__name__, sys.exc_info()[-1].tb_lineno, os.path.basename(__file__), e, traceback.format_exc())
+                    error = "Error occured while processing search request. {0} on line {1} of {2}: {3}\n{4}".format(type(e).__name__, sys.exc_info()[-1].tb_lineno, os.path.basename(__file__), e, traceback.format_exc())
                     log_error(error, json.dumps(dict(request.POST)))
                     
                     if settings.DEBUG:
@@ -236,8 +238,11 @@ def mysearches(request):
     Render the My Searches page
     '''
     response = {}
-
     response["headings"] = ["Date Submitted", "Query", "Progress", "Actions"]
+    
+    if "error_message" in request.session:
+        response["error_message"] = request.session["error_message"]
+        request.session["error_message"] = "" # clear it out so it won't show on refresh
 
     all_user_searches = searches.objects.all().filter(userid=request.user).order_by('-date_submitted')
 
@@ -306,7 +311,7 @@ def delete_search(request, search_id):
     '''
     Will remove the search from the database and delete files on the server
     '''
-
+    # TODO - put this in a try-catch block and have error show on page like in download
     search = searches.objects.get(search_id=search_id)
     loging.info("Deleting search: {0}. {1}".format(search_id, search))
 
@@ -317,14 +322,14 @@ def delete_search(request, search_id):
 
     else:
         save_location = os.path.join(settings.STORAGE_LOCATION,search_id)
-        zip_path = save_location + ".zip"
+        zip_path = find_zip_file(search_id)
 
         if os.path.isdir(save_location):
             try:
                 shutil.rmtree(save_location)
             except Exception as e1:
                 log_error("Could not delete files for search {0}. {1}".format(search_id,e1), search)
-        if os.path.exists(zip_path):
+        if zip_path != None and os.path.exists(zip_path):
             try:
                 os.remove(zip_path)
             except Exception as e2:
@@ -338,10 +343,54 @@ def delete_search(request, search_id):
 
 def download_search(request, search_id):
     '''
-    TODO -- need to download files from the server for the search
+    need to download files from the server for the search
     '''
-    print(search_id)
+    error_message = ""
+    try: 
+        # make sure the search documents requested are for the user that made the search (HTTP 403)
+        search = searches.objects.filter(search_id=search_id)
+        if len(search) == 1:
+            search = search[0]
+        else:
+            error_message = "The search record could not be located on the server. please contact a system administator."
+        if search.userid != str(request.user):
+            error_message = "You do not have permissions to download searches other than ones you requested."
+
+        # make sure the search file exists (HTTP 404)
+        if error_message == "":
+            zipfile = find_zip_file(search_id)
+            if zipfile == None or not os.path.exists(zipfile) or not os.access(zipfile, os.R_OK):
+                error_message = "The search results can not be located on the server. please contact a system administator."
+
+        if error_message == "":
+            # download the search zip
+            with open(zipfile, 'rb') as fh:
+                    response = HttpResponse(fh.read(), content_type="application/force-download")
+                    response['Content-Disposition'] = 'attachment; filename=' + os.path.basename(zipfile)
+                    return response
+    except Exception as e:
+        error = "Error downloading search {0}. {1} on line {2} of {3}: {4}\n{5}".format(str(search_id), type(e).__name__, sys.exc_info()[-1].tb_lineno, os.path.basename(__file__), e, traceback.format_exc())
+        log_error(error, json.dumps(dict(request.POST)))
+
+        if settings.DEBUG:
+            error_message = error
+        else:
+            error_message = "An unexpected error has occured."
+
+    request.session["error_message"] = error_message
     return redirect(mysearches)
+
+
+def find_zip_file(search_id):
+    '''
+    For the given search ID, it will locate the full path for the zip file
+    '''
+    filepath = os.path.join(settings.STORAGE_LOCATION,search_id)
+    for root, dirs, files in os.walk(filepath):
+        for name in files:
+            if name.endswith("zip"):
+                return os.path.join(root,name)
+    return None
 
 """ ------------------------------
     About Page

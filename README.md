@@ -27,16 +27,25 @@ ta_env/bin/python manage.py update_sources
 Installing the Text Assembler service to process the queue:
 ```
 cp init.d/textassemblerd /etc/init.d/
+cp init.d/textassemblerzipd /etc/init.d/
 systemctl daemon-reload
 systemctl enable textassemblerd
 systemctl start textassemblerd
+systemctl enable textassemblerzipd
+systemctl start textassemblerzipd
 ```
+TODO -- make sure no more than once instance of the service is running at a time
 
 Need Gluster version to match version on gluster share (gluster --version)
 ```
 sudo add-apt-repository ppa:gluster/glusterfs-5
 sudo apt-get update
 sudo aptitude install glusterfs-client
+```
+
+cifs mount 
+```
+sudo apt install cifs-utils
 ```
 
 Notes

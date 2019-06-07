@@ -1,6 +1,6 @@
 #! /bin/sh
 ### BEGIN INIT INFO
-# Provides:          textassemblerd
+# Provides:          tassemblerd
 # Required-Start:    $syslog $time $remote_fs
 # Required-Stop:     $syslog $time $remote_fs
 # Default-Start:     2 3 4 5
@@ -10,8 +10,8 @@
 ### END INIT INFO
 
 PATH=/bin:/usr/bin:/sbin:/usr/sbin
-DAEMON=/var/www/text-assembler/textassemblerd
-PIDFILE=/var/run/textassemblerd.pid
+DAEMON=/var/www/text-assembler/tassemblerd
+PIDFILE=/var/run/tassemblerd.pid
 
 test -x $DAEMON || exit 0
 
@@ -19,14 +19,14 @@ test -x $DAEMON || exit 0
 
 case "$1" in
   start)
-	log_daemon_msg "Starting Text Assembler Daemon" "textassemblerd"
-    start-stop-daemon --start --background --make-pidfile --oknodo --name textassemblerd \
+	log_daemon_msg "Starting Text Assembler Daemon" "tassemblerd"
+    start-stop-daemon --start --background --make-pidfile --oknodo --name tassemblerd \
         --pidfile $PIDFILE --startas $DAEMON
 	log_end_msg $?
     ;;
   stop)
-	log_daemon_msg "Stopping Text Assembler Daemon" "textassemblerd"
-    start-stop-daemon --stop --remove-pidfile --oknodo --name textassemblerd \
+	log_daemon_msg "Stopping Text Assembler Daemon" "tassemblerd"
+    start-stop-daemon --stop --remove-pidfile --oknodo --name tassemblerd \
         --pidfile $PIDFILE --retry=TERM/25/KILL/5
 	log_end_msg $?
     ;;
@@ -35,10 +35,10 @@ case "$1" in
     $0 start
     ;;
   status)
-    status_of_proc -p $PIDFILE $DAEMON textassemblerd && exit 0 || exit $?
+    status_of_proc -p $PIDFILE $DAEMON tassemblerd && exit 0 || exit $?
     ;;
   *)
-    echo "Usage: /etc/init.d/textassemblerd {start|stop|restart|force-reload|status}"
+    echo "Usage: /etc/init.d/tassemblerd {start|stop|restart|force-reload|status}"
     exit 1
     ;;
 esac
