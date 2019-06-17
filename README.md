@@ -55,6 +55,8 @@ Notes
 TODO
 -------
 * Authentication
+    https://requests-oauthlib.readthedocs.io/en/latest/oauth2_workflow.html
+    https://oauthlib.readthedocs.io/en/v3.0.1/oauth2/clients/webapplicationclient.html#
 * Send the 'save' options back to the form in the event of failure to repopulate the form
     * what should the screen show when the save is sucessful? cleared form?
 * Contact LN about multiple values not allowed in Language and Source fields for search
@@ -62,9 +64,13 @@ TODO
 * If the API returns an error, distinguish that in the error message so users know it was from LN 
   and not Text Assembler
 * handle failed searches in My Searches page
+* switch sleep for wait_to_download to less time (in case sigterm is triggered we don't want to wait a day for it to process)
 * Lint (pylint3 --max-line-length=160 --load-plugins=pylint_django --extension-pkg-whitelist=lxml)
 * Unit Tests
 * Accessibility scan
+expand download formats
+make it more clear you can select multiple filters
+switch preview to showing full text instead of extract
 
 Nice to Have
 -------------

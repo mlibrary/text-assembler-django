@@ -27,7 +27,7 @@ class searches(models.Model):
     user_notified = models.BooleanField(default=False) # flag indicating if the user has been send the email notification yet
     run_time_seconds = models.IntegerField(default=0) # number of seconds the download has been actively running (not including waiting in queue)
     retry_count = models.IntegerField(default=0) # number of times a call to the API failed
-    errror_message = models.TextField(null=True)
+    error_message = models.TextField(null=True)
     failed_date = models.DateTimeField(null=True) # date the search failed
 
     def __str__(self):

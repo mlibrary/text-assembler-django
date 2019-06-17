@@ -127,7 +127,7 @@ def search(request):
                             # Save the selected filters
                             for k,v in set_filters.items():
                                 if k == "Date":
-                                    for i in range(0,len(values),2):
+                                    for i in range(0,len(v),2):
                                         filter_obj = filters(search_id = search_obj, filter_name = k, filter_value = v[i] + " " + v[i+1])
                                         filter_obj.save()
                                 else:
@@ -296,6 +296,9 @@ def set_search_info(search):
         search.status = "Preparing Results for Download"
     if search.date_completed_compression != None:
         search.status = "Completed"
+    # TODO -- handle Failed searches
+    if search.failed_date != None:
+        search.status = "Failed"
 
     if search.num_results_in_search == None or search.num_results_in_search == 0:
         search.percent_complete = 0
@@ -334,7 +337,7 @@ def delete_search(request, search_id):
                 os.remove(zip_path)
             except Exception as e2:
                 log_error("Could not delete the zipped file for search {0}. {1}".format(search_id, e2), search)
-
+        # TODO -- not deleting root directory
 
     # delete the records from the database regardless of if we can delete the files
     search.delete()

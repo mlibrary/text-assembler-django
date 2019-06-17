@@ -262,6 +262,8 @@ class LN_API:
         filters = ""
         filter_data = Filters()
 
+        logging.debug(set_filters)
+
         for key, values in set_filters.items():
             namespace = filter_data.getEnumNamespace(key)
 
@@ -270,8 +272,15 @@ class LN_API:
 
             # Handle dates separately since they have 2 values (start date and end date)
             if key == 'Date':
+                if len(values[0]) > 3: # the values are stored together
+                    tmp = []
+                    for v in values:
+                        tmp.append(v.split(" ")[0])
+                        tmp.append(v.split(" ")[1])
+                    values = tmp
                 filters += " ("
                 for i in range(0, len(values), 2):
+                    logging.debug("===" + values[i] + " " + values[i+1] + "===")
                     filters += key.replace('_', '/') + " " + values[i] + " " + values[i+1] + " and "
                 filters = filters[:-5] # remove the last AND
                 filters += ")"

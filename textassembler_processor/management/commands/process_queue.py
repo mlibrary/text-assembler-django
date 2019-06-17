@@ -125,10 +125,12 @@ class Command(BaseCommand):
                 if "error_message" in results:
                     log_error("An error occured processing search id: {0}. {1}".format(self.cur_search.search_id, results["error_message"]), self.cur_search)
                     self.cur_search.retry_count = self.cur_search.retry_count + 1
-                    self.cur_search.error_message = results["error_message"]
+                    self.cur_search.error_message = results["error_message"] ## TODO -- not saving
                     if self.cur_search.retry_count > settings.LN_MAX_RETRY:
                         self.cur_search.failed_date = timezone.now()
                         # TODO -- send email notification (set cur_search.user_notified)
+                    self.cur_search.save()
+                    continue
 
                 ## save the results to the server
                 save_location = os.path.join(settings.STORAGE_LOCATION,str(self.cur_search.search_id))
