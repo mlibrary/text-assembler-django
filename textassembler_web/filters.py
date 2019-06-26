@@ -180,3 +180,13 @@ class Filters:
             return 'LexisNexis.ServicesApi.' + filter_type
         else:
             return ''
+
+    def getFormatType(self, filter_type):
+        '''
+        Retrieve the format that LexisNexis expects for the given filter when 
+        calling the API.
+        '''
+        if filter_type in ['PublicationType', 'Location','Company','People','Publisher']:
+            return 'base64'
+        else:
+            return 'text'

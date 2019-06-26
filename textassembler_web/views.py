@@ -1,13 +1,16 @@
 from django.http import HttpResponse, JsonResponse, Http404
 from django.shortcuts import render, redirect
 from .forms import TextAssemblerWebForm
+from requests_oauthlib import OAuth2Session
 import logging
+import base64
 import traceback
 import sys
 import os
 from django.conf import settings
 from django.db import connections
 from .ln_api import LN_API
+from .oauth_client import OAUTH_CLIENT
 from .filters import Filters
 from .utilities import log_error
 from .models import available_formats, download_formats, searches, filters
@@ -17,6 +20,67 @@ from django.utils import timezone
 import shutil
 from django.core.exceptions import PermissionDenied
 
+""" ------------------------------
+    Login
+    ------------------------------
+"""
+def login(request):
+    '''
+    Handles login requests
+    '''
+    # If they are already logged in, send users to search page
+    if request.session.get('userid', False):
+        logging.debug("User already logged in: " + request.session['userid']) 
+        return redirect('/search')
+
+    app_auth = OAUTH_CLIENT(settings.APP_CLIENT_ID, settings.APP_CLIENT_SECRET, \
+        settings.APP_REDIRECT_URL, settings.APP_AUTH_URL, \
+        settings.APP_TOKEN_URL, settings.APP_PROFILE_URL) 
+   
+
+    # Check if the logon was successful already
+    if 'code' in request.GET and request.session.get('state',False):
+        logging.debug("Getting OAuth access token from the code")
+        app_auth.set_state(request.session['state'])
+        request.session['access_token'] = app_auth.get_access_token(request.GET['code'])
+
+    # Call the OAuth provider to authenticate
+    if not request.session.get('access_token', False):
+        logging.debug("Authenticating the user")
+        app_auth.init_auth_url()
+        request.session['state'] = app_auth.get_state() # save the state in the session to use later
+        return redirect(app_auth.get_auth_url())
+
+    # Retrieve user information after a successful logon
+    if request.session.get('access_token', False) and not request.session.get('userid', False):
+        logging.debug("Getting the authenticated user's userid")
+        app_auth.set_access_token(request.session['access_token'])
+        results = app_auth.fetch()
+        request.session['userid'] = results['info'][settings.APP_USER_ID_FIELD]
+
+    # Check if the userid is still not set
+    if not request.session.get('userid',False):
+        logging.warn("UserID was still not set after authentication against OAuth")
+        return HttpResponse('Unable to log in. You must be an active MSU user to use this resource.')
+
+    # Send users to the search page on sucessful login
+    return redirect('/search')
+
+""" ------------------------------
+    Logout
+    ------------------------------
+"""
+def logout(request):
+    '''
+    Handles logout requests
+    '''
+    # Clear the session
+    request.session['userid'] = None
+    request.session['access_token'] = None
+    request.session['state'] = None
+
+    # Redirect to OAuth logout page
+    return redirect(settings.APP_LOGOUT_URL)
 
 """ ------------------------------
     Search Page
@@ -27,12 +91,16 @@ def search(request):
     Render the search page
     '''
 
+    # Verify that the user is logged in
+    if not request.session.get('userid',False):
+        return redirect('/login')
+
     filter_data = get_filter_opts()
     set_filters = {}
     set_formats = []
     set_post_filters = []
 
-    print(request.POST)
+    logging.debug(request.POST)
     # Set the initial form data
     form = TextAssemblerWebForm(request.POST or None)
     form.set_fields(filter_data, request.POST['search'] if 'search' in request.POST else '')
@@ -57,6 +125,10 @@ def search(request):
     for post_filter in set_post_filters:
         name = post_filter.split("||")[0]
         value = post_filter.split("||")[-1]
+        fmt = get_filter_format(name)
+        # convert the value(s) from base64 if the filter expects it
+        if fmt == 'base64':
+            value = base64.b64decode(value + "=========").decode('utf-8')
         if string_is_int(value):
             value = int(value)
         if name in set_filters:
@@ -64,7 +136,7 @@ def search(request):
         else:
             set_filters[name] = [value]
 
-    print(set_filters)
+    logging.debug(set_filters)
 
 
     # Validate any data necessary from the post data
@@ -120,7 +192,7 @@ def search(request):
 
                         if response["error_message"] == "":
                             # Save the search record
-                            search_obj = searches(userid = request.user, query=clean["search"])
+                            search_obj = searches(userid = request.session['userid'], query=clean["search"])
 
                             search_obj.save()
 
@@ -218,6 +290,13 @@ def get_filter_val_input(request, filter_type):
     filters = Filters()
     return JsonResponse(filters.getFilterValues(filter_type))
 
+def get_filter_format(filter_type):
+    '''
+    Get the format type of the given filter (base64 or text)
+    '''
+    filters = Filters()
+    return filters.getFormatType(filter_type)
+
 def string_is_int(s):
     '''
     Check if the string contains an integer (because checking isinstance will return false for
@@ -237,6 +316,11 @@ def mysearches(request):
     '''
     Render the My Searches page
     '''
+
+    # Verify that the user is logged in
+    if not request.session.get('userid',False):
+        return redirect('/login')
+
     response = {}
     response["headings"] = ["Date Submitted", "Query", "Progress", "Actions"]
 
@@ -244,7 +328,7 @@ def mysearches(request):
         response["error_message"] = request.session["error_message"]
         request.session["error_message"] = "" # clear it out so it won't show on refresh
 
-    all_user_searches = searches.objects.all().filter(userid=request.user).order_by('-date_submitted')
+    all_user_searches = searches.objects.all().filter(userid=request.session['userid']).order_by('-date_submitted')
 
     for search in all_user_searches:
         search = set_search_info(search)
@@ -348,6 +432,11 @@ def download_search(request, search_id):
     '''
     need to download files from the server for the search
     '''
+
+    # Verify that the user is logged in
+    if not request.session.get('userid',False):
+        return redirect('/login')
+
     error_message = ""
     try:
         # make sure the search documents requested are for the user that made the search (HTTP 403)
@@ -356,7 +445,7 @@ def download_search(request, search_id):
             search = search[0]
         else:
             error_message = "The search record could not be located on the server. please contact a system administator."
-        if search.userid != str(request.user):
+        if search.userid != str(request.session['userid']):
             error_message = "You do not have permissions to download searches other than ones you requested."
 
         # make sure the search file exists (HTTP 404)
@@ -370,6 +459,7 @@ def download_search(request, search_id):
             with open(zipfile, 'rb') as fh:
                     response = HttpResponse(fh.read(), content_type="application/force-download")
                     response['Content-Disposition'] = 'attachment; filename=' + os.path.basename(zipfile)
+                    request.session["error_message"] = error_message
                     return response
     except Exception as e:
         error = "Error downloading search {0}. {1} on line {2} of {3}: {4}\n{5}".format(str(search_id), type(e).__name__, sys.exc_info()[-1].tb_lineno, os.path.basename(__file__), e, traceback.format_exc())
@@ -403,4 +493,9 @@ def about(request):
     '''
     Render the About page
     '''
+
+    # Verify that the user is logged in
+    if not request.session.get('userid',False):
+        return redirect('/login')
+
     return render(request, 'textassembler_web/about.html', {})

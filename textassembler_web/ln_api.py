@@ -2,7 +2,7 @@
 Search the LexisNexis API
 """
 import logging
-import json
+import base64
 import datetime
 import requests
 from django.conf import settings
@@ -52,16 +52,16 @@ class LN_API:
         data = {'grant_type': 'client_credentials',
                 'scope': settings.LN_SCOPE}
 
-        access_token_response = requests.post(settings.LN_TOKEN_URL,
-            data=data, verify=True,
-            auth=(settings.LN_CLIENT_ID, settings.LN_CLIENT_SECRET),
+        access_token_response = requests.post(settings.LN_TOKEN_URL, \
+            data=data, verify=True, \
+            auth=(settings.LN_CLIENT_ID, settings.LN_CLIENT_SECRET), \
             timeout=settings.LN_TIMEOUT)
 
         if access_token_response.status_code == requests.codes.ok:
             tokens = access_token_response.json()
             self.access_token = tokens['access_token']
             self.expiration_time = timezone.now() + datetime.timedelta(seconds=int(tokens['expires_in']))
-
+            return ""
         else:
             results = access_token_response.json()
             log_error("Error occured obtaining access token. Return code: {0}. Response:".format(access_token_response.status_code), results)
@@ -69,8 +69,6 @@ class LN_API:
                 return results["error"]["message"]
             else:
                 return "An unexpected error occured."
-
-        return ""
 
 
     def refresh_throttle_data(self, display=False):
@@ -88,7 +86,6 @@ class LN_API:
         throttles = self.limits.objects.all()
         if throttles.count() == 0:
             log_error("No record exists in the database containing the throttling limitations!")
-            return False
         if throttles.count() > 1:
             log_error("More than one record exists in the database for the throttling limitations!")
 
@@ -209,7 +206,7 @@ class LN_API:
             resp = requests.post(url, params=params, headers=headers, timeout=settings.LN_TIMEOUT)
 
         # Log the API call
-        result_count =  resp.json()["@odata.count"] if resp.status_code == requests.codes.ok and "@odata.count" in resp.json().keys() else 0
+        result_count = resp.json()["@odata.count"] if resp.status_code == requests.codes.ok and "@odata.count" in resp.json().keys() else 0
         self.api_log.objects.create(
             request_url=resp.url,
             request_type=req_type,
@@ -230,23 +227,31 @@ class LN_API:
 
 
     def search(self, term="", set_filters={}):
+        '''
+        Search the API given the search term and filters.
+        @return API results
+        '''
         filters = self.convert_filters_to_query_string(set_filters)
 
         # Always provide the $exand=PostFilters so we can provide them to the UI
         params = {"$search":term, "$expand": "PostFilters"}
 
-        if len(filters) > 0:
+        if filters:
             params['$filter'] = filters
 
         return self.api_call(resource='News', params=params)
 
     def download(self, term="", set_filters={}, download_cnt=10, skip=0):
+        '''
+        Download the full-text results from the API given the search term and filters.
+        @return API results with full text
+        '''
         filters = self.convert_filters_to_query_string(set_filters)
 
         # Always provide the $exand=Document so we get the full text result
         params = {"$search":term, "$expand": "Document", "$top": download_cnt, "$skip": skip}
 
-        if len(filters) > 0:
+        if filters > 0:
             params['$filter'] = filters
 
         return self.api_call(resource='News', params=params)
@@ -266,6 +271,11 @@ class LN_API:
 
         for key, values in set_filters.items():
             namespace = filter_data.getEnumNamespace(key)
+            fmt = filter_data.getFormatType(key)
+
+            # convert the value(s) to base64 if the filter expects it
+            if fmt == 'base64':
+                values[:] = [base64.b64encode(val.encode('utf-8')).decode("utf-8").replace("=", "") for val in values]
 
             if filters != '':
                 filters += " and "
@@ -274,13 +284,13 @@ class LN_API:
             if key == 'Date':
                 if len(values[0]) > 3: # the values are stored together
                     tmp = []
-                    for v in values:
-                        tmp.append(v.split(" ")[0])
-                        tmp.append(v.split(" ")[1])
+                    for val in values:
+                        tmp.append(val.split(" ")[0])
+                        tmp.append(val.split(" ")[1])
                     values = tmp
                 filters += " ("
                 for i in range(0, len(values), 2):
-                    logging.debug("===" + values[i] + " " + values[i+1] + "===")
+                    logging.debug("===" + str(values[i]) + " " + str(values[i+1]) + "===")
                     filters += key.replace('_', '/') + " " + values[i] + " " + values[i+1] + " and "
                 filters = filters[:-5] # remove the last AND
                 filters += ")"
@@ -306,14 +316,14 @@ class LN_API:
         return filters
 
 
-    def string_is_int(self, s):
+    def string_is_int(self, s_val):
         '''
         Check if the string contains an integer since isinstance will return
         false for strings with an integer.
         '''
 
         try:
-            int(s)
+            int(s_val)
             return True
         except ValueError:
             return False
