@@ -31,3 +31,13 @@ API_URL = https://services-api.lexisnexis.com/v1/
 DOWNLOAD_PER_CALL = 10
 MAX_RETRY = 3
 TIMEOUT_SECONDS = 30
+
+[oauth]
+AUTH_URL = https://oauth.itservices.msu.edu/oauth/authorize
+TOKEN_URL = https://oauth.itservices.msu.edu/oauth/token
+PROFILE_URL = https://oauth.itservices.msu.edu/oauth/me
+LOGOUT_URL = https://oauth.itservices.msu.edu/oauth/logout 
+CLIENT_ID = client_id
+CLIENT_SECRET = client_secret
+REDIRECT_URL = https://textassembler.lib.msu.edu/login
+USER_ID_FIELD = msunetid

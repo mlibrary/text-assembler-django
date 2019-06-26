@@ -26,37 +26,24 @@ ta_env/bin/python manage.py update_sources
 
 Installing the Text Assembler service to process the queue:
 ```
-cp init.d/textassemblerd /etc/init.d/
-cp init.d/textassemblerzipd /etc/init.d/
+cp init.d/tassemblerd /etc/init.d/
+cp init.d/tassemblerzipd /etc/init.d/
 systemctl daemon-reload
-systemctl enable textassemblerd
-systemctl start textassemblerd
-systemctl enable textassemblerzipd
-systemctl start textassemblerzipd
+systemctl enable tassemblerd
+systemctl start tassemblerd
+systemctl enable tassemblerzipd
+systemctl start tassemblerzipd
 ```
-TODO -- make sure no more than once instance of the service is running at a time
+TODO - set to add to crontab to start services on boot
 
-Need Gluster version to match version on gluster share (gluster --version)
-```
-sudo add-apt-repository ppa:gluster/glusterfs-5
-sudo apt-get update
-sudo aptitude install glusterfs-client
-```
-
-cifs mount 
-```
-sudo apt install cifs-utils
-```
 
 Notes
 --------------
-
+* Run `pip freeze > requirements.txt` to update the pip packages required
+* To lint, run `pylint3 --max-line-length=160 --load-plugins=pylint_django --extension-pkg-whitelist=lxml textassembler_web`
 
 TODO
 -------
-* Authentication
-    https://requests-oauthlib.readthedocs.io/en/latest/oauth2_workflow.html
-    https://oauthlib.readthedocs.io/en/v3.0.1/oauth2/clients/webapplicationclient.html#
 * Send the 'save' options back to the form in the event of failure to repopulate the form
     * what should the screen show when the save is sucessful? cleared form?
 * Contact LN about multiple values not allowed in Language and Source fields for search
@@ -65,12 +52,14 @@ TODO
   and not Text Assembler
 * handle failed searches in My Searches page
 * switch sleep for wait_to_download to less time (in case sigterm is triggered we don't want to wait a day for it to process)
+* Add format to field filters for plain text vs base64, store plain text in DB -- need to identify all fields
 * Lint (pylint3 --max-line-length=160 --load-plugins=pylint_django --extension-pkg-whitelist=lxml)
 * Unit Tests
 * Accessibility scan
-expand download formats
-make it more clear you can select multiple filters
-switch preview to showing full text instead of extract
+* Check for blank plain text filter values
+* expand download formats
+* make it more clear you can select multiple filters
+* switch preview to showing full text instead of extract
 
 Nice to Have
 -------------

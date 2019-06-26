@@ -53,6 +53,17 @@ LN_DOWNLOAD_PER_CALL = int(configs.get("lexisnexis","DOWNLOAD_PER_CALL"))
 LN_MAX_RETRY = int(configs.get("lexisnexis","MAX_RETRY"))
 LN_TIMEOUT = int(configs.get("lexisnexis","TIMEOUT_SECONDS"))
 
+# App OAuth Configs
+APP_AUTH_URL = configs.get("oauth","AUTH_URL")
+APP_TOKEN_URL = configs.get("oauth","TOKEN_URL")
+APP_PROFILE_URL = configs.get("oauth","PROFILE_URL")
+APP_LOGOUT_URL = configs.get("oauth","LOGOUT_URL")
+APP_CLIENT_ID = configs.get("oauth","CLIENT_ID")
+APP_CLIENT_SECRET = configs.get("oauth","CLIENT_SECRET")
+APP_REDIRECT_URL = configs.get("oauth","REDIRECT_URL")
+APP_USER_ID_FIELD = configs.get("oauth","USER_ID_FIELD")
+
+
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = configs.get("secretkey", "SECRET_KEY")
 

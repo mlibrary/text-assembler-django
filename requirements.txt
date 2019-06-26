@@ -5,11 +5,13 @@ django-crispy-forms==1.7.2
 idna==2.8
 mysql-connector-python==8.0.15
 mysqlclient==1.4.2.post1
+oauthlib==3.0.1
 pkg-resources==0.0.0
 protobuf==3.7.1
 PyMySQL==0.9.3
 pytz==2018.9
 requests==2.21.0
+requests-oauthlib==1.2.0
 six==1.12.0
 sqlparse==0.3.0
 urllib3==1.24.1
