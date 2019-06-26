@@ -1,8 +1,7 @@
-import requests
-import json
+"""
+Class to handle OAuth client authentication
+"""
 from requests_oauthlib import OAuth2Session
-from django.conf import settings
-from django.shortcuts import redirect
 
 class OAUTH_CLIENT:
     '''
@@ -53,7 +52,6 @@ class OAUTH_CLIENT:
         '''
         return self.state
 
-    
     def set_access_token(self, token):
         '''
         Set the access token
@@ -70,7 +68,7 @@ class OAUTH_CLIENT:
             self.access_token = app_auth.fetch_token(self.token_url, client_secret=self.client_secret, \
                 authorization_response=self.redirect_url + "?code=" + code + \
                 "&state=" + self.state + "&redirect_uri=" + self.redirect_url, \
-                include_client_id = True)
+                include_client_id=True)
 
         return self.access_token
 
