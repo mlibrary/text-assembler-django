@@ -30,7 +30,7 @@ class TextAssemblerWebForm(forms.Form):
         * Filters
         The individual filter fields will be added dynamically by the JS
         '''
-        choices = [('','Select...')]
+        choices = [('','Select one or more filters...')]
 
         for opt in filter_data:
             choices.append((opt["id"],opt["name"]))

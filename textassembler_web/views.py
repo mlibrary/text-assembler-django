@@ -33,10 +33,10 @@ def login(request):
         logging.debug("User already logged in: " + request.session['userid']) 
         return redirect('/search')
 
+    # Initialize the OAuth client
     app_auth = OAUTH_CLIENT(settings.APP_CLIENT_ID, settings.APP_CLIENT_SECRET, \
         settings.APP_REDIRECT_URL, settings.APP_AUTH_URL, \
         settings.APP_TOKEN_URL, settings.APP_PROFILE_URL) 
-   
 
     # Check if the logon was successful already
     if 'code' in request.GET and request.session.get('state',False):
@@ -101,6 +101,7 @@ def search(request):
     set_post_filters = []
 
     logging.debug(request.POST)
+
     # Set the initial form data
     form = TextAssemblerWebForm(request.POST or None)
     form.set_fields(filter_data, request.POST['search'] if 'search' in request.POST else '')
@@ -145,9 +146,17 @@ def search(request):
         if key == 'year(Date)':
             for value in values:
                 if not string_is_int(value) or isinstance(value,int):
-                    response['error_message'] += "The 'Year' field requires only numeric input, provided: {0}.".format(value);
+                    response['error_message'] += \
+                        "The 'Year' field requires only numeric input, provided: {0}.".format(value)
+        else:
+            for value in values:
+                if not value:
+                    response['error_message'] += \
+                        "The '{0}' field can not be blank, please provide a value or remove the filter.".format(key)
+                    break
     if 'Date' in set_filters and 'year(Date)' in set_filters:
-        response['error_message'] += "Please you either the year filter or the range filter for dates, but not a combination of both."
+        response['error_message'] += \
+            "Please you either the year filter or the range filter for dates, but not a combination of both."
 
     # Send the set filters back to the form to pre-populate the fields
     response["post_data"] = json.dumps(set_filters)
@@ -174,7 +183,9 @@ def search(request):
                             response['search_results'] = results
                             response["search_results_json"] = json.dumps(results) # used in the event of failure after search
                         if "error_message" in results:
-                            response['error_message'] = results["error_message"]
+                            response['error_message'] = \
+                                "Error returned from LexisNexis: {0}".format( \
+                                    "[Not Set]" if not results["error_message"] else results["error_message"])
 
 
 
@@ -217,7 +228,9 @@ def search(request):
                             return response
 
                 except Exception as e:
-                    error = "Error occured while processing search request. {0} on line {1} of {2}: {3}\n{4}".format(type(e).__name__, sys.exc_info()[-1].tb_lineno, os.path.basename(__file__), e, traceback.format_exc())
+                    error = "Error occured while processing search request. {0} on line {1} of {2}: {3}\n{4}".format( \
+                        type(e).__name__, sys.exc_info()[-1].tb_lineno, \
+                        os.path.basename(__file__), e, traceback.format_exc())
                     log_error(error, json.dumps(dict(request.POST)))
 
                     if settings.DEBUG:
@@ -398,34 +411,55 @@ def delete_search(request, search_id):
     '''
     Will remove the search from the database and delete files on the server
     '''
-    # TODO - put this in a try-catch block and have error show on page like in download
-    search = searches.objects.get(search_id=search_id)
-    logging.info("Deleting search: {0}. {1}".format(search_id, search))
 
-    # delete files on the server
-    ## verify the storage location is accessibly
-    if not os.access(settings.STORAGE_LOCATION, os.W_OK) or not os.path.isdir(settings.STORAGE_LOCATION):
-        log_error("Could not delete files for search {0} due to storage location being inaccessible or not writable. {1}".format(search_id, settings.STORAGE_LOCATION), search)
+    # Verify that the user is logged in
+    if not request.session.get('userid',False):
+        return redirect('/login')
 
-    else:
-        save_location = os.path.join(settings.STORAGE_LOCATION,search_id)
-        zip_path = find_zip_file(search_id)
+    try:
+        search = searches.objects.get(search_id=search_id)
+        logging.info("Deleting search: {0}. {1}".format(search_id, search))
 
-        if os.path.isdir(save_location):
-            try:
-                shutil.rmtree(save_location)
-            except Exception as e1:
-                log_error("Could not delete files for search {0}. {1}".format(search_id,e1), search)
-        if zip_path != None and os.path.exists(zip_path):
-            try:
-                os.remove(zip_path)
-            except Exception as e2:
-                log_error("Could not delete the zipped file for search {0}. {1}".format(search_id, e2), search)
-        # TODO -- not deleting root directory
+        # delete files on the server
+        ## verify the storage location is accessibly
+        if not os.access(settings.STORAGE_LOCATION, os.W_OK) or not os.path.isdir(settings.STORAGE_LOCATION):
+            log_error("Could not delete files for search {0} due to storage location being inaccessible or not writable. {1}".format(search_id, settings.STORAGE_LOCATION), search)
 
-    # delete the records from the database regardless of if we can delete the files
-    search.delete()
+        else:
+            save_location = os.path.join(settings.STORAGE_LOCATION,search_id)
+            zip_path = find_zip_file(search_id)
 
+            if os.path.isdir(save_location):
+                try:
+                    shutil.rmtree(save_location)
+                except Exception as e1:
+                    log_error("Could not delete files for search {0}. {1}".format(search_id,e1), search)
+            if zip_path != None and os.path.exists(zip_path):
+                try:
+                    os.remove(zip_path)
+                except Exception as e2:
+                    log_error("Could not delete the zipped file for search {0}. {1}".format(search_id, e2), search)
+            if os.path.isdir(save_location):
+                try:
+                    shutil.rmdir(save_location)
+                except Exception as e3:
+                    log_error("Could not delete root directory for search {0}. {1}".format(search_id,e3), search)
+
+        # delete the records from the database regardless of if we can delete the files
+        search.delete()
+
+    except Exception as e:
+        error = "Error deleting search {0}. {1} on line {2} of {3}: {4}\n{5}".format(\
+            str(search_id), type(e).__name__, sys.exc_info()[-1].tb_lineno, \
+            os.path.basename(__file__), e, traceback.format_exc())
+        log_error(error, json.dumps(dict(request.POST)))
+
+        if settings.DEBUG:
+            error_message = error
+        else:
+            error_message = "An unexpected error has occured."
+
+    request.session["error_message"] = error_message
     return redirect(mysearches)
 
 def download_search(request, search_id):
@@ -444,7 +478,8 @@ def download_search(request, search_id):
         if len(search) == 1:
             search = search[0]
         else:
-            error_message = "The search record could not be located on the server. please contact a system administator."
+            error_message = \
+                "The search record could not be located on the server. please contact a system administator."
         if search.userid != str(request.session['userid']):
             error_message = "You do not have permissions to download searches other than ones you requested."
 
@@ -452,7 +487,8 @@ def download_search(request, search_id):
         if error_message == "":
             zipfile = find_zip_file(search_id)
             if zipfile == None or not os.path.exists(zipfile) or not os.access(zipfile, os.R_OK):
-                error_message = "The search results can not be located on the server. please contact a system administator."
+                error_message = \
+                    "The search results can not be located on the server. please contact a system administator."
 
         if error_message == "":
             # download the search zip
@@ -462,7 +498,9 @@ def download_search(request, search_id):
                     request.session["error_message"] = error_message
                     return response
     except Exception as e:
-        error = "Error downloading search {0}. {1} on line {2} of {3}: {4}\n{5}".format(str(search_id), type(e).__name__, sys.exc_info()[-1].tb_lineno, os.path.basename(__file__), e, traceback.format_exc())
+        error = "Error downloading search {0}. {1} on line {2} of {3}: {4}\n{5}".format(\
+            str(search_id), type(e).__name__, sys.exc_info()[-1].tb_lineno, \
+            os.path.basename(__file__), e, traceback.format_exc())
         log_error(error, json.dumps(dict(request.POST)))
 
         if settings.DEBUG:

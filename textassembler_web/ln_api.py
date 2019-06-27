@@ -8,7 +8,7 @@ import requests
 from django.conf import settings
 from django.apps import apps
 from django.utils import timezone
-from .utilities import log_error
+from .utilities import log_error, seconds_to_dhms_string
 
 class LN_API:
     '''
@@ -186,12 +186,14 @@ class LN_API:
 
         # Make sure we are within the API throttling limits
         if is_download and not self.check_can_download():
-            # We are out of downloads for the timeframe
-            return {"error_message":"There are no downloads remaining for the current min/hour/day"}
+            seconds = self.get_time_until_next_download()
+            time = seconds_to_dhms_string(seconds)
+            return {"error_message":"There are no LexisNexis downloads remaining for the current min/hour/day. Next available in {0}".format(time)}
 
         if not self.check_can_search():
-            # We are out of searches for the timeframe
-            return {"error_message":"There are no searches remaining for the current min/hour/day"}
+            seconds = self.get_time_until_next_search()
+            time = seconds_to_dhms_string(seconds)
+            return {"error_message":"There are no LexisNexis searches remaining for the current min/hour/day. Next available in {0}".format(time)}
 
         error_message = self.authenticate()
         if error_message:
@@ -220,10 +222,10 @@ class LN_API:
 
         else:
             log_error("Call to {0} failed with code {1}. Response: ".format(url, resp.status_code), results)
-            if "error" in results and "message" in results["error"]:
-                return {"error_message":results["error"]["message"]}
+            if "error" in results and "message" in results:
+                return {"error_message":"Error: {0}. Message: {1}".format(results["error"], results["message"])}
             else:
-                return {"error_message": "An unexpected error occured."}
+                return {"error_message": "An unexpected API error occured."}
 
 
     def search(self, term="", set_filters={}):
