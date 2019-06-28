@@ -42,23 +42,29 @@ Notes
 * Run `pip freeze > requirements.txt` to update the pip packages required
 * To lint, run `pylint3 --max-line-length=160 --load-plugins=pylint_django --extension-pkg-whitelist=lxml textassembler_web`
 
+* Demo site: https://solutions.nexis.com/wsapi/demo-site
+
 TODO
 -------
+* Add format to field filters for plain text vs base64, store plain text in DB -- need to identify all fields
+    * The clear text fields are: year(Date), NegativeNews, Language and Publisher.  The rest are Base 64
+* Remove fields that don't have sensible text input (company, location, industry) and have documentation for how to do it in term field (increase size)
+* Add in code for cleaned TXT format option
+* Add in logic to delete old searches automatically (make length of time configurable)
+    * add 3 months to date compression completed or failed date
 * Send the 'save' options back to the form in the event of failure to repopulate the form
 * Contact LN about multiple values not allowed in Language and Source fields for search
-* Handle failed searches in My Searches page
-* Add format to field filters for plain text vs base64, store plain text in DB -- need to identify all fields
-* expand download formats
-* Switch preview to showing full text instead of extract (make configurable)
-* Add in logic to delete old searches automatically (make length of time configurable)
+* Finalize exact run limitation times and amounts
 
-* Unit Tests
 * Accessibility scan
-* Lint
+* Write setup instructions
 
 Nice to Have
 -------------
+* Unit Tests
+* Lint
 * Sortable My Searches grid
+* Select sort order of results
 * email settings, email domain to notify users. ex: EMAIL_DOMAIN = msu.edu, will email to [user]@msu.edu
     * if not set, then emails will not be sent to users
 * Display / calculate the estimated completion time of searches (search page and my searches page)

@@ -52,6 +52,8 @@ LN_API_URL = configs.get("lexisnexis","API_URL")
 LN_DOWNLOAD_PER_CALL = int(configs.get("lexisnexis","DOWNLOAD_PER_CALL"))
 LN_MAX_RETRY = int(configs.get("lexisnexis","MAX_RETRY"))
 LN_TIMEOUT = int(configs.get("lexisnexis","TIMEOUT_SECONDS"))
+PREVIEW_FORMAT = configs.get("lexisnexis","PREVIEW_FORMAT")
+NUM_MONTHS_KEEP_SEARCHES = int(configs.get("lexisnexis","NUM_MONTHS_KEEP_SEARCHES"))
 
 # App OAuth Configs
 APP_AUTH_URL = configs.get("oauth","AUTH_URL")

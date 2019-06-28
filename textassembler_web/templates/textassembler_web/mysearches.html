@@ -5,7 +5,9 @@
 
 {% block content %}
 
-<h1>My Searches</h1>
+<h1>My Searches</h1><hr/>
+
+<p><strong>Instructions:</strong> This page contains your already queued searches. Each record will display it's current status and offer you the ability to download or delete your search. Searches will automatically be deleted from the system after {{ num_months_keep_searches }} months. The exact date each search will be removed is located in the details section of the progress column. </p>
 
 {% if error_message %}
 <br/><p class='error'>{{ error_message }}</p>
@@ -22,7 +24,7 @@
         <tr>
             <td class="search-column {{ headings.0|lower|slugify }}-column">{{ s.date_submitted }}</td>
             <td class="search-column {{ headings.1|lower|slugify }}-column">
-                {{ s.query }}
+                {{ s.query|truncatechars:100}}
                 <a href='' role='button' onClick='return false;' data-trigger='focus' data-html='true' data-toggle='popover'
                     title="Query Details"
                     data-content='<strong>Filters:</strong><br/>
@@ -41,6 +43,9 @@
                             {{ f.format_name }}<br/>
 
                         {% endfor %}
+                        <br/>
+                        <strong>Search Query</strong><br/>
+                        {{ s.query }}
                     '>
                     (details)
                 </a>
@@ -51,7 +56,10 @@
                     title="Progress Details" 
                     data-content='Downloaded {{ s.num_results_downloaded | intcomma }} out of {{ s.num_results_in_search |intcomma }} results<br/>
                         Last Progress Made: {{ s.update_date }}<br/>
-                        Total Run Time: {% seconds_to_dhms s.run_time_seconds %} <br/>'>
+                        Total Run Time: {% seconds_to_dhms s.run_time_seconds %} <br/>
+                        {% if s.error_message %} Error Message: {{ s.error_message }}<br/>{% endif %}
+                        {% if s.delete_date %} Date to be Deleted: {{ s.delete_date }}<br/>{% endif %}
+                        '>
                     (details)</a>
                 <br/>
                 <div class="progress">

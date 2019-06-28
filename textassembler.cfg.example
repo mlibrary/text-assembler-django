@@ -31,6 +31,10 @@ API_URL = https://services-api.lexisnexis.com/v1/
 DOWNLOAD_PER_CALL = 10
 MAX_RETRY = 3
 TIMEOUT_SECONDS = 30
+# PREVIEW_FORMAT valid values: EXTRACT, FULL
+PREVIEW_FORMAT = FULL
+# The number of months completed searches should be retained
+NUM_MONTHS_KEEP_SEARCHES = 3
 
 [oauth]
 AUTH_URL = https://oauth.itservices.msu.edu/oauth/authorize

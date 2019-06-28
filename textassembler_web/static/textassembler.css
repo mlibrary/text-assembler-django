@@ -210,3 +210,6 @@ input[type=checkbox], input[type=radio] {
 .action-btn {
     padding-bottom: 5px;
 }
+.query-column {
+    max-width: 300px;
+}

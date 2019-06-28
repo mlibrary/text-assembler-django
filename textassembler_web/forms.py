@@ -39,11 +39,15 @@ class TextAssemblerWebForm(forms.Form):
             label='Search Term / Query',
             error_messages={'required': 'Required field'},
             initial= search,
-            widget=forms.TextInput(attrs={
+            widget=forms.Textarea(attrs={
                 'class':'form-control',
                 'placeholder':'Search term',
-                'multiline':'True'
-            })
+                'rows': 1})
+        #    widget=forms.TextInput(attrs={
+        #        'class':'form-control',
+        #        'placeholder':'Search term',
+        #        'multiline':'True'
+        #    })
         )
         self.fields['filter_opts'] = forms.ChoiceField(
             choices=choices,

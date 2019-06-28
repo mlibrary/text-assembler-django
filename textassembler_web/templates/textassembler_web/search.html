@@ -86,8 +86,8 @@
                             <button type="submit" name='add-filters' class="btn btn-block btn-primary col-5 lmargin-10">Refresh Result Preview</button>
                         </div>
                     {% endif %}
-                    <a href='#' id='advanced_options_link' data-toggle="collapse" data-target='#advanced_options'>(Select download formats)</a>
-                    <div id='advanced_options' class='collapse'>
+                    <p>Select format(s) to download the results in:</p>
+                    <div id='advanced_options'>
                         {% for format in available_formats %}
                         <div class='input-group checkbox'>
                             <label><input type='checkbox' name='selected-formats' value='{{ format.format_id }}' {% if forloop.first %} checked {% endif %}/>
@@ -108,10 +108,15 @@
                     <span class='field-title'>Title: </span><span class='title'>{{ result.Title }}</span><br/>
                     <span class='field-title'>Date: </span><span class='date'>{{ result.Date|parse_iso|date:"F jS Y" }}</span>
                     <span class='field-title overview-title'>Overview: </span><span class='overview'>{{ result.Overview }}</span><br/>
-                    {% for extract in result.Extracts %}
-                    <span class='field-title'>Extract: <button type="button" class="btn btn-info btn-sm" data-toggle="collapse" data-target="#extract-{{forloop.parentloop.counter}}-{{forloop.counter}}">Show/Hide</button></span><br/>
-                    <div class='extract collapse' id='extract-{{forloop.parentloop.counter}}-{{forloop.counter}}'>{{ extract.SummaryText | safe }}</div><br/>
-                    {% endfor %}
+                    {% if result.Document %}
+                        <span class='field-title'>Full Text: <button type="button" class="btn btn-info btn-sm" data-toggle="collapse" data-target="#extract-{{forloop.parentloop.counter}}">Show/Hide</button></span><br/>
+                        <div class='extract collapse' id='extract-{{forloop.parentloop.counter}}'>{{ result.Document.Content | safe }}</div><br/>
+                    {% else %}
+                        {% for extract in result.Extracts %}
+                        <span class='field-title'>Extract: <button type="button" class="btn btn-info btn-sm" data-toggle="collapse" data-target="#extract-{{forloop.parentloop.counter}}-{{forloop.counter}}">Show/Hide</button></span><br/>
+                        <div class='extract collapse' id='extract-{{forloop.parentloop.counter}}-{{forloop.counter}}'>{{ extract.SummaryText | safe }}</div><br/>
+                        {% endfor %}
+                    {% endif %}
                 </div>
             {% endfor %}
 

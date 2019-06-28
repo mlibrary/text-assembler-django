@@ -253,7 +253,7 @@ class LN_API:
         # Always provide the $exand=Document so we get the full text result
         params = {"$search":term, "$expand": "Document", "$top": download_cnt, "$skip": skip}
 
-        if filters > 0:
+        if filters:
             params['$filter'] = filters
 
         return self.api_call(resource='News', params=params)

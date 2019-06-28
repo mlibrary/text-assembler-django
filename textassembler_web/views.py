@@ -17,6 +17,7 @@ from .models import available_formats, download_formats, searches, filters
 import json
 import logging
 from django.utils import timezone
+import datetime
 import shutil
 from django.core.exceptions import PermissionDenied
 
@@ -187,6 +188,18 @@ def search(request):
                                 "Error returned from LexisNexis: {0}".format( \
                                     "[Not Set]" if not results["error_message"] else results["error_message"])
 
+                        elif settings.PREVIEW_FORMAT == "FULL":
+                            # Get the full-text for the 10 results to display on the page
+                            results = search_api.download(clean["search"], set_filters)
+                            if "value" in results:
+                                response['search_results'] = results
+                                response["search_results_json"] = json.dumps(results) # used in the event of failure after search
+                            if "error_message" in results:
+                                response['error_message'] = \
+                                    "Error returned from LexisNexis: {0}".format( \
+                                        "[Not Set]" if not results["error_message"] \
+                                            else results["error_message"])
+                            
 
 
                     elif "submit-search" in dict(request.POST):
@@ -347,6 +360,7 @@ def mysearches(request):
         search = set_search_info(search)
 
     response["searches"] = all_user_searches
+    response["num_months_keep_searches"] = settings.NUM_MONTHS_KEEP_SEARCHES
 
     return render(request, 'textassembler_web/mysearches.html', response)
 
@@ -386,6 +400,7 @@ def set_search_info(search):
     for f in formats:
         search.download_formats.append(available_formats.objects.get(format_id=f.format_id.format_id))
 
+    # determine the status
     search.status = "Queued"
     if search.date_started != None:
         search.status = "In Progress"
@@ -393,17 +408,21 @@ def set_search_info(search):
         search.status = "Preparing Results for Download"
     if search.date_completed_compression != None:
         search.status = "Completed"
-    # TODO -- handle Failed searches
     if search.failed_date != None:
         search.status = "Failed"
 
+    # set date the search is set to be deleted on
+    if search.status == "Completed":
+        search.delete_date = search.date_completed_compression + datetime.timedelta(days=settings.NUM_MONTHS_KEEP_SEARCHES * 30)
+    if search.status == "Failed":
+        search.delete_date = search.failed_date + datetime.timedelta(days=settings.NUM_MONTHS_KEEP_SEARCHES * 30)
+
+    # calculate percent complete
     if search.num_results_in_search == None or search.num_results_in_search == 0:
         search.percent_complete = 0
     else:
         logging.debug(round((search.num_results_downloaded / search.num_results_in_search) * 100,0))
         search.percent_complete = round((search.num_results_downloaded / search.num_results_in_search) * 100,0)
-
-    # TODO if the search is complete, show the date that the search will be deleted
 
     return search
 
@@ -412,6 +431,7 @@ def delete_search(request, search_id):
     Will remove the search from the database and delete files on the server
     '''
 
+    error_message = ""
     # Verify that the user is logged in
     if not request.session.get('userid',False):
         return redirect('/login')
