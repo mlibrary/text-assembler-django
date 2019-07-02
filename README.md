@@ -26,13 +26,15 @@ ta_env/bin/python manage.py update_sources
 
 Installing the Text Assembler service to process the queue:
 ```
-cp init.d/tassemblerd /etc/init.d/
-cp init.d/tassemblerzipd /etc/init.d/
+cp etc/init.d/* /etc/init.d/
+sudo chmod +x /etc/init.d/tassembler*
 systemctl daemon-reload
 systemctl enable tassemblerd
 systemctl start tassemblerd
 systemctl enable tassemblerzipd
 systemctl start tassemblerzipd
+systemctl enable tassemblerdeld
+systemctl start tassemblerdeld
 ```
 TODO - set to add to crontab to start services on boot
 
@@ -47,8 +49,6 @@ Notes
 TODO
 -------
 * Add in code for cleaned TXT format option
-* Add in logic to delete old searches automatically (make length of time configurable)
-    * add 3 months to date compression completed or failed date
 * Contact LN about multiple values not allowed in Language and Source fields for search
 * Finalize exact run limitation times and amounts
 

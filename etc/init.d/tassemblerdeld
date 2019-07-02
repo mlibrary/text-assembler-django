@@ -1,0 +1,46 @@
+#! /bin/sh
+### BEGIN INIT INFO
+# Provides:          tassemblerdeld
+# Required-Start:    $syslog $time $remote_fs
+# Required-Stop:     $syslog $time $remote_fs
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: Text Assembler Compression Daemon
+# Description:       Processes the Text Assembler compression queue
+### END INIT INFO
+
+PATH=/bin:/usr/bin:/sbin:/usr/sbin
+DAEMON=/var/www/text-assembler/tassemblerdeld
+PIDFILE=/var/run/tassemblerdeld.pid
+
+test -x $DAEMON || exit 0
+
+. /lib/lsb/init-functions
+
+case "$1" in
+  start)
+	log_daemon_msg "Starting Text Assembler Deletion Daemon" "tassemblerdeld"
+    start-stop-daemon --start --background --make-pidfile --oknodo --name tassemblerdeld \
+        --pidfile $PIDFILE --startas $DAEMON
+	log_end_msg $?
+    ;;
+  stop)
+	log_daemon_msg "Stopping Text Assembler Deletion Daemon" "tassemblerdeld"
+    start-stop-daemon --stop --remove-pidfile --oknodo --name tassemblerdeld \
+        --pidfile $PIDFILE --retry=TERM/25/KILL/5
+	log_end_msg $?
+    ;;
+  force-reload|restart)
+    $0 stop
+    $0 start
+    ;;
+  status)
+    status_of_proc -p $PIDFILE $DAEMON tassemblerdeld && exit 0 || exit $?
+    ;;
+  *)
+    echo "Usage: /etc/init.d/tassemblerdeld {start|stop|restart|force-reload|status}"
+    exit 1
+    ;;
+esac
+
+exit 0

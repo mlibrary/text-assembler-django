@@ -1,0 +1,14 @@
+#!/bin/bash
+
+sig_term() {
+    kill -15 "$MANAGE_PID"
+}
+
+trap sig_term SIGINT SIGTERM
+
+TASSEMBLERDELD_LOG=/var/log/apache2/tassemblerdeld.log
+SCRIPT_LOCATION="$( dirname "${BASH_SOURCE[0]}" )"
+$SCRIPT_LOCATION/ta_env/bin/python $SCRIPT_LOCATION/manage.py delete_searches 1>> $TASSEMBLERDELD_LOG 2>&1 &
+MANAGE_PID=$!
+wait $MANAGE_PID
+

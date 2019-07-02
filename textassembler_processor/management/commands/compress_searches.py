@@ -40,7 +40,7 @@ class Command(BaseCommand):
                     else:
                         self.retry = False
                         continue # nothing to process
-                except OperationalError as ex:
+                except Exception as ex:
                     log_error("Compression Processor failed to retrieve the compress queue. {0}".format(ex))
                     if not self.retry:
                         time.sleep(10) # wait 10 seconds and re-try
