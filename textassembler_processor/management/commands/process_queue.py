@@ -5,7 +5,6 @@ import time
 import logging
 import signal
 import os
-import traceback
 import sys
 import json
 from django.core.management.base import BaseCommand
@@ -13,7 +12,8 @@ from django.apps import apps
 from django.conf import settings
 from django.utils import timezone
 from textassembler_web.ln_api import LN_API
-from textassembler_web.utilities import log_error
+from textassembler_web.utilities import log_error, create_error_message
+from bs4 import BeautifulSoup
 
 class Command(BaseCommand):
     '''
@@ -171,10 +171,15 @@ class Command(BaseCommand):
                                 with open(os.path.join(save_path, file_name + ".txt"), 'w') as fl:
                                     fl.write(full_text)
                             elif f.format_id.format_name == "TXT Only":
-                                pass # TODO -- Devin wrote something to do this
+                                try:
+                                    cleaned_full_text = self.remove_html(full_text)
+                                except Exception as ex:
+                                    log_error("Unable to create TXT Only output for search {0}, filename {1}. Error. {2}".format(self.cur_search.search_id, file_name, create_error_message(ex)))
+                                    cleaned_full_text = full_text ## write the original text to the file instead
+                                with open(os.path.join(save_path, file_name + "_ONLY_TXT.txt"), 'w') as fl:
+                                    fl.write(cleaned_full_text)
                     except Exception as ex:
-                        error = "{0} on line {1} of {2}: {3}\n{4}".format(type(ex).__name__, sys.exc_info()[-1].tb_lineno, os.path.basename(__file__), ex, traceback.format_exc())
-                        log_error("Failed to save downloaded results to the server. {0}".format(error))
+                        log_error("Failed to save downloaded results to the server. {0}".format(create_error_message(ex)))
                         self.terminate = True
                         self.error = True
                         continue # not adding to retry count since it wasn't a problem with the search
@@ -185,6 +190,7 @@ class Command(BaseCommand):
                     # step if the termination was due to a failure
 
                     ## update the search in the database
+                    logging.info("Finished saving next {0} results for search: {1}".format(settings.LN_DOWNLOAD_PER_CALL, self.cur_search.search_id))
                     self.cur_search.skip_value = self.cur_search.skip_value + settings.LN_DOWNLOAD_PER_CALL
                     self.cur_search.update_date = timezone.now()
                     self.cur_search.run_time_seconds = self.cur_search.run_time_seconds + int(round(time.time() - start_time, 0))
@@ -192,6 +198,7 @@ class Command(BaseCommand):
                     self.cur_search.num_results_downloaded = self.cur_search.num_results_downloaded + len(results["value"])
                     ## check if the search is complete
                     if self.cur_search.num_results_downloaded >= self.cur_search.num_results_in_search:
+                        logging.info("Completed downloading all results for search: {0}".format(self.cur_search.search_id))
                         self.cur_search.date_completed = timezone.now()
 
                     ## save the search record
@@ -201,10 +208,7 @@ class Command(BaseCommand):
             except Exception as e:
                 # This scenario shouldn't happen, but handling it just in case
                 # so that the service won't quit on-error
-                error = "{0} on line {1} of {2}: {3}\n{4}".format(type(e).__name__, \
-                    sys.exc_info()[-1].tb_lineno, os.path.basename(__file__), \
-                    e, traceback.format_exc())
-                log_error("An unexpected error occured while processing the queue. {0}".format(error))
+                log_error("An unexpected error occured while processing the queue. {0}".format(create_error_message(e)))
                 self.terminate = True # stop the service since something is horribly wrong
                 continue
 
@@ -216,6 +220,29 @@ class Command(BaseCommand):
         Handles command termination
         '''
         self.terminate = True
+
+    def remove_html(self, text):
+        output = []
+
+        bs = BeautifulSoup(text, "html.parser")
+
+        headline = bs.h1.string if bs.h1 is not None and bs.h1.string is not None else ""
+        # check another place for headline
+        if not headline:
+            headline = bs.find('nitf:hedline').text if bs.find('nitf:hedline') is not None else ""
+
+        title = bs.title.string if bs.title is not None and bs.title.string is not None else ""
+
+        # write the title and headline
+        output.append(title)
+        if title != headline: # prevent duplicate output to file
+            output.append(headline)
+    
+        text = bs.find('bodytext').text if bs.find('bodytext') is not None else ""
+        output.append(text)
+        full_output = "\n\n".join(output)
+
+        return full_output
 
     def wait_for_download(self):
         '''

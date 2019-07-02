@@ -48,10 +48,9 @@ Notes
 
 TODO
 -------
-* Add in code for cleaned TXT format option
 * Contact LN about multiple values not allowed in Language and Source fields for search
 * Finalize exact run limitation times and amounts
-
+* Switch log message definitions to use new utility function
 * Accessibility scan
 * Write setup instructions
 * Plan for migrating existing searches to new system (completed or in progress)

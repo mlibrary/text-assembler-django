@@ -9,6 +9,9 @@ import smtplib
 import socket
 from email.message import EmailMessage
 import re
+import traceback
+import sys
+import os
 
 def log_error(error_message, json_data = None):
     # Print both the error and and POST data to the error log
@@ -84,3 +87,12 @@ def seconds_to_dhms_string(time):
         return "%d hours, %d minutes, %d seconds" % (hours, minutes, seconds)
 
     return "%d days, %d hours, %d minutes, %d seconds" % (days, hours, minutes, seconds)
+
+def create_error_message(e):
+    '''
+    Creates the stack-trace message for logging purposes
+    TODO - take optional parameter for the calling filename to add to log message
+    '''
+    return "{0} on line {1}: {3}\n{4}".format(type(e).__name__, \
+        sys.exc_info()[-1].tb_lineno, \
+        e, traceback.format_exc())
