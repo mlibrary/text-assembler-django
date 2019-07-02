@@ -101,11 +101,12 @@ def search(request):
     set_formats = []
     set_post_filters = []
 
+    logging.debug("==== POST DATA ====")
     logging.debug(request.POST)
 
     # Set the initial form data
     form = TextAssemblerWebForm(request.POST or None)
-    form.set_fields(filter_data, request.POST['search'] if 'search' in request.POST else '')
+    form.set_fields(get_ui_filter_opts(), request.POST['search'] if 'search' in request.POST else '')
 
     response = {
         "form": form,
@@ -115,7 +116,7 @@ def search(request):
 
     # Parse the POST data
     for opt in filter_data:
-            filter_data = {k:v for k,v in dict(request.POST).items() if k == opt['id']}
+            filter_data = {k:v for k,v in dict(request.POST).items() if k.lower() == opt['id'].lower()}
             for k,v in filter_data.items():
                 set_filters[k] = v
     if "selected-formats" in dict(request.POST):
@@ -138,6 +139,7 @@ def search(request):
         else:
             set_filters[name] = [value]
 
+    logging.debug("==== SET FILTERS ====")
     logging.debug(set_filters)
 
 
@@ -286,6 +288,8 @@ def clean_post_filters(results):
                     else:
                         only_filter = only_filters
                     filter_name = only_filter.split("%20eq%20")[0].replace("/","_")
+                    if filter_name[0] == '(':
+                        filter_name = filter_name[1:]
 
                     value = only_filter.split("%20eq%20")[1]
                     namespace = filters.getEnumNamespace(filter_name)
@@ -304,10 +308,17 @@ def clean_post_filters(results):
 
 def get_filter_opts():
     '''
-    Get the available filters that the UI can use
+    get the available filters for the API
     '''
     filters = Filters()
     return filters.getAvailableFilters()
+
+def get_ui_filter_opts():
+    '''
+    get the available filters that the ui can use
+    '''
+    filters = Filters()
+    return filters.getAvailableFilters(False)
 
 def get_filter_val_input(request, filter_type):
     '''

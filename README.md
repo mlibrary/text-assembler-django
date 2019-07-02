@@ -46,18 +46,15 @@ Notes
 
 TODO
 -------
-* Add format to field filters for plain text vs base64, store plain text in DB -- need to identify all fields
-    * The clear text fields are: year(Date), NegativeNews, Language and Publisher.  The rest are Base 64
-* Remove fields that don't have sensible text input (company, location, industry) and have documentation for how to do it in term field (increase size)
 * Add in code for cleaned TXT format option
 * Add in logic to delete old searches automatically (make length of time configurable)
     * add 3 months to date compression completed or failed date
-* Send the 'save' options back to the form in the event of failure to repopulate the form
 * Contact LN about multiple values not allowed in Language and Source fields for search
 * Finalize exact run limitation times and amounts
 
 * Accessibility scan
 * Write setup instructions
+* Plan for migrating existing searches to new system (completed or in progress)
 
 Nice to Have
 -------------

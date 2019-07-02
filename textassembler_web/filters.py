@@ -12,7 +12,7 @@ class Filters:
     def __init__(self):
         self.api = None
 
-    def getAvailableFilters(self):
+    def getAvailableFilters(self, include_all = True):
         '''
         The id field matches the filter in the API $filter value, replace / with _
         The name is what to display on the page
@@ -22,22 +22,30 @@ class Filters:
         have issues rendering it.
         '''
 
-        return [{"id":"Language", "name":"Language"}, # TODO -- not allowing multiple filters, talk to LN
+        # Removed fields from dropdown that only accept coded values as input in the 
+        # API. Ex: Alaska expects US-AK for location, and Google expects CC00055NZ for company
+        filter_opts =  [{"id":"Language", "name":"Language"}, # TODO -- not allowing multiple filters, talk to LN
                 {"id":"Source_Id", "name":"Source"}, # TODO -- not allowing multiple filters, talk to LN
                 {"id":"Date", "name":"Date Range"},
                 {"id":"year(Date)", "name":"Year"},
                 {"id":"NegativeNews", "name":"Negative News Type"},
                 {"id":"GroupDuplicates", "name":"Group Duplicates"},
                 {"id":"SearchType", "name": "Search Type"},
-                {"id":"Location", "name": "Location"},
-                {"id":"Geography", "name": "Geography"},
-                {"id":"Industry", "name": "Industry"},
+                {"id":"PublicationType", "name": "Publication Type"},
+                {"id":"Publisher", "name": "Publisher"},
+                {"id":"location", "name": "location"},
+                {"id":"geography", "name": "geography"},
+                {"id":"industry", "name": "industry"},
                 {"id":"Subject", "name": "Subject"},
                 {"id":"Section", "name": "Section"},
                 {"id":"Company", "name": "Company"},
-                {"id":"PublicationType", "name": "Publication Type"},
-                {"id":"Publisher", "name": "Publisher"},
-                {"id":"People", "name":"People"}]
+                {"id":"People", "name":"People"}
+                ]
+
+        if include_all:
+            return filter_opts
+        else:
+            return [x for x in filter_opts if x['id'].lower() not in ['location','geography','industry','subject','section','company','people']]
 
     def getFilterValues(self, filter_type):
         '''
@@ -186,7 +194,7 @@ class Filters:
         Retrieve the format that LexisNexis expects for the given filter when 
         calling the API.
         '''
-        if filter_type in ['PublicationType', 'Location','Company','People','Publisher']:
+        if filter_type.lower() in ['publicationtype', 'location','company', 'people', 'geography','industry','subject','section']:
             return 'base64'
         else:
             return 'text'
