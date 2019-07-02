@@ -174,12 +174,12 @@ class Command(BaseCommand):
                                 try:
                                     cleaned_full_text = self.remove_html(full_text)
                                 except Exception as ex:
-                                    log_error("Unable to create TXT Only output for search {0}, filename {1}. Error. {2}".format(self.cur_search.search_id, file_name, create_error_message(ex)))
+                                    log_error("Unable to create TXT Only output for search {0}, filename {1}. Error. {2}".format(self.cur_search.search_id, file_name, create_error_message(ex, os.path.basename(__file__))))
                                     cleaned_full_text = full_text ## write the original text to the file instead
                                 with open(os.path.join(save_path, file_name + "_ONLY_TXT.txt"), 'w') as fl:
                                     fl.write(cleaned_full_text)
                     except Exception as ex:
-                        log_error("Failed to save downloaded results to the server. {0}".format(create_error_message(ex)))
+                        log_error("Failed to save downloaded results to the server. {0}".format(create_error_message(ex, os.path.basename(__file__))))
                         self.terminate = True
                         self.error = True
                         continue # not adding to retry count since it wasn't a problem with the search
@@ -208,7 +208,7 @@ class Command(BaseCommand):
             except Exception as e:
                 # This scenario shouldn't happen, but handling it just in case
                 # so that the service won't quit on-error
-                log_error("An unexpected error occured while processing the queue. {0}".format(create_error_message(e)))
+                log_error("An unexpected error occured while processing the queue. {0}".format(create_error_message(e, os.path.basename(__file__))))
                 self.terminate = True # stop the service since something is horribly wrong
                 continue
 

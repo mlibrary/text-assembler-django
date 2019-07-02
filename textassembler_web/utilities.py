@@ -88,11 +88,11 @@ def seconds_to_dhms_string(time):
 
     return "%d days, %d hours, %d minutes, %d seconds" % (days, hours, minutes, seconds)
 
-def create_error_message(e):
+def create_error_message(e, source_file = ""):
     '''
-    Creates the stack-trace message for logging purposes
-    TODO - take optional parameter for the calling filename to add to log message
+    Creates the stack-trace message for logging purposes. Takes the source file to print to
+    the error message if provided.
     '''
-    return "{0} on line {1}: {3}\n{4}".format(type(e).__name__, \
-        sys.exc_info()[-1].tb_lineno, \
+    return "{0} on line {1}{2}:  {3}\n{4}".format(type(e).__name__, \
+        sys.exc_info()[-1].tb_lineno, (" in " + source_file if source_file else ""), \
         e, traceback.format_exc())

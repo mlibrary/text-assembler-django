@@ -4,7 +4,6 @@ from .forms import TextAssemblerWebForm
 from requests_oauthlib import OAuth2Session
 import logging
 import base64
-import traceback
 import sys
 import os
 from django.conf import settings
@@ -12,7 +11,7 @@ from django.db import connections
 from .ln_api import LN_API
 from .oauth_client import OAUTH_CLIENT
 from .filters import Filters
-from .utilities import log_error
+from .utilities import log_error, create_error_message
 from .models import available_formats, download_formats, searches, filters
 import json
 import logging
@@ -243,10 +242,8 @@ def search(request):
                             return response
 
                 except Exception as e:
-                    error = "Error occured while processing search request. {0} on line {1} of {2}: {3}\n{4}".format( \
-                        type(e).__name__, sys.exc_info()[-1].tb_lineno, \
-                        os.path.basename(__file__), e, traceback.format_exc())
-                    log_error(error, json.dumps(dict(request.POST)))
+                    error = create_error_message(e, os.path.basename(__file__))
+                    log_error("Error occured while processing search request. {0}".format(error), json.dumps(dict(request.POST)))
 
                     if settings.DEBUG:
                         response["error_message"] = error
@@ -480,10 +477,8 @@ def delete_search(request, search_id):
         search.delete()
 
     except Exception as e:
-        error = "Error deleting search {0}. {1} on line {2} of {3}: {4}\n{5}".format(\
-            str(search_id), type(e).__name__, sys.exc_info()[-1].tb_lineno, \
-            os.path.basename(__file__), e, traceback.format_exc())
-        log_error(error, json.dumps(dict(request.POST)))
+        error = create_error_message(e, os.path.basename(__file__))
+        log_error("Error deleting search {0}. {1}".format(str(search_id), error), json.dumps(dict(request.POST)))
 
         if settings.DEBUG:
             error_message = error
@@ -529,10 +524,8 @@ def download_search(request, search_id):
                     request.session["error_message"] = error_message
                     return response
     except Exception as e:
-        error = "Error downloading search {0}. {1} on line {2} of {3}: {4}\n{5}".format(\
-            str(search_id), type(e).__name__, sys.exc_info()[-1].tb_lineno, \
-            os.path.basename(__file__), e, traceback.format_exc())
-        log_error(error, json.dumps(dict(request.POST)))
+        error = create_error_message(e, os.path.basename(__file__))
+        log_error("Error downloading search {0}. {1}".format(str(search_id), error), json.dumps(dict(request.POST)))
 
         if settings.DEBUG:
             error_message = error

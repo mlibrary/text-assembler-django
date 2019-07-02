@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand, CommandError
-from textassembler_web.utilities import log_error
+from textassembler_web.utilities import log_error, create_error_message
 from django.apps import apps
 from django.conf import settings
 import logging
@@ -7,7 +7,6 @@ import signal
 import time
 import os
 from django.utils import timezone
-import traceback
 import sys
 import shutil
 import datetime
@@ -20,6 +19,9 @@ class Command(BaseCommand):
     help = "Process searches pending deletion."
 
     def handle(self, *args, **options):
+        '''
+        Handles the command when run from the command line.
+        '''
         signal.signal(signal.SIGINT, self.sig_term)
         signal.signal(signal.SIGTERM, self.sig_term)
 
@@ -94,8 +96,7 @@ class Command(BaseCommand):
             except Exception as e:
                 # This scenario shouldn't happen, but handling it just in case
                 # so that the service won't quit on-error
-                error = "{0} on line {1} of {2}: {3}\n{4}".format(type(e).__name__, sys.exc_info()[-1].tb_lineno, os.path.basename(__file__), e, traceback.format_exc())
-                log_error("An unexpected error occured while deleting old searches. {0}".format(error))
+                log_error("An unexpected error occured while deleting old searches. {0}".format(create_error_message(e, os.path.basename(__file__))))
                 self.terminate = True # stop the service since something is horribly wrong
                 continue
 
@@ -114,4 +115,7 @@ class Command(BaseCommand):
         return None
 
     def sig_term(self, sig, frame):
+        '''
+        Handles user termination of the process.
+        '''
         self.terminate = True
