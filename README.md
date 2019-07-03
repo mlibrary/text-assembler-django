@@ -49,8 +49,8 @@ Notes
 TODO
 -------
 * Contact LN about multiple values not allowed in Language and Source fields for search
+* Kick off job to update all sources
 * Finalize exact run limitation times and amounts
-* Switch log message definitions to use new utility function
 * Accessibility scan
 * Write setup instructions
 * Plan for migrating existing searches to new system (completed or in progress)
@@ -63,4 +63,7 @@ Nice to Have
 * Select sort order of results
 * email settings, email domain to notify users. ex: EMAIL_DOMAIN = msu.edu, will email to [user]@msu.edu
     * if not set, then emails will not be sent to users
-* Display / calculate the estimated completion time of searches (search page and my searches page)
+
+Post Release
+-----------
+* Evaluate how accurate the days to complete estimate is

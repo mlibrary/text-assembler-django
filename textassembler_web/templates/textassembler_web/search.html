@@ -64,10 +64,12 @@
             criteria and try again.</span>
         {% else %}
             <h2>Queue Search For Full Download</h2>
-            <p>Be sure to review the preview of the results below to ensure that you are happy with the filters before queueing the full seach.</p>
+            <p>Be sure to review the preview of the results below to ensure that you are happy with the filters before queueing the full seach. 
+            The number of days to complete the download is estimated based on the number of other searches in the queue and the number of 
+            allowed downloads per day by LexisNexis.</p>
             <div class='queue-search'>
                     <div class='input-group radio'>
-                        <label><input type='radio' name='use_filter' value='existing' data-toggle="collapse" data-target='#post_filters.show' checked/>Use existing filters ({{ search_results.count | intcomma }} results)</label>
+                        <label><input type='radio' name='use_filter' value='existing' data-toggle="collapse" data-target='#post_filters.show' checked/>Use existing filters ({{ search_results.count | intcomma }} results, approximately {{ search_results.est_days_to_complete | intcomma }} days to download)</label>
                     </div>
                     {% if search_results.postFilters|length > 0 %}
                         <div class='input-group radio'>
@@ -78,7 +80,7 @@
                            {% for filterName, filterValues in search_results.postFilters.items %}
                                 <optgroup label='{{ filterName }}'>
                                     {% for valueName, value in filterValues.items %}
-                                        <option value='{{ filterName }}||{{ value.Value }}'>{{ valueName }} ({{ value.Count | intcomma }})</span></option>
+                                        <option value='{{ filterName }}||{{ value.Value }}'>{{ valueName }} ({{ value.Count | intcomma }} results, {{ value.est_days_to_complete | intcomma }} day(s) to download)</span></option>
                                     {% endfor %}
                                 </optgroup>
                             {% endfor %} 

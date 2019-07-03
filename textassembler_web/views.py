@@ -11,7 +11,7 @@ from django.db import connections
 from .ln_api import LN_API
 from .oauth_client import OAUTH_CLIENT
 from .filters import Filters
-from .utilities import log_error, create_error_message
+from .utilities import log_error, create_error_message, estimate_days_to_complete_search 
 from .models import available_formats, download_formats, searches, filters
 import json
 import logging
@@ -180,6 +180,8 @@ def search(request):
                         search_api = LN_API()
                         results = search_api.search(clean["search"], set_filters)
                         if "value" in results:
+                            # add estimated number of days to complete to result set
+                            results['est_days_to_complete'] = estimate_days_to_complete_search(int(results['@odata.count']))
                             results['count'] = results['@odata.count']
                             results['postFilters'] = clean_post_filters(results['value'])
                             response['search_results'] = results
@@ -299,7 +301,7 @@ def clean_post_filters(results):
                     # Add the filter option and value to the results, grouped by the filter name
                     if filter_name not in postFilters:
                         postFilters[filter_name] = {}
-                    postFilters[filter_name][item['Name']] = {"Count":item['Count'], "Value": value}
+                    postFilters[filter_name][item['Name']] = {"Count":item['Count'], "Value": value, "est_days_to_complete": estimate_days_to_complete_search(item['Count']) }
     return postFilters
 
 
@@ -425,11 +427,13 @@ def set_search_info(search):
     if search.status == "Failed":
         search.delete_date = search.failed_date + datetime.timedelta(days=settings.NUM_MONTHS_KEEP_SEARCHES * 30)
 
+    if (search.status == "Queued" or search.status == "In Progress") and search.num_results_in_search and search.num_results_in_search > 0:
+        search.est_days_to_complete = estimate_days_to_complete_search(search.num_results_in_search - search.num_results_downloaded)
+
     # calculate percent complete
     if search.num_results_in_search == None or search.num_results_in_search == 0:
         search.percent_complete = 0
     else:
-        logging.debug(round((search.num_results_downloaded / search.num_results_in_search) * 100,0))
         search.percent_complete = round((search.num_results_downloaded / search.num_results_in_search) * 100,0)
 
     return search

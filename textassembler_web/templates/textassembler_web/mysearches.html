@@ -57,6 +57,7 @@
                     data-content='Downloaded {{ s.num_results_downloaded | intcomma }} out of {{ s.num_results_in_search |intcomma }} results<br/>
                         Last Progress Made: {{ s.update_date }}<br/>
                         Total Run Time: {% seconds_to_dhms s.run_time_seconds %} <br/>
+                        {% if s.est_days_to_complete %} Est. Days Remaining: {{ s.est_days_to_complete | intcomma }} <br/>{% endif %}
                         {% if s.error_message %} Error Message: {{ s.error_message }}<br/>{% endif %}
                         {% if s.delete_date %} Date to be Deleted: {{ s.delete_date }}<br/>{% endif %}
                         '>
