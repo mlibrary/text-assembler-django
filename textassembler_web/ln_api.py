@@ -111,7 +111,7 @@ class LN_API:
         '''
 
         self.refresh_throttle_data(True)
-
+    
         if self.requests_per_min.count() < self.throttles.searches_per_minute \
             and self.requests_per_hour.count() < self.throttles.searches_per_hour and \
             self.requests_per_day.count() < self.throttles.searches_per_day:
@@ -224,6 +224,8 @@ class LN_API:
             log_error("Call to {0} failed with code {1}. Response: ".format(url, resp.status_code), results)
             if "error" in results and "message" in results:
                 return {"error_message":"Error: {0}. Message: {1}".format(results["error"], results["message"])}
+            elif "ErrorDescription" in results:
+                return {"error_message":"Error: {0}.".format(results["ErrorDescription"])}
             else:
                 return {"error_message": "An unexpected API error occured."}
 

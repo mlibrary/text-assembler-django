@@ -57,6 +57,9 @@ TODO
 
 Nice to Have
 -------------
+* Uppdate logic for update sources to not store all results in memory
+    * add field to DB for active flag, add new records without active flag
+    * when job is complete (without failure), delete all active records, then mark all remaining records active
 * Unit Tests
 * Lint
 * Sortable My Searches grid
