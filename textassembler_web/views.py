@@ -195,6 +195,8 @@ def search(request):
                             # Get the full-text for the 10 results to display on the page
                             results = search_api.download(clean["search"], set_filters)
                             if "value" in results:
+                                results['count'] = results['@odata.count']
+                                results['postFilters'] = response['search_results']['postFilters']
                                 response['search_results'] = results
                                 response["search_results_json"] = json.dumps(results) # used in the event of failure after search
                             if "error_message" in results:
