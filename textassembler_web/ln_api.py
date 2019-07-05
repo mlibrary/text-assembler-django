@@ -282,7 +282,10 @@ class LN_API:
 
             # convert the value(s) to base64 if the filter expects it
             if fmt == 'base64':
-                values[:] = [base64.b64encode(val.encode('utf-8')).decode("utf-8").replace("=", "") for val in values]
+                # need to put this in a temp variable first to avoid updating the original variable when returned
+                # this caused a problem for full text results since the 2nd call would double encode the values
+                tmp = [base64.b64encode(val.encode('utf-8')).decode("utf-8").replace("=", "") for val in values]
+                values = tmp
 
             if filters != '':
                 filters += " and "

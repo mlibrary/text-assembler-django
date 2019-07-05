@@ -48,7 +48,6 @@ Notes
 
 TODO
 -------
-* full text option breaks something with the post filters
 * Contact LN about multiple values not allowed in Language and Source fields for search
 * Finalize exact run limitation times and amounts
 * Accessibility scan
