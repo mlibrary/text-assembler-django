@@ -12,7 +12,7 @@ from django.apps import apps
 from django.conf import settings
 from django.utils import timezone
 from textassembler_web.ln_api import LN_API
-from textassembler_web.utilities import log_error, create_error_message
+from textassembler_web.utilities import log_error, create_error_message, send_user_notification
 from bs4 import BeautifulSoup
 
 class Command(BaseCommand):
@@ -140,10 +140,13 @@ class Command(BaseCommand):
                 if "error_message" in results:
                     log_error("An error occured processing search id: {0}. {1}".format(self.cur_search.search_id, results["error_message"]), self.cur_search)
                     self.cur_search.retry_count = self.cur_search.retry_count + 1
-                    self.cur_search.error_message = results["error_message"] ## TODO -- not saving
+                    self.cur_search.error_message = results["error_message"]
                     if self.cur_search.retry_count > settings.LN_MAX_RETRY:
                         self.cur_search.failed_date = timezone.now()
-                        # TODO -- send email notification (set cur_search.user_notified)
+                        if not self.cur_search.user_notified and settings.NOTIF_EMAIL_DOMAIN:
+                            #  send email notification
+                            send_user_notification(self.cur_search.userid, self.cur_search.query, self.cur_search.date_submitted, 0, True)  
+                            self.cur_search.user_notified = True
                     self.cur_search.save()
                     continue
 

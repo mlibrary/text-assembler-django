@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand, CommandError
-from textassembler_web.utilities import log_error, create_error_message
+from textassembler_web.utilities import log_error, create_error_message, send_user_notification
 from django.apps import apps
 from django.conf import settings
 import logging
@@ -89,7 +89,9 @@ class Command(BaseCommand):
                         shutil.rmtree(os.path.join(root,d))
 
                 logging.info("Completed cleanup of non-compressed files for search {0}".format(self.cur_search.search_id))
-                # TODO - notify the user, set user_notified
+                #  send email notification
+                send_user_notification(self.cur_search.userid, self.cur_search.query, self.cur_search.date_submitted, self.cur_search.num_results_downloaded)  
+                self.cur_search.user_notified = True
 
                 # update the search record
                 self.cur_search.update_date = timezone.now()

@@ -3,6 +3,13 @@ APP_NAME = Text Assembler
 TIME_ZONE = America/Detroit
 MAINTAINER_EMAILS = schanzme@msu.edu, schanzme@lib.msu.edu
 STORAGE_LOCATION = /mnt/textassembler
+# NOTIF_EMAIL_DOMAIN should be the end part of the email address to use for
+# constructing user email addresses. The first part will be the USER_ID_FIELD
+# returned from OAuth. Ex: schanzme@msu.edu. If blank, no notification
+# emaikls will be sent for completed/failed searches
+NOTIF_EMAIL_DOMAIN = msu.edu
+# If set to true, all notification emails will have the MAINTAINER_EMAILS BCC'd
+BCC_MAINTAINERS_ON_NOTIF = true
 
 [database.default]
 ENGINE = django.db.backends.mysql
@@ -15,6 +22,8 @@ ATOMIC_REQUESTS = true
 
 [hosts]
 ALLOWED_HOSTS = textassembler.lib.msu.edu
+# PREFERED_HOST_URL is used for notification emails to indicate the URL they should use to check their searches
+PREFERED_HOST_URL = https://textassembler.lib.msu.edu
 
 [debug]
 DEBUG = true

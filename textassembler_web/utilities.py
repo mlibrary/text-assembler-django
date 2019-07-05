@@ -40,7 +40,6 @@ def log_error(error_message, json_data = None):
 
     # Email system administrators the error as well
     sender = "root@" + socket.getfqdn()
-    receivers = settings.MAINTAINER_EMAILS
 
     message = """
     <h1>Error:</h1>
@@ -62,6 +61,66 @@ def log_error(error_message, json_data = None):
         s.quit()
     except Exception as e:
        logging.error("Error: unable to send email to maintainers. " + e)
+
+def send_user_notification(userid, search_query, date_queued, num_results, failed=False):
+    '''
+    Sends an email notification to the specified user indicating that their search
+    has completed processing.
+    '''
+    # Check for empty parameter in config
+    if not settings.NOTIF_EMAIL_DOMAIN or settings.NOTIF_EMAIL_DOMAIN == "": 
+        return
+
+    if not userid or userid == "":
+        return
+
+    if settings.BCC_MAINTAINERS_ON_NOTIF:
+        # Validate the emails provided
+        for email in settings.MAINTAINER_EMAILS:
+            if len(email) == 0:
+                continue
+            match = re.match('^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$', email)
+            if match == None:
+                logging.error("Could not send email, one or more of the emails provided for MAINTAINER_EMAILS was not valid. " + email)
+                return
+
+    user_email = userid + "@" + settings.NOTIF_EMAIL_DOMAIN
+    match = re.match('^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$', user_email)
+    if match == None:
+        logging.error("Could not send email, one or more of the emails provided for userid {0} was not valid. {1}".format(userid, user_email))
+        return
+
+    
+    # Email system administrators the error as well
+    sender = "root@" + socket.getfqdn()
+
+    message = """
+    <h1>Search Completed Processing</h1>
+    <p>Search Term: {}</p>
+    <p>Status: {}</p>
+    <p>Number of Results: {}</p>
+    <p>Date Submitted: {}</p>
+    <p>Please visit {} to view your search.</p>
+    """.format(search_query,
+        "Success" if not failed else "Failed", 
+        num_results if not failed else "N/A",
+        date_queued.strftime("%B %m, %Y"),
+        settings.PREFERED_HOST_URL)
+
+    try:
+        msg = EmailMessage()
+        msg.set_content(message, subtype='html')
+        msg['Subject'] = 'Text Assembler - Search Completed Processing'
+        msg['From'] = "root@" + socket.getfqdn()
+        msg['To'] = user_email
+        msg['Bcc'] = settings.MAINTAINER_EMAILS
+
+        s = smtplib.SMTP('localhost')
+        s.send_message(msg)
+        s.quit()
+    except Exception as e:
+       logging.error("Error: unable to send notification email. " + e)
+        
 
 def seconds_to_dhms_string(time):
     '''

@@ -50,7 +50,6 @@ TODO
 -------
 * Contact LN about multiple values not allowed in Language and Source fields for search
 * Finalize exact run limitation times and amounts
-* Accessibility scan
 * Write setup instructions
 * Plan for migrating existing searches to new system (completed or in progress)
 
@@ -60,8 +59,6 @@ Nice to Have
 * Lint
 * Sortable My Searches grid
 * Select sort order of results
-* email settings, email domain to notify users. ex: EMAIL_DOMAIN = msu.edu, will email to [user]@msu.edu
-    * if not set, then emails will not be sent to users
 
 Post Release
 -----------

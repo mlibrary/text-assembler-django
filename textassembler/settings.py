@@ -80,7 +80,11 @@ else:
 
 ALLOWED_HOSTS = [host.strip() for host in configs.get("hosts", "ALLOWED_HOSTS").split(",")]
 
+# General settings
 MAINTAINER_EMAILS = [email.strip() for email in configs.get("general", "MAINTAINER_EMAILS").split(",")]
+NOTIF_EMAIL_DOMAIN = configs.get("general","NOTIF_EMAIL_DOMAIN")
+BCC_MAINTAINERS_ON_NOTIF = configs.get("general", "BCC_MAINTAINERS_ON_NOTIF").lower() == 'true'
+PREFERED_HOST_URL = configs.get("hosts","PREFERED_HOST_URL")
 
 
 # Application definition
