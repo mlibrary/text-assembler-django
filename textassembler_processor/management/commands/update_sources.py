@@ -8,52 +8,74 @@ import logging
 class Command(BaseCommand):
     help = "Update the available search sources from LexisNexis"
 
+    def add_arguments(self, parser):
+        # Optional argument for skip value to pick up where you left off in event of failure
+        parser.add_argument('-s', '--skip', type=int, help='Skip value to start with (Default = 0)')
+
+
     def handle(self, *args, **options):
         self.sources = apps.get_model('textassembler_web','sources')
-        logging.info("Starting refresh of LexisNexis searchable sources.")
+
+        # Process command line argument
+        skip = int(options['skip']) if options['skip'] else 0
+       
+        total = 0 
+
+        logging.info("Starting refresh of LexisNexis searchable sources. Skip value = {0}".format(skip))
 
         # Get all the sources
         self.api = LN_API()
-        skip = 0
 
         self.wait_for_search(self.api)
-        sources = self.api.api_call(resource="Sources", params={"$top":100})
+        sources = self.api.api_call(resource="Sources", params={"$top":100, "$skip":skip})
 
         # check for errors
         if "error_message" in sources:
             logging.error("Error occured refreshing the sources. Message: ".format(sources["error_message"]))
             return
 
-        results = []
-        logging.info("Found {0} sources.".format(sources['@odata.count']))
+        total = int(sources['@odata.count'])
+        logging.info("Found {0} sources.".format(total))
         if "value" in sources and len(sources["value"]) > 0:
-            logging.info("Processing results {0} - {1}".format(0,100))
+            logging.info("Processing results {0} - {1}, out of {2} results.".format(skip, skip+100, total))
             for source in sources["value"]:
-                results.append({'id':source["Id"],'name':source['Name']})
-            while skip < int(sources["@odata.count"]):
+                # make sure it's not already in there
+                if self.sources.objects.all().filter(source_id=source["Id"], source_name=source['Name'][0:250], active=False).count() == 0:
+                    # add it as inactive
+                    self.sources.objects.create(source_id=source["Id"], source_name=source['Name'][0:250])
+            while skip < total:
+                skip += 100
                 time.sleep(1) # take a brief break to free up CPU usage
                 self.wait_for_search(self.api)
                 sources = self.api.api_call(resource="Sources",params={"$top":100, "$skip":skip})
                 if "error_message" in sources:
-                    logging.error("Error occured refreshing the sources. Message: ".format(sources["error_message"]))
-                    return
+                    if "response_code" in sources and sources["response_code"] == 429:
+                        logging.error("Went over throttling limit! will recalculate next available window.", sources)
+                        continue
+                    else:
+                        logging.error("Error occured refreshing the sources. Message: ".format(sources["error_message"]))
+                        return
                 if sources is not None and "value" in sources and len(sources["value"]) > 0:
-                    logging.info("Processing results {0} - {1}".format(skip,skip+100))
+                    total = int(sources['@odata.count'])
+                    logging.info("Processing results {0} - {1}, out of {2} results.".format(skip, skip+100, total))
                     for source in sources["value"]:
-                        results.append({'id':source["Id"],'name':source['Name']})
+                        # make sure it's not already in there
+                        if self.sources.objects.all().filter(source_id=source["Id"], source_name=source['Name'][0:250], active=False).count() == 0:
+                            # add it as inactive
+                            self.sources.objects.create(source_id=source["Id"], source_name=source['Name'][0:250])
                 else:
                     break
-                skip += 100
 
         # Start a transaction to remove the current sources then add the new ones
-        logging.info("Updating the database with the {0} sources.".format(len(results)))
+        logging.info("Updating the database to activate the {0} new sources.".format(total))
         with transaction.atomic():
-            self.sources.objects.all().delete()
+            #  delete all currently active records
+            self.sources.objects.all().filter(active=True).delete()
 
-            for result in results:
-                self.sources.objects.create(source_id=result['id'], source_name=result['name'][0:250])
+            #  mark all remaining records as active
+            records = self.sources.objects.all().update(active=True)
 
-        logging.info("Completed refresh of sources. {0} found.".format(len(results)))
+        logging.info("Completed refresh of sources. {0} found.".format(total))
 
     def wait_for_search(self, api):
         wait_time = api.get_time_until_next_search()

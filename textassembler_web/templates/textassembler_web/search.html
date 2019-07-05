@@ -76,7 +76,7 @@
                             <label><input type='radio' name='use_filter' id='use_suggested' data-toggle="collapse" data-target='#post_filters:not(.show)' value='suggested'/>Select additional filter(s)&nbsp;<a href='' role='button' onClick='return false;' data-trigger='focus' data-html='true' data-toggle='popover' title='Additional Filters' data-content='These are suggestions provided by LexisNexis to help narrow down your search further. They are grouped by the field they filter on and show how many results you could expect by adding that filter. You can select one or more of these and either submit your search directly or refresh the preview of the results with the new filters. <strong>Note that the filter values populated may appear in code instead of plain text.</strong>'>(?)</a></label>
                         </div>
                         <div id='post_filters' class='collapse form-row col-6'>
-                            <select name='post_filters' class='sp' multiple data-live-search='true' data-width='100%'>
+                            <select name='post_filters' class='sp' multiple data-live-search='true' data-width='100%' aria-label='post filters'>
                            {% for filterName, filterValues in search_results.postFilters.items %}
                                 <optgroup label='{{ filterName }}'>
                                     {% for valueName, value in filterValues.items %}

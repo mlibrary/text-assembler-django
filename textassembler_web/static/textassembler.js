@@ -67,14 +67,14 @@ function addFilterRow(data, selected_filter, selected_filter_value='') {
 
     switch(data["type"]){
         case "text":
-            newRow += "<input type='text' name='" + selected_filter + "' class='form-control' ";
+            newRow += "<input type='text' name='" + selected_filter + "' class='form-control' aria-label='" + selected_filter + "' ";
             if (selected_filter_value && selected_filter_value.length == 1){
                 newRow += "value='" + selected_filter_value[0] + "'";
             }
             newRow += "></input>";
             break;
         case "select":
-            newRow += "<select name='" + selected_filter + "' class='sp' multiple data-live-search='true' data-width='100%'>";
+            newRow += "<select name='" + selected_filter + "' class='sp' width='100px' multiple data-live-search='true' data-width='100%' aria-label='" + selected_filter + "' >";
             var i = 0;
             for (i=0; i< data["choices"].length; i++){
                 newRow += "<option value='" + data["choices"][i]['val'] + "'";
@@ -88,7 +88,7 @@ function addFilterRow(data, selected_filter, selected_filter_value='') {
             newRow += "</select>";
             break;
         case "date":
-            newRow += "<select name='" + selected_filter + "' class='sp comp-dd' data-width='15%'>";
+            newRow += "<select name='" + selected_filter + "' class='sp comp-dd' data-width='15%' aria-label='" + selected_filter + "' >";
             var i = 0;
             for (i=0; i< data["choices"].length; i++){
                 newRow += "<option value='" + data["choices"][i]['val'] + "'";
@@ -99,7 +99,7 @@ function addFilterRow(data, selected_filter, selected_filter_value='') {
                 }
                 newRow += ">" + data["choices"][i]['name'] + "</option>";
             }
-            newRow += "</select><input type ='date' name='" + selected_filter + "' class='form-control filter-date'";
+            newRow += "</select><input type ='date' name='" + selected_filter + "' class='form-control filter-date' aria-label='" + selected_filter + "' ";
             if (selected_filter_value != null && selected_filter_value.length == 2){
                 newRow += " value='" + selected_filter_value[1] + "'";
             }

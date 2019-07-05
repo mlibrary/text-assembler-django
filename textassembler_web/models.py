@@ -5,6 +5,7 @@ class sources(models.Model):
     """Searchable sources in the LexisNexis API"""
     source_id = models.CharField(max_length=255)
     source_name = models.CharField(max_length=255)
+    active = models.BooleanField(default=False)
 
 class available_formats(models.Model):
     format_id = models.AutoField(primary_key=True)

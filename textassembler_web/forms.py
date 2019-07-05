@@ -42,18 +42,16 @@ class TextAssemblerWebForm(forms.Form):
             widget=forms.Textarea(attrs={
                 'class':'form-control',
                 'placeholder':'Search term',
+                'aria-label':'Search Term',
                 'rows': 1})
-        #    widget=forms.TextInput(attrs={
-        #        'class':'form-control',
-        #        'placeholder':'Search term',
-        #        'multiline':'True'
-        #    })
         )
         self.fields['filter_opts'] = forms.ChoiceField(
             choices=choices,
             label="Filters / Options",
             required=False,
-            widget=forms.Select(attrs={'class':'filter_opts form-control'}),
+            widget=forms.Select(attrs={
+                'class':'filter_opts form-control',
+                'aria-label':'Filters'}),
         )
 
 

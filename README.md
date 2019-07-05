@@ -48,8 +48,8 @@ Notes
 
 TODO
 -------
+* full text option breaks something with the post filters
 * Contact LN about multiple values not allowed in Language and Source fields for search
-* Kick off job to update all sources
 * Finalize exact run limitation times and amounts
 * Accessibility scan
 * Write setup instructions
@@ -57,9 +57,6 @@ TODO
 
 Nice to Have
 -------------
-* Uppdate logic for update sources to not store all results in memory
-    * add field to DB for active flag, add new records without active flag
-    * when job is complete (without failure), delete all active records, then mark all remaining records active
 * Unit Tests
 * Lint
 * Sortable My Searches grid

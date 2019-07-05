@@ -128,7 +128,7 @@ class Filters:
 
         elif filter_type == 'Source_Id':
             results = []
-            for source in sources.objects.all():
+            for source in sources.objects.all().filter(active=True):
                 results.append({"val":source.source_id, "name":source.source_name})
             return {'name':'Source', 'type':'select',
                     'help':'The content source that is searched',

@@ -223,11 +223,14 @@ class LN_API:
         else:
             log_error("Call to {0} failed with code {1}. Response: ".format(url, resp.status_code), results)
             if "error" in results and "message" in results:
-                return {"error_message":"Error: {0}. Message: {1}".format(results["error"], results["message"])}
+                return {"error_message":"Error: {0}. Message: {1}".format(results["error"], results["message"]),
+                        "response_code": resp.status_code}
             elif "ErrorDescription" in results:
-                return {"error_message":"Error: {0}.".format(results["ErrorDescription"])}
+                return {"error_message":"Error: {0}.".format(results["ErrorDescription"]), 
+                        "response_code": resp.status_code}
             else:
-                return {"error_message": "An unexpected API error occured."}
+                return {"error_message": "An unexpected API error occured.", 
+                        "response_code": resp.status_code}
 
 
     def search(self, term="", set_filters={}):

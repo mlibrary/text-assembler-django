@@ -130,6 +130,10 @@ input[type=checkbox], input[type=radio] {
     height: 20px;
     margin-top: 10px;
 }
+.dropdown-menu {
+    min-width: 100% !important;
+    max-width: 130% !important;
+}
 .filter_type_label {
     padding-left:40px !important;
 }
