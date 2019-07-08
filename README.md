@@ -3,6 +3,13 @@ Text Assembler
 This is a web-based application that makes use of the Lexis Nexis API for searching and downloading from their 
 data set.
 
+Contents
+--------
+* [Assumptions](#assumptions)
+* [Install & Setup](#install-setup)
+* [WSK to API Transition](#wsk-to-api-transition)
+* [Technical Overview](#technical-overview)
+
 Assumptions
 -----------
 * This application uses OAuth2 for authentication. Some form of authentication is required to obtain a unique userid. 
@@ -40,11 +47,9 @@ deactivate
 export LANG='en_US.UTF-8'
 export LC_ALL='en_US.UTF-8'
 ```
-* Configure the application
-Copy all of the .example files (find . -name '*.example') and make necessary changes.
-
-This will also involve creating a database and an application user, which will be parameters 
-in the main config file.
+* Configure the application:  
+Copy all of the `.example` files (find . -name '*.example') and make necessary changes.   
+This will also involve creating a database and an application user, which will be parameters in the main config file.
 
 * Run the database setup
 ```
@@ -52,7 +57,7 @@ cd /var/www/text-assembler
 ta_env/bin/python manage.py migrate
 ```
 
-* Configure Apache
+* Configure Apache:   
 Create a new Apache configuration file using the below as an example
 ```
 <VirtualHost *:80>
@@ -90,9 +95,8 @@ Create a new Apache configuration file using the below as an example
 </VirtualHost>
 ```
 
-* Set up the services
-
-Installing the Text Assembler service to process the queue, zip compression handler, and deletion handler:
+* Set up the services:  
+Installing the Text Assembler service to process the queue, zip compression handler, and deletion handler.
 ```
 cp etc/init.d/* /etc/init.d/
 sudo chmod +x /etc/init.d/tassembler*
@@ -105,7 +109,7 @@ systemctl enable tassemblerdeld
 systemctl start tassemblerdeld
 ```
 
-* Set up cron jobs to start services on boot and update Lexis Nexis sources on a regular basis (`/etc/crontab`)
+* Set up cron job to update Lexis Nexis sources on a regular basis (`/etc/crontab`)
 ```
 @monthly    root        /var/www/text-assembler/ta_env/bin/python /var/www/text-assembler/manage.py update_sources
 ```
@@ -117,7 +121,8 @@ using the existing Lexis Nexis WSK. If this does not apply to you, please skip
 over this section.
 
 * In the existing system, mark the searches as completed so they stop processing.
-* Add a README.txt to the top level directory of each of the searches stating:
+* Add a README.txt to the top level directory of each of the searches stating 
+something along these lines:
 ```
 Processing for this search has been terminated due to the migration away from the LexisNexis WSK system 
 on to the new API system. Due to differnces in the interaction with this system, it was not possible 
@@ -221,6 +226,7 @@ compression was completed or the date the search failed (if it is a failed searc
 before deleting items is set to 3 in the config file by default.
 
 It will delete the files from the server and delete the search record from the database.
+
 Development Notes
 --------------
 * Run `pip freeze > requirements.txt` to update the pip packages required
