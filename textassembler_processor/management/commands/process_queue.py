@@ -91,7 +91,7 @@ class Command(BaseCommand):
                 # continue loop if there are no downloads remaining
                 #   (this could happen if some other search sneaks in before this
                 #   process wakes)
-                if not self.api.check_can_download():
+                if not self.api.check_can_download(True):
                     continue
 
                 # get the next item from the queue
@@ -258,6 +258,6 @@ class Command(BaseCommand):
             # Check if we can download every 10 seconds instead of waiting the full wait_time to
             # be able to handle sig_term triggering (i.e. we don't want to sleep for an hour before
             # a kill command is processed)
-            while not self.api.check_can_download():
+            while not self.api.check_can_download(True):
                 time.sleep(10)
             logging.info("Resuming processing")

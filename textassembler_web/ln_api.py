@@ -119,15 +119,27 @@ class LN_API:
 
         return False
 
-    def check_can_download(self):
+    def check_can_download(self, processing=False):
         '''
         Checks the remaining searches available per min/hr/day to see if we are able to do any more
 
-        returns: (bool,bool) can_search, can_download
+        returns: (bool) can_download
         '''
 
         self.refresh_throttle_data(True)
 
+        #  check that we are within the valid processing time window
+        if processing:
+            # determine if it is currently a weekend or weekday
+            is_weekday = datetime.datetime.today().weekday() < 5
+
+            if is_weekday:
+                if timezone.now().time() < self.throttles.weekday_start_time or timezone.now().time() > self.throttles.weekday_end_time:
+                    return False
+            else:
+                if timezone.now().time() < self.throttles.weekend_start_time or timezone.now().time() > self.throttles.weekend_end_time:
+                    return False
+    
         if self.requests_per_min.filter(is_download=True).count() < self.throttles.downloads_per_minute \
             and self.requests_per_hour.filter(is_download=True).count() < self.throttles.downloads_per_hour \
             and self.requests_per_day.filter(is_download=True).count() < self.throttles.downloads_per_day:
@@ -158,24 +170,41 @@ class LN_API:
 
     def get_time_until_next_download(self):
         '''
-        Gets the number of seconds until we can perform the next download
+        Gets the number of seconds until we can perform the next download. 
+        Does not account for run window
         '''
 
         self.refresh_throttle_data()
+        seconds = 0
+        seconds_window = 0
 
         # Available now
-        if self.requests_per_min.filter(is_download=True).count() < self.throttles.downloads_per_minute  \
-            and self.requests_per_hour.filter(is_download=True).count() < self.throttles.downloads_per_hour \
-            and self.requests_per_day.filter(is_download=True).count() < self.throttles.downloads_per_day:
+        if self.check_can_download(True):
             return 0
 
         # Calculate
         if self.requests_per_day.filter(is_download=True).count() >= self.throttles.downloads_per_day:
-            return ((timezone.now() + datetime.timedelta(days=1)) - timezone.now()).total_seconds()
+            seconds = ((timezone.now() + datetime.timedelta(days=1)) - timezone.now()).total_seconds()
         if self.requests_per_hour.filter(is_download=True).count() >= self.throttles.downloads_per_hour:
-            return ((timezone.now() + datetime.timedelta(hours=1)) - timezone.now()).total_seconds()
+            seconds = ((timezone.now() + datetime.timedelta(hours=1)) - timezone.now()).total_seconds()
         if self.requests_per_min.filter(is_download=True).count() >= self.throttles.downloads_per_minute:
-            return ((timezone.now() + datetime.timedelta(minutes=1)) - timezone.now()).total_seconds()
+            seconds = ((timezone.now() + datetime.timedelta(minutes=1)) - timezone.now()).total_seconds()
+
+        
+        is_weekday = datetime.datetime.today().weekday() < 5
+
+        if is_weekday:
+            start_date = datetime.datetime.combine(datetime.date.today(), self.throttles.weekday_start_time)
+        else:
+            start_date = datetime.datetime.combine(datetime.date.today(), self.throttles.weekend_start_time)
+        t = start_date  - datetime.datetime.now()
+        seconds_window = t.total_seconds()
+
+
+        if seconds > seconds_window:
+            return seconds
+        else:
+            return seconds_window
 
     def api_call(self, req_type='GET', resource='News', params={}):
         '''
