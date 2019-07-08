@@ -1,4 +1,6 @@
 from django.db import models
+from django.dispatch import receiver
+from django.db.models.signals import pre_delete
 
 
 class sources(models.Model):
@@ -46,3 +48,39 @@ class filters(models.Model):
 class download_formats(models.Model):
     search_id = models.ForeignKey("searches", models.CASCADE)
     format_id = models.ForeignKey("available_formats", models.CASCADE)
+
+class historical_searches(models.Model):
+    '''
+    Used to store deleted searches for later querying for reporting purposes.
+    '''
+    search_id = models.IntegerField(default=0)
+    date_submitted = models.DateTimeField(null=True)
+    update_date = models.DateTimeField(null=True)
+    query = models.TextField()
+    date_started = models.DateTimeField(null=True)
+    date_completed = models.DateTimeField(null=True)
+    num_results_downloaded = models.IntegerField(default=0)
+    num_results_in_search = models.IntegerField(default=0)
+    skip_value = models.IntegerField(default=0) 
+    date_started_compression = models.DateTimeField(null=True) 
+    date_completed_compression = models.DateTimeField(null=True)
+    user_notified = models.BooleanField(default=False)
+    run_time_seconds = models.IntegerField(default=0)
+    retry_count = models.IntegerField(default=0) 
+    error_message = models.TextField(null=True)
+    failed_date = models.DateTimeField(null=True)
+    date_deleted = models.DateTimeField(auto_now_add=True)
+
+@receiver(pre_delete, sender=searches)
+def save_historical_search_data(sender, instance, **kwargs):
+    '''
+    Once a record is deleted from the searches table, add it to the historical_searches table.
+    '''
+    search_obj = historical_searches( search_id=instance.search_id, date_submitted=instance.date_submitted, update_date=instance.update_date,
+        query=instance.query, date_started=instance.date_started, date_completed=instance.date_completed,
+        num_results_downloaded=instance.num_results_downloaded, num_results_in_search=instance.num_results_in_search,
+        skip_value=instance.skip_value, date_started_compression=instance.date_started_compression,
+        date_completed_compression=instance.date_completed_compression, user_notified=instance.user_notified,
+        run_time_seconds=instance.run_time_seconds, retry_count=instance.retry_count,
+        error_message=instance.error_message, failed_date=instance.failed_date)
+    search_obj.save()

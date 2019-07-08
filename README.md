@@ -195,6 +195,10 @@ This is calculated based on the limitations we have on the API, given the assump
 the limitations we have. So if we are limited to 1,000 downloads a day and there are 3 other searches in the queue with 
 each 5,000 results... it would take a new search with 5,000 results 20 days to complete (5000 * 4 / 1000).
 
+When searches are deleted, it will delete the record from the database as well as removing the files for it on the 
+server. It will create a historical record in the `historical_searches` table of the database. This is used 
+only for reporting purposes (i.e. to get the number of searches ran over the year, or the number of documents downloaded). 
+
 ### Queue Processor (tassemblerd, [code](textassembler_processor/management/commands/process_queue.py))
 This is the daemon process that does the bulk of the work. It will continually run on the server checking if there are 
 searches in the queue that need results downloaded for them still, and if there are, it will verify that we have available
@@ -237,10 +241,7 @@ TODO
 -------
 * Contact LN about multiple values not allowed in Language and Source fields for search
 * Finalize exact run limitation times and amounts
-* Write setup instructions
-* Plan for migrating existing searches to new system (completed or in progress)
 * Move remaining to-do's as gitlab issues
-* Have an ondelete trigger for searches table to save old searches for later reporting needs
 
 Nice to Have
 -------------
@@ -249,6 +250,14 @@ Nice to Have
 * Sortable My Searches grid
 * Select sort order of results
 * Move throttling limits to config from the database
+
+Release
+-------
+* Setup site on existing lexnex server
+* Migrate existing searches to new system
+* OAuth request to switch redirect URL (DON'T DO THIS UNTIL RIGHT WHEN WE'RE READY TO SWITCH)
+* Remove old site and Mono installation from server
+* Add back server to regular ubuntu ansible group
 
 Post Release
 -----------
