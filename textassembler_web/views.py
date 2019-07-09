@@ -147,7 +147,7 @@ def search(request):
         ## Make sure Year is an integer
         if key == 'year(Date)':
             for value in values:
-                if not string_is_int(value) or isinstance(value,int):
+                if not string_is_int(value) and not isinstance(value,int):
                     response['error_message'] += \
                         "The 'Year' field requires only numeric input, provided: {0}.".format(value)
         else:

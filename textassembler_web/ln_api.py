@@ -134,10 +134,12 @@ class LN_API:
             is_weekday = datetime.datetime.today().weekday() < 5
 
             if is_weekday:
-                if timezone.now().time() < self.throttles.weekday_start_time or timezone.now().time() > self.throttles.weekday_end_time:
+                end_is_next_day = self.throttles.weekday_end_time < self.throttles.weekday_start_time
+                if datetime.datetime.now().time() < self.throttles.weekday_start_time or (not end_is_next_day and datetime.datetime.now().time() > self.throttles.weekday_end_time):
                     return False
             else:
-                if timezone.now().time() < self.throttles.weekend_start_time or timezone.now().time() > self.throttles.weekend_end_time:
+                end_is_next_day = self.throttles.weekend_end_time < self.throttles.weekend_start_time
+                if datetime.datetime.now().time() < self.throttles.weekend_start_time or (not end_is_next_day and datetime.now().time() > self.throttles.weekend_end_time):
                     return False
     
         if self.requests_per_min.filter(is_download=True).count() < self.throttles.downloads_per_minute \
