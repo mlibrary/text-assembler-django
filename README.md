@@ -266,7 +266,6 @@ Nice to Have
 -------------
 * Unit Tests
 * Lint
-* Sortable My Searches grid
 * Select sort order of results
 
 Release

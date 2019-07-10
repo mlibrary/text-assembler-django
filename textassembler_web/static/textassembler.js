@@ -181,4 +181,5 @@ $( document ).ready(function() {
     }
     $(".sp").selectpicker();
     $('[data-toggle="popover"]').popover();
+    $('#mysearches').DataTable(); 
 });

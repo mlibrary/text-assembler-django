@@ -12,8 +12,8 @@
 {% if error_message %}
 <br/><p class='error'>{{ error_message }}</p>
 {% endif %}
-
-<table class="table">
+<br/>
+<table id='mysearches' class="table">
     <thead><tr>
     {% for h in headings %}
         <th scop='col' class="{{ h|lower|slugify }}-column">{{ h }}</th>
