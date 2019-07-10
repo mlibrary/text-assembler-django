@@ -45,6 +45,23 @@ PREVIEW_FORMAT = FULL
 # The number of months completed searches should be retained
 NUM_MONTHS_KEEP_SEARCHES = 3
 
+[api_limits]
+# Number of search-only calls we are allowed to make per minute/hour/day
+SEARCHES_PER_MINUTE = 5
+SEARCHES_PER_HOUR = 100
+SEARCHES_PER_DAY = 1000
+# Number of download ($expand=Document) calls we are allowed to make
+# per minute/hour/day
+DOWNLOADS_PER_MINUTE = 5
+DOWNLOADS_PER_HOUR = 100
+DOWNLOADS_PER_DAY = 100
+# Time we can process queued searches on weekdays (using 24-hour clock)
+WEEKDAY_START_TIME = 23:00
+WEEKDAY_END_TIME = 06:00
+# Time we can process queued searches on weekends (using 24-hour clock)
+WEEKEND_START_TIME = 00:00
+WEEKEND_END_TIME = 00:00
+
 [oauth]
 AUTH_URL = https://oauth.itservices.msu.edu/oauth/authorize
 TOKEN_URL = https://oauth.itservices.msu.edu/oauth/token

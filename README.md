@@ -249,7 +249,6 @@ Nice to Have
 * Lint
 * Sortable My Searches grid
 * Select sort order of results
-* Move throttling limits to config from the database
 
 Release
 -------

@@ -1,18 +1,5 @@
 from django.db import models
 
-class limits(models.Model):
-    """Contains the search limitations with the LexisNexis API."""
-    searches_per_minute = models.IntegerField()
-    searches_per_hour = models.IntegerField()
-    searches_per_day = models.IntegerField()
-    downloads_per_minute = models.IntegerField()
-    downloads_per_hour = models.IntegerField()
-    downloads_per_day = models.IntegerField()
-    weekday_start_time = models.TimeField()
-    weekday_end_time = models.TimeField()
-    weekend_start_time = models.TimeField()
-    weekend_end_time = models.TimeField()
-
 class api_log(models.Model):
     log_id = models.AutoField(primary_key=True)
     request_url = models.TextField()

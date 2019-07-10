@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 import os
 from configparser import ConfigParser
 import logging
+import datetime
 
 
 def load_configs(path_to_configs):
@@ -54,6 +55,18 @@ LN_MAX_RETRY = int(configs.get("lexisnexis","MAX_RETRY"))
 LN_TIMEOUT = int(configs.get("lexisnexis","TIMEOUT_SECONDS"))
 PREVIEW_FORMAT = configs.get("lexisnexis","PREVIEW_FORMAT")
 NUM_MONTHS_KEEP_SEARCHES = int(configs.get("lexisnexis","NUM_MONTHS_KEEP_SEARCHES"))
+
+# API Limits
+SEARCHES_PER_MINUTE = int(configs.get("api.limits","SEARCHES_PER_MINUTE"))
+SEARCHES_PER_HOUR = int(configs.get("api.limits","SEARCHES_PER_HOUR"))
+SEARCHES_PER_DAY = int(configs.get("api.limits","SEARCHES_PER_DAY"))
+DOWNLOADS_PER_MINUTE = int(configs.get("api.limits","DOWNLOADS_PER_MINUTE"))
+DOWNLOADS_PER_HOUR = int(configs.get("api.limits","DOWNLOADS_PER_HOUR"))
+DOWNLOADS_PER_DAY = int(configs.get("api.limits","DOWNLOADS_PER_DAY"))
+WEEKDAY_START_TIME = datetime.datetime.strptime(configs.get("api.limits","WEEKDAY_START_TIME"),'%H:%M').time()
+WEEKDAY_END_TIME = datetime.datetime.strptime(configs.get("api.limits","WEEKDAY_END_TIME"),'%H:%M').time()
+WEEKEND_START_TIME = datetime.datetime.strptime(configs.get("api.limits","WEEKEND_START_TIME"),'%H:%M').time()
+WEEKEND_END_TIME = datetime.datetime.strptime(configs.get("api.limits","WEEKEND_END_TIME"),'%H:%M').time()
 
 # App OAuth Configs
 APP_AUTH_URL = configs.get("oauth","AUTH_URL")

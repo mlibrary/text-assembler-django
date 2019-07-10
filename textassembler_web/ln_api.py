@@ -19,12 +19,10 @@ class LN_API:
         '''
         Initialize the object and authenticate against the API
         '''
-        self.limits = apps.get_model('textassembler_processor', 'limits')
         self.api_log = apps.get_model('textassembler_processor', 'api_log')
         self.access_token = None
         self.expiration_time = None
 
-        self.throttles = None
         self.requests_per_min = None
         self.requests_per_hour = None
         self.requests_per_day = None
@@ -82,26 +80,30 @@ class LN_API:
         self.requests_per_hour = self.api_log.objects.filter(request_date__gte=timezone.now()- datetime.timedelta(hours=1))
         self.requests_per_day = self.api_log.objects.filter(request_date__gte=timezone.now() - datetime.timedelta(days=1))
 
+        # validate trottle settings
+        if not settings.SEARCHES_PER_MINUTE or not settings.SEARCHES_PER_HOUR or \
+            not settings.SEARCHES_PER_DAY or not settings.DOWNLOADS_PER_MINUTE or \
+            not settings.DOWNLOADS_PER_HOUR or not settings.DOWNLOADS_PER_DAY:
+            log_error("API limits are not properly configured")
+
+        if not settings.WEEKDAY_START_TIME or not settings.WEEKDAY_END_TIME or \
+            not settings.WEEKEND_START_TIME or not settings.WEEKEND_START_TIME:
+            log_error("API processing start and end times not properly configured")
+
         # Compare against the limits for min/hr/day
-        throttles = self.limits.objects.all()
-        if throttles.count() == 0:
-            log_error("No record exists in the database containing the throttling limitations!")
-        if throttles.count() > 1:
-            log_error("More than one record exists in the database for the throttling limitations!")
-
-        self.throttles = throttles[0]
-
         if display:
             logging.info("Current search limits: {0}/min, {1}/hr, {2}/day out of {3}/min, {4}/hr, {5}/day".format(
-                self.requests_per_min.count(), self.requests_per_hour.count(), self.requests_per_day.count(),
-                self.throttles.searches_per_minute, self.throttles.searches_per_hour, self.throttles.searches_per_day))
+                self.requests_per_min.count(), self.requests_per_hour.count(), 
+                self.requests_per_day.count(),
+                settings.SEARCHES_PER_MINUTE, settings.SEARCHES_PER_HOUR, 
+                settings.SEARCHES_PER_DAY))
 
             logging.info("Current download limits: {0}/min, {1}/hr, {2}/day out of {3}/min, {4}/hr, {5}/day".format(
                 self.requests_per_min.filter(is_download=True).count(),
                 self.requests_per_hour.filter(is_download=True).count(),
                 self.requests_per_day.filter(is_download=True).count(),
-                self.throttles.downloads_per_minute, self.throttles.downloads_per_hour,
-                self.throttles.downloads_per_day))
+                settings.DOWNLOADS_PER_MINUTE, settings.DOWNLOADS_PER_HOUR,
+                settings.DOWNLOADS_PER_DAY))
 
     def check_can_search(self):
         '''
@@ -112,9 +114,9 @@ class LN_API:
 
         self.refresh_throttle_data(True)
     
-        if self.requests_per_min.count() < self.throttles.searches_per_minute \
-            and self.requests_per_hour.count() < self.throttles.searches_per_hour and \
-            self.requests_per_day.count() < self.throttles.searches_per_day:
+        if self.requests_per_min.count() < settings.SEARCHES_PER_MINUTE \
+            and self.requests_per_hour.count() < settings.SEARCHES_PER_HOUR and \
+            self.requests_per_day.count() < settings.SEARCHES_PER_DAY:
             return True
 
         return False
@@ -134,17 +136,17 @@ class LN_API:
             is_weekday = datetime.datetime.today().weekday() < 5
 
             if is_weekday:
-                end_is_next_day = self.throttles.weekday_end_time < self.throttles.weekday_start_time
-                if datetime.datetime.now().time() < self.throttles.weekday_start_time or (not end_is_next_day and datetime.datetime.now().time() > self.throttles.weekday_end_time):
+                end_is_next_day = settings.WEEKDAY_END_TIME < settings.WEEKDAY_START_TIME
+                if datetime.datetime.now().time() < settings.WEEKDAY_START_TIME or (not end_is_next_day and datetime.datetime.now().time() > settings.WEEKDAY_END_TIME):
                     return False
             else:
-                end_is_next_day = self.throttles.weekend_end_time < self.throttles.weekend_start_time
-                if datetime.datetime.now().time() < self.throttles.weekend_start_time or (not end_is_next_day and datetime.now().time() > self.throttles.weekend_end_time):
+                end_is_next_day = settings.WEEKEND_END_TIME < settings.WEEKEND_START_TIME
+                if datetime.datetime.now().time() < settings.WEEKEND_START_TIME or (not end_is_next_day and datetime.now().time() > settings.WEEKEND_END_TIME):
                     return False
     
-        if self.requests_per_min.filter(is_download=True).count() < self.throttles.downloads_per_minute \
-            and self.requests_per_hour.filter(is_download=True).count() < self.throttles.downloads_per_hour \
-            and self.requests_per_day.filter(is_download=True).count() < self.throttles.downloads_per_day:
+        if self.requests_per_min.filter(is_download=True).count() < settings.DOWNLOADS_PER_MINUTE \
+            and self.requests_per_hour.filter(is_download=True).count() < settings.DOWNLOADS_PER_HOUR \
+            and self.requests_per_day.filter(is_download=True).count() < settings.DOWNLOADS_PER_DAY:
             return True
 
         return False
@@ -157,17 +159,17 @@ class LN_API:
         self.refresh_throttle_data()
 
         # Available now
-        if self.requests_per_min.count() < self.throttles.searches_per_minute  \
-            and self.requests_per_hour.count() < self.throttles.searches_per_hour \
-            and self.requests_per_day.count() < self.throttles.searches_per_day:
+        if self.requests_per_min.count() < settings.SEARCHES_PER_MINUTE  \
+            and self.requests_per_hour.count() < settings.SEARCHES_PER_HOUR \
+            and self.requests_per_day.count() < settings.SEARCHES_PER_DAY:
             return 0
 
         # Calculate
-        if self.requests_per_day.count() >= self.throttles.searches_per_day:
+        if self.requests_per_day.count() >= settings.SEARCHES_PER_DAY:
             return ((timezone.now() + datetime.timedelta(days=1)) - timezone.now()).total_seconds()
-        if self.requests_per_hour.count() >= self.throttles.searches_per_hour:
+        if self.requests_per_hour.count() >= settings.SEARCHES_PER_HOUR:
             return ((timezone.now() + datetime.timedelta(hours=1)) - timezone.now()).total_seconds()
-        if self.requests_per_min.count() >= self.throttles.searches_per_minute:
+        if self.requests_per_min.count() >= settings.SEARCHES_PER_MINUTE:
             return ((timezone.now() + datetime.timedelta(minutes=1)) - timezone.now()).total_seconds()
 
     def get_time_until_next_download(self):
@@ -185,20 +187,20 @@ class LN_API:
             return 0
 
         # Calculate
-        if self.requests_per_day.filter(is_download=True).count() >= self.throttles.downloads_per_day:
+        if self.requests_per_day.filter(is_download=True).count() >= settings.DOWNLOADS_PER_DAY:
             seconds = ((timezone.now() + datetime.timedelta(days=1)) - timezone.now()).total_seconds()
-        if self.requests_per_hour.filter(is_download=True).count() >= self.throttles.downloads_per_hour:
+        if self.requests_per_hour.filter(is_download=True).count() >= settings.DOWNLOADS_PER_HOUR:
             seconds = ((timezone.now() + datetime.timedelta(hours=1)) - timezone.now()).total_seconds()
-        if self.requests_per_min.filter(is_download=True).count() >= self.throttles.downloads_per_minute:
+        if self.requests_per_min.filter(is_download=True).count() >= settings.DOWNLOADS_PER_MINUTE:
             seconds = ((timezone.now() + datetime.timedelta(minutes=1)) - timezone.now()).total_seconds()
 
         
         is_weekday = datetime.datetime.today().weekday() < 5
 
         if is_weekday:
-            start_date = datetime.datetime.combine(datetime.date.today(), self.throttles.weekday_start_time)
+            start_date = datetime.datetime.combine(datetime.date.today(), settings.WEEKDAY_START_TIME)
         else:
-            start_date = datetime.datetime.combine(datetime.date.today(), self.throttles.weekend_start_time)
+            start_date = datetime.datetime.combine(datetime.date.today(), settings.WEEKEND_START_TIME)
         t = start_date  - datetime.datetime.now()
         seconds_window = t.total_seconds()
 

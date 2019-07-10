@@ -165,16 +165,17 @@ def estimate_days_to_complete_search(num_results_in_search):
     It uses the max number of downloads allowed per day as the cap since we can download faster than the cap.
     It will compare against the number of items currently in the queue that are sharing those downloads.
     '''
-    limits = apps.get_model('textassembler_processor', 'limits')
+    # validate trottle settings
+    if not settings.SEARCHES_PER_MINUTE or not settings.SEARCHES_PER_HOUR or \
+        not settings.SEARCHES_PER_DAY or not settings.DOWNLOADS_PER_MINUTE or \
+        not settings.DOWNLOADS_PER_HOUR or not settings.DOWNLOADS_PER_DAY:
+        log_error("API limits are not properly configured")
 
-    throttles = limits.objects.all()
-    if throttles.count() == 0:
-        log_error("No record exists in the database containing the throttling limitations!")
-    if throttles.count() > 1:
-        log_error("More than one record exists in the database for the throttling limitations!")
+    if not settings.WEEKDAY_START_TIME or not settings.WEEKDAY_END_TIME or \
+        not settings.WEEKEND_START_TIME or not settings.WEEKEND_START_TIME:
+        log_error("API processing start and end times not properly configured")
 
-    throttles = throttles[0]
     queue_cnt = searches.objects.filter(date_completed__isnull=True, failed_date__isnull=True).count()
     queue_cnt = 1 if queue_cnt == 0 else queue_cnt
 
-    return math.ceil(int(num_results_in_search) / (int(throttles.downloads_per_day) / int(queue_cnt)))
+    return math.ceil(int(num_results_in_search) / (int(settings.DOWNLOADS_PER_DAY) / int(queue_cnt)))
