@@ -7,6 +7,7 @@ Contents
 --------
 * [Assumptions](#assumptions)
 * [Install & Setup](#install-setup)
+* [Applying Updates](#applying-updates)
 * [WSK to API Transition](#wsk-to-api-transition)
 * [Technical Overview](#technical-overview)
 
@@ -112,6 +113,24 @@ systemctl start tassemblerdeld
 * Set up cron job to update Lexis Nexis sources on a regular basis (`/etc/crontab`)
 ```
 @monthly    root        /var/www/text-assembler/ta_env/bin/python /var/www/text-assembler/manage.py update_sources
+```
+
+Applying Updates
+----------------
+As improvements are made to the application, they will be pushed to the primary branch of this Git repository.
+In order to apply changes made, here are the steps you will need to follow:
+
+* Pull the latest code from GitLab
+* If any of the .example files changed, compare them with you files to determine if there are changes you need to add.
+For example, if the `textassembler.cfg.example` file changes, you will want to compare them to add/remove/change the 
+fields indicated so it is up-to-date.
+* Run the database migrations to check for any changes: `/var/www/text-assembler/ta_env/bin/python /var/www/text-assembler/manage.py migrate`.
+* Restart Apache and the Text Assembler daemons: 
+```
+systemctl restart apache2
+systemctl restart tassemberd
+systemctl restart tassemberzipd
+systemctl restart tassemberdeld
 ```
 
 WSK to API Transition
