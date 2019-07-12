@@ -22,7 +22,9 @@
     <tbody>
         {% for s in searches %}
         <tr>
-            <td class="search-column {{ headings.0|lower|slugify }}-column">{{ s.date_submitted }}</td>
+            <td class="search-column {{ headings.0|lower|slugify }}-column" data-order="{{ s.date_submitted|date:'YmdHis' }}">
+                {{ s.date_submitted }}
+            </td>
             <td class="search-column {{ headings.1|lower|slugify }}-column">
                 {{ s.query|truncatechars:100}}
                 <a href='' role='button' onClick='return false;' data-trigger='focus' data-html='true' data-toggle='popover'
