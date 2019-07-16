@@ -260,13 +260,6 @@ TODO
 -------
 * Contact LN about multiple values not allowed in Language and Source fields for search
 * Finalize exact run limitation times and amounts
-* Move remaining to-do's as gitlab issues
-
-Nice to Have
--------------
-* Unit Tests
-* Lint
-* Select sort order of results
 
 Release
 -------
