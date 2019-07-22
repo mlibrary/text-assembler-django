@@ -1,6 +1,6 @@
 stages:
  - linting
- - unittest_job
+ - unittest
 
 linting_job:
  stage: linting
