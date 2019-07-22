@@ -249,28 +249,3 @@ compression was completed or the date the search failed (if it is a failed searc
 before deleting items is set to 3 in the config file by default.
 
 It will delete the files from the server and delete the search record from the database.
-
-Development Notes
---------------
-* Run `pip freeze > requirements.txt` to update the pip packages required
-* To lint, run `pylint3 --max-line-length=160 --load-plugins=pylint_django --extension-pkg-whitelist=lxml textassembler_web`
-* Lexis Nexis demo site: https://solutions.nexis.com/wsapi/demo-site
-
-TODO
--------
-* lint processor files
-* full regression test
-* Contact LN about multiple values not allowed in Language and Source fields for search
-* Finalize exact run limitation times and amounts
-
-Release
--------
-* Setup site on existing lexnex server
-* Migrate existing searches to new system
-* OAuth request to switch redirect URL (DON'T DO THIS UNTIL RIGHT WHEN WE'RE READY TO SWITCH)
-* Remove old site and Mono installation from server
-* Add back server to regular ubuntu ansible group
-
-Post Release
------------
-* Evaluate how accurate the days to complete estimate is
