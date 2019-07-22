@@ -14,7 +14,7 @@ import os
 from configparser import ConfigParser
 import logging
 import datetime
-
+import sys
 
 def load_configs(path_to_configs):
     """Load configs from default location."""
@@ -27,6 +27,8 @@ def load_configs(path_to_configs):
     return configs
 
 
+RUNNING_TESTS = (len(sys.argv) > 1 and sys.argv[1] == 'test')
+
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -34,7 +36,10 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 APPEND_SLASH = False
 
 # Secure settings (including passwords) stored in additional settings file, and loaded below.
-SECURE_SETTINGS = os.path.join(BASE_DIR, "textassembler.cfg")
+if RUNNING_TESTS:
+    SECURE_SETTINGS = os.path.join(BASE_DIR, "textassembler.cfg.example")
+else:
+    SECURE_SETTINGS = os.path.join(BASE_DIR, "textassembler.cfg")
 
 # Load configs from location in SECURE_SETTINGS
 CONFIGS = load_configs(SECURE_SETTINGS)

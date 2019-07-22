@@ -45,7 +45,7 @@ PREVIEW_FORMAT = FULL
 # The number of months completed searches should be retained
 NUM_MONTHS_KEEP_SEARCHES = 3
 
-[api_limits]
+[api.limits]
 # Number of search-only calls we are allowed to make per minute/hour/day
 SEARCHES_PER_MINUTE = 5
 SEARCHES_PER_HOUR = 100
