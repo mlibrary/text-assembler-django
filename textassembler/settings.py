@@ -22,7 +22,8 @@ def load_configs(path_to_configs):
     # Load configs preserving case
     configs.optionxform = str
     # Individual configs accessed via configs object.
-    configs.readfp(open(path_to_configs))
+    with open(path_to_configs) as conf_file:
+        configs.read_file(conf_file)
     return configs
 
 
@@ -36,54 +37,54 @@ APPEND_SLASH = False
 SECURE_SETTINGS = os.path.join(BASE_DIR, "textassembler.cfg")
 
 # Load configs from location in SECURE_SETTINGS
-configs = load_configs(SECURE_SETTINGS)
+CONFIGS = load_configs(SECURE_SETTINGS)
 
 # App Name
-APP_NAME = configs.get("general","APP_NAME")
+APP_NAME = CONFIGS.get("general", "APP_NAME")
 
 # Storage location where search results will be saved
-STORAGE_LOCATION = configs.get("general","STORAGE_LOCATION")
+STORAGE_LOCATION = CONFIGS.get("general", "STORAGE_LOCATION")
 
 # LexisNexis Configs
-LN_TOKEN_URL = configs.get("lexisnexis","TOKEN_URL")
-LN_CLIENT_ID = configs.get("lexisnexis","CLIENT_ID")
-LN_CLIENT_SECRET = configs.get("lexisnexis","CLIENT_SECRET")
-LN_SCOPE = configs.get("lexisnexis","SCOPE")
-LN_API_URL = configs.get("lexisnexis","API_URL")
-LN_DOWNLOAD_PER_CALL = int(configs.get("lexisnexis","DOWNLOAD_PER_CALL"))
-LN_MAX_RETRY = int(configs.get("lexisnexis","MAX_RETRY"))
-LN_TIMEOUT = int(configs.get("lexisnexis","TIMEOUT_SECONDS"))
-PREVIEW_FORMAT = configs.get("lexisnexis","PREVIEW_FORMAT")
-NUM_MONTHS_KEEP_SEARCHES = int(configs.get("lexisnexis","NUM_MONTHS_KEEP_SEARCHES"))
+LN_TOKEN_URL = CONFIGS.get("lexisnexis", "TOKEN_URL")
+LN_CLIENT_ID = CONFIGS.get("lexisnexis", "CLIENT_ID")
+LN_CLIENT_SECRET = CONFIGS.get("lexisnexis", "CLIENT_SECRET")
+LN_SCOPE = CONFIGS.get("lexisnexis", "SCOPE")
+LN_API_URL = CONFIGS.get("lexisnexis", "API_URL")
+LN_DOWNLOAD_PER_CALL = int(CONFIGS.get("lexisnexis", "DOWNLOAD_PER_CALL"))
+LN_MAX_RETRY = int(CONFIGS.get("lexisnexis", "MAX_RETRY"))
+LN_TIMEOUT = int(CONFIGS.get("lexisnexis", "TIMEOUT_SECONDS"))
+PREVIEW_FORMAT = CONFIGS.get("lexisnexis", "PREVIEW_FORMAT")
+NUM_MONTHS_KEEP_SEARCHES = int(CONFIGS.get("lexisnexis", "NUM_MONTHS_KEEP_SEARCHES"))
 
 # API Limits
-SEARCHES_PER_MINUTE = int(configs.get("api.limits","SEARCHES_PER_MINUTE"))
-SEARCHES_PER_HOUR = int(configs.get("api.limits","SEARCHES_PER_HOUR"))
-SEARCHES_PER_DAY = int(configs.get("api.limits","SEARCHES_PER_DAY"))
-DOWNLOADS_PER_MINUTE = int(configs.get("api.limits","DOWNLOADS_PER_MINUTE"))
-DOWNLOADS_PER_HOUR = int(configs.get("api.limits","DOWNLOADS_PER_HOUR"))
-DOWNLOADS_PER_DAY = int(configs.get("api.limits","DOWNLOADS_PER_DAY"))
-WEEKDAY_START_TIME = datetime.datetime.strptime(configs.get("api.limits","WEEKDAY_START_TIME"),'%H:%M').time()
-WEEKDAY_END_TIME = datetime.datetime.strptime(configs.get("api.limits","WEEKDAY_END_TIME"),'%H:%M').time()
-WEEKEND_START_TIME = datetime.datetime.strptime(configs.get("api.limits","WEEKEND_START_TIME"),'%H:%M').time()
-WEEKEND_END_TIME = datetime.datetime.strptime(configs.get("api.limits","WEEKEND_END_TIME"),'%H:%M').time()
+SEARCHES_PER_MINUTE = int(CONFIGS.get("api.limits", "SEARCHES_PER_MINUTE"))
+SEARCHES_PER_HOUR = int(CONFIGS.get("api.limits", "SEARCHES_PER_HOUR"))
+SEARCHES_PER_DAY = int(CONFIGS.get("api.limits", "SEARCHES_PER_DAY"))
+DOWNLOADS_PER_MINUTE = int(CONFIGS.get("api.limits", "DOWNLOADS_PER_MINUTE"))
+DOWNLOADS_PER_HOUR = int(CONFIGS.get("api.limits", "DOWNLOADS_PER_HOUR"))
+DOWNLOADS_PER_DAY = int(CONFIGS.get("api.limits", "DOWNLOADS_PER_DAY"))
+WEEKDAY_START_TIME = datetime.datetime.strptime(CONFIGS.get("api.limits", "WEEKDAY_START_TIME"), '%H:%M').time()
+WEEKDAY_END_TIME = datetime.datetime.strptime(CONFIGS.get("api.limits", "WEEKDAY_END_TIME"), '%H:%M').time()
+WEEKEND_START_TIME = datetime.datetime.strptime(CONFIGS.get("api.limits", "WEEKEND_START_TIME"), '%H:%M').time()
+WEEKEND_END_TIME = datetime.datetime.strptime(CONFIGS.get("api.limits", "WEEKEND_END_TIME"), '%H:%M').time()
 
 # App OAuth Configs
-APP_AUTH_URL = configs.get("oauth","AUTH_URL")
-APP_TOKEN_URL = configs.get("oauth","TOKEN_URL")
-APP_PROFILE_URL = configs.get("oauth","PROFILE_URL")
-APP_LOGOUT_URL = configs.get("oauth","LOGOUT_URL")
-APP_CLIENT_ID = configs.get("oauth","CLIENT_ID")
-APP_CLIENT_SECRET = configs.get("oauth","CLIENT_SECRET")
-APP_REDIRECT_URL = configs.get("oauth","REDIRECT_URL")
-APP_USER_ID_FIELD = configs.get("oauth","USER_ID_FIELD")
+APP_AUTH_URL = CONFIGS.get("oauth", "AUTH_URL")
+APP_TOKEN_URL = CONFIGS.get("oauth", "TOKEN_URL")
+APP_PROFILE_URL = CONFIGS.get("oauth", "PROFILE_URL")
+APP_LOGOUT_URL = CONFIGS.get("oauth", "LOGOUT_URL")
+APP_CLIENT_ID = CONFIGS.get("oauth", "CLIENT_ID")
+APP_CLIENT_SECRET = CONFIGS.get("oauth", "CLIENT_SECRET")
+APP_REDIRECT_URL = CONFIGS.get("oauth", "REDIRECT_URL")
+APP_USER_ID_FIELD = CONFIGS.get("oauth", "USER_ID_FIELD")
 
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = configs.get("secretkey", "SECRET_KEY")
+SECRET_KEY = CONFIGS.get("secretkey", "SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = configs.get("debug", "DEBUG").lower() == 'true'
+DEBUG = CONFIGS.get("debug", "DEBUG").lower() == 'true'
 
 if DEBUG:
     # will output to console
@@ -91,13 +92,13 @@ if DEBUG:
 else:
     logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)-8s %(message)s', datefmt='%a, %d %b %Y %H:%M:%S', filemode='w')
 
-ALLOWED_HOSTS = [host.strip() for host in configs.get("hosts", "ALLOWED_HOSTS").split(",")]
+ALLOWED_HOSTS = [host.strip() for host in CONFIGS.get("hosts", "ALLOWED_HOSTS").split(", ")]
 
 # General settings
-MAINTAINER_EMAILS = [email.strip() for email in configs.get("general", "MAINTAINER_EMAILS").split(",")]
-NOTIF_EMAIL_DOMAIN = configs.get("general","NOTIF_EMAIL_DOMAIN")
-BCC_MAINTAINERS_ON_NOTIF = configs.get("general", "BCC_MAINTAINERS_ON_NOTIF").lower() == 'true'
-PREFERED_HOST_URL = configs.get("hosts","PREFERED_HOST_URL")
+MAINTAINER_EMAILS = [email.strip() for email in CONFIGS.get("general", "MAINTAINER_EMAILS").split(", ")]
+NOTIF_EMAIL_DOMAIN = CONFIGS.get("general", "NOTIF_EMAIL_DOMAIN")
+BCC_MAINTAINERS_ON_NOTIF = CONFIGS.get("general", "BCC_MAINTAINERS_ON_NOTIF").lower() == 'true'
+PREFERED_HOST_URL = CONFIGS.get("hosts", "PREFERED_HOST_URL")
 
 
 # Application definition
@@ -150,7 +151,7 @@ WSGI_APPLICATION = 'textassembler.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/2.2/ref/settings/#databases
 # Database
-DATABASES = {'default': dict(configs.items("database.default")),} 
+DATABASES = {'default': dict(CONFIGS.items("database.default")),}
 # Check for ATOMIC_REQUESTS setting. If not set, defaults to True.
 ATOMIC_REQUESTS = DATABASES['default'].get('ATOMIC_REQUESTS', "True").lower() == "true"
 DATABASES['default']['ATOMIC_REQUESTS'] = ATOMIC_REQUESTS
@@ -184,7 +185,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = configs.get("general", "TIME_ZONE")
+TIME_ZONE = CONFIGS.get("general", "TIME_ZONE")
 
 USE_I18N = True
 

@@ -1,12 +1,20 @@
+'''
+Web form fields
+'''
 from django import forms
-from crispy_forms.helper import FormHelper
-from crispy_forms.layout import Layout, Submit, Row, Column
-import json
+from crispy_forms.helper import FormHelper # pylint: disable=unused-import,import-error
+from crispy_forms.layout import Layout, Submit, Row, Column # pylint: disable=unused-import,import-error
 
 class TextAssemblerWebForm(forms.Form):
+    '''
+    Creates the web form for the search page
+    '''
 
     def __init__(self, *args, **kwargs):
-        super(TextAssemblerWebForm,self).__init__(*args,**kwargs)
+        '''
+        Initialize the base search form
+        '''
+        super(TextAssemblerWebForm, self).__init__(*args, **kwargs)
 
         self.helper = FormHelper()
         self.helper.form_class = 'form-horizontal'
@@ -21,24 +29,24 @@ class TextAssemblerWebForm(forms.Form):
         '''
         Call the search function in views.py on form-submit
         '''
-        self.helper.form_action = reverse("search")
+        self.helper.form_action = reverse("search") # pylint: disable=undefined-variable
 
-    def set_fields(self, filter_data, search = ''):
+    def set_fields(self, filter_data, search=''):
         '''
         Add fields:
         * Search Term
         * Filters
         The individual filter fields will be added dynamically by the JS
         '''
-        choices = [('','Select one or more filters...')]
+        choices = [('', 'Select one or more filters...')]
 
         for opt in filter_data:
-            choices.append((opt["id"],opt["name"]))
+            choices.append((opt["id"], opt["name"]))
 
         self.fields['search'] = forms.CharField(
             label='Search Term / Query',
             error_messages={'required': 'Required field'},
-            initial= search,
+            initial=search,
             widget=forms.Textarea(attrs={
                 'class':'form-control',
                 'placeholder':'Search term',
@@ -53,5 +61,3 @@ class TextAssemblerWebForm(forms.Form):
                 'class':'filter_opts form-control',
                 'aria-label':'Filters'}),
         )
-
-

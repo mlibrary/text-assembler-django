@@ -3,8 +3,8 @@ Retrieves information to use in templates
 """
 import datetime
 from django import template
-from ..utilities import seconds_to_dhms_string
 from django.conf import settings
+from ..utilities import seconds_to_dhms_string # pylint: disable=relative-beyond-top-level
 
 register = template.Library()
 

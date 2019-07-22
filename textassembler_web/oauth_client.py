@@ -3,13 +3,13 @@ Class to handle OAuth client authentication
 """
 from requests_oauthlib import OAuth2Session
 
-class OAUTH_CLIENT:
+class OAuthClient: # pylint: disable=too-many-instance-attributes
     '''
     OAuth client using the requests_oauthlib library
     https://requests-oauthlib.readthedocs.io/en/latest/oauth2_workflow.html
     '''
 
-    def __init__(self, client_id, client_secret, redirect_url, auth_url, token_url, profile_url):
+    def __init__(self, client_id, client_secret, redirect_url, auth_url, token_url, profile_url): #pylint: disable=too-many-arguments
         '''
         Initialize the object with OAuth variables
         '''

@@ -3,26 +3,27 @@ Utility functions for the Web interface
 """
 
 import logging
-import datetime
-from django.conf import settings
-from django.apps import apps 
-from .models import searches
-import smtplib
-import socket
-from email.message import EmailMessage
 import re
 import traceback
 import sys
-import os
 import math
+import smtplib
+import socket
+from email.message import EmailMessage
+from django.conf import settings
+from .models import searches
 
-def log_error(error_message, json_data = None):
+def log_error(error_message, json_data=None):
+    '''
+    Print the error and data to the log and send it to the system
+    administrator as well.
+    '''
     # Print both the error and and POST data to the error log
     logging.error(error_message)
     if json_data != None:
         logging.error(json_data)
 
-    if len(settings.MAINTAINER_EMAILS) == 0:
+    if not settings.MAINTAINER_EMAILS:
         return
 
     # Check for empty parameter in config
@@ -31,23 +32,21 @@ def log_error(error_message, json_data = None):
 
     # Validate the emails provided
     for email in settings.MAINTAINER_EMAILS:
-        if len(email) == 0:
+        if not email:
             continue
-        match = re.match('^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$', email)
-        if match == None:
-            logging.error("Could not send email, one or more of the emails provided for MAINTAINER_EMAILS was not valid. " + email)
+        match = re.match(r'^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$', email)
+        if match is None:
+            logging.error(f"Could not send email, one or more of the emails provided for MAINTAINER_EMAILS was not valid. {email}")
             return
 
     # Email system administrators the error as well
-    sender = "root@" + socket.getfqdn()
-
-    message = """
+    message = f"""
     <h1>Error:</h1>
-    <p>{}</p>
+    <p>{error_message}</p>
 
     <h1>POST Data:</h1>
-    <p>{}</p>
-    """.format(error_message, json_data)
+    <p>{json_data}</p>
+    """
 
     try:
         msg = EmailMessage()
@@ -56,11 +55,11 @@ def log_error(error_message, json_data = None):
         msg['From'] = "root@" + socket.getfqdn()
         msg['To'] = settings.MAINTAINER_EMAILS
 
-        s = smtplib.SMTP('localhost')
-        s.send_message(msg)
-        s.quit()
-    except Exception as e:
-       logging.error("Error: unable to send email to maintainers. " + e)
+        slib = smtplib.SMTP('localhost')
+        slib.send_message(msg)
+        slib.quit()
+    except smtplib.SMTPException as ex:
+        logging.error(f"Error: unable to send email to maintainers. {ex}")
 
 def send_user_notification(userid, search_query, date_queued, num_results, failed=False):
     '''
@@ -68,7 +67,7 @@ def send_user_notification(userid, search_query, date_queued, num_results, faile
     has completed processing.
     '''
     # Check for empty parameter in config
-    if not settings.NOTIF_EMAIL_DOMAIN or settings.NOTIF_EMAIL_DOMAIN == "": 
+    if not settings.NOTIF_EMAIL_DOMAIN or settings.NOTIF_EMAIL_DOMAIN == "":
         return
 
     if not userid or userid == "":
@@ -77,35 +76,29 @@ def send_user_notification(userid, search_query, date_queued, num_results, faile
     if settings.BCC_MAINTAINERS_ON_NOTIF:
         # Validate the emails provided
         for email in settings.MAINTAINER_EMAILS:
-            if len(email) == 0:
+            if not email:
                 continue
-            match = re.match('^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$', email)
-            if match == None:
-                logging.error("Could not send email, one or more of the emails provided for MAINTAINER_EMAILS was not valid. " + email)
+            match = re.match(r'^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$', email)
+            if match is None:
+                logging.error(f"Could not send email, one or more of the emails provided for MAINTAINER_EMAILS was not valid. {email}")
                 return
 
     user_email = userid + "@" + settings.NOTIF_EMAIL_DOMAIN
-    match = re.match('^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$', user_email)
-    if match == None:
-        logging.error("Could not send email, one or more of the emails provided for userid {0} was not valid. {1}".format(userid, user_email))
+    match = re.match(r'^[_a-z0-9-]+(\.[_a-z0-9-]+)*@[a-z0-9-]+(\.[a-z0-9-]+)*(\.[a-z]{2,4})$', user_email)
+    if match is None:
+        logging.error(f"Could not send email, one or more of the emails provided for userid {userid} was not valid. {user_email}")
         return
 
-    
-    # Email system administrators the error as well
-    sender = "root@" + socket.getfqdn()
 
-    message = """
+    # Email system administrators the error as well
+    message = f"""
     <h1>Search Completed Processing</h1>
-    <p>Search Term: {}</p>
-    <p>Status: {}</p>
-    <p>Number of Results: {}</p>
-    <p>Date Submitted: {}</p>
-    <p>Please visit {} to view your search.</p>
-    """.format(search_query,
-        "Success" if not failed else "Failed", 
-        num_results if not failed else "N/A",
-        date_queued.strftime("%B %m, %Y"),
-        settings.PREFERED_HOST_URL)
+    <p>Search Term: {search_query}</p>
+    <p>Status: {'Success' if not failed else 'Failed'}</p>
+    <p>Number of Results: {num_results if not failed else 'N/A'}</p>
+    <p>Date Submitted: {date_queued.strftime('%B %m, %Y')}</p>
+    <p>Please visit {settings.PREFERED_HOST_URL} to view your search.</p>
+    """
 
     try:
         msg = EmailMessage()
@@ -115,12 +108,12 @@ def send_user_notification(userid, search_query, date_queued, num_results, faile
         msg['To'] = user_email
         msg['Bcc'] = settings.MAINTAINER_EMAILS
 
-        s = smtplib.SMTP('localhost')
-        s.send_message(msg)
-        s.quit()
-    except Exception as e:
-       logging.error("Error: unable to send notification email. " + e)
-        
+        slib = smtplib.SMTP('localhost')
+        slib.send_message(msg)
+        slib.quit()
+    except smtplib.SMTPException as ex:
+        logging.error(f"Error: unable to send notification email. {ex}")
+
 
 def seconds_to_dhms_string(time):
     '''
@@ -142,24 +135,22 @@ def seconds_to_dhms_string(time):
     seconds = time
 
     if days == 0 and hours == 0 and minutes == 0:
-        return "%d seconds" % (seconds)
+        return f"{seconds} seconds"
     if days == 0 and hours == 0:
-        return "%d minutes, %d seconds" % (minutes, seconds)
+        return f"{minutes} minutes, {seconds} seconds"
     if days == 0:
-        return "%d hours, %d minutes, %d seconds" % (hours, minutes, seconds)
+        return f"{hours} hours, {minutes} minutes, {seconds} seconds"
 
-    return "%d days, %d hours, %d minutes, %d seconds" % (days, hours, minutes, seconds)
+    return f"{days} days, {hours} hours, {minutes} minutes, {seconds} seconds"
 
-def create_error_message(e, source_file = ""):
+def create_error_message(ex, source_file=""):
     '''
     Creates the stack-trace message for logging purposes. Takes the source file to print to
     the error message if provided.
     '''
-    return "{0} on line {1}{2}:  {3}\n{4}".format(type(e).__name__, \
-        sys.exc_info()[-1].tb_lineno, (" in " + source_file if source_file else ""), \
-        e, traceback.format_exc())
+    return f"{type(ex).__name__} on line {sys.exc_info()[-1].tb_lineno}{' in ' + source_file if source_file else ''}:  {ex}\n{traceback.format_exc()}"
 
-def estimate_days_to_complete_search(num_results_in_search):
+def est_days_to_complete_search(num_results_in_search):
     '''
     Calculates the number of days it would take to complete a search given the number of results it has.
     It uses the max number of downloads allowed per day as the cap since we can download faster than the cap.
@@ -167,9 +158,11 @@ def estimate_days_to_complete_search(num_results_in_search):
     '''
     # validate trottle settings
     if not settings.SEARCHES_PER_MINUTE or not settings.SEARCHES_PER_HOUR or \
-        not settings.SEARCHES_PER_DAY or not settings.DOWNLOADS_PER_MINUTE or \
-        not settings.DOWNLOADS_PER_HOUR or not settings.DOWNLOADS_PER_DAY:
-        log_error("API limits are not properly configured")
+        not settings.SEARCHES_PER_DAY:
+        log_error("API search limits are not properly configured")
+    if not settings.DOWNLOADS_PER_MINUTE or not settings.DOWNLOADS_PER_HOUR or \
+        not settings.DOWNLOADS_PER_DAY:
+        log_error("API download limits are not properly configured")
 
     if not settings.WEEKDAY_START_TIME or not settings.WEEKDAY_END_TIME or \
         not settings.WEEKEND_START_TIME or not settings.WEEKEND_START_TIME:

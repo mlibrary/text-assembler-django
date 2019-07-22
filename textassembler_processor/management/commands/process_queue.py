@@ -5,33 +5,30 @@ import time
 import logging
 import signal
 import os
-import sys
 import json
+from bs4 import BeautifulSoup # pylint: disable=import-error
 from django.core.management.base import BaseCommand
 from django.apps import apps
 from django.conf import settings
 from django.utils import timezone
-from textassembler_web.ln_api import LN_API
+from django.db import OperationalError
+from textassembler_web.ln_api import LNAPI
 from textassembler_web.utilities import log_error, create_error_message, send_user_notification
-from bs4 import BeautifulSoup
 
-class Command(BaseCommand):
+class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
     '''
     Process the search queue downloading results from LexisNexis
     '''
     help = "Process the search queue downloading results from LexisNexis"
 
-    def handle(self, *args, **options):
-        '''
-        Handles the command to process the queue
-        '''
-        signal.signal(signal.SIGINT, self.sig_term)
-        signal.signal(signal.SIGTERM, self.sig_term)
-
+    def __init__(self):
         self.terminate = False
         self.error = False
         self.cur_search = None
         self.retry = False
+        self.api = None
+        self.set_formats = None
+        self.set_filters = None
 
         # Grab the necessary models
         self.searches = apps.get_model('textassembler_web', 'searches')
@@ -39,8 +36,18 @@ class Command(BaseCommand):
         self.download_formats = apps.get_model('textassembler_web', 'download_formats')
         self.available_formats = apps.get_model('textassembler_web', 'available_formats')
 
+        super().__init__()
+
+    def handle(self, *args, **options): # pylint: disable=too-many-locals, too-many-branches, too-many-statements
+        '''
+        Handles the command to process the queue
+        '''
+        signal.signal(signal.SIGINT, self.sig_term)
+        signal.signal(signal.SIGTERM, self.sig_term)
+
+
         logging.info("Starting queue processing.")
-        self.api = LN_API()
+        self.api = LNAPI()
         while not self.terminate:
             time.sleep(1) # take a quick break to free up CPU usage
             try:
@@ -50,8 +57,8 @@ class Command(BaseCommand):
                     if not queue:
                         self.retry = False
                         continue # nothing to process
-                except Exception as ex:
-                    log_error("Queue Processor failed to retrieve the search queue. {0}".format(ex))
+                except OperationalError as ex:
+                    log_error(f"Queue Processor failed to retrieve the search queue. {ex}")
                     if not self.retry:
                         time.sleep(10) # wait 10 seconds and re-try
                         self.retry = True
@@ -61,12 +68,11 @@ class Command(BaseCommand):
 
                 # verify the storage location is accessibly
                 if not os.access(settings.STORAGE_LOCATION, os.W_OK) or not os.path.isdir(settings.STORAGE_LOCATION):
-                    log_error("Queue Processor failed due to storage location being inaccessible or not writable. {0}".format(settings.STORAGE_LOCATION))
+                    log_error(f"Queue Processor failed due to storage location being inaccessible or not writable. {settings.STORAGE_LOCATION}")
                     # wait 30 seconds, if the storage is still not available, then terminate
                     time.sleep(30)
                     if not os.access(settings.STORAGE_LOCATION, os.W_OK) or not os.path.isdir(settings.STORAGE_LOCATION):
-                        log_error("Stopping. Queue Processor failed due to storage location being " +\
-                            "inaccessible or not writable. {0}".format(settings.STORAGE_LOCATION))
+                        log_error(f"Stopping. Queue Processor failed due to storage location being inaccessible or not writable. {settings.STORAGE_LOCATION}")
                         self.terminate = True
                         self.error = True
                         continue
@@ -74,12 +80,12 @@ class Command(BaseCommand):
                 # Update / validate authentication with the API
                 response = self.api.authenticate()
                 if response != "":
-                    log_error("Queue Processor failed to authenticate against LexisNexis API. Response: {0}".format(response))
+                    log_error(f"Queue Processor failed to authenticate against LexisNexis API. Response: {response}")
                     # wait 5 minutes, if the storage is still not able to authenticate, then terminate
                     time.sleep(60*5)
                     response = self.api.authenticate()
                     if response != "":
-                        log_error("Stopping. Queue Processor failed to authenticate against LexisNexis API. Response: {0}".format(response))
+                        log_error(f"Stopping. Queue Processor failed to authenticate against LexisNexis API. Response: {response}")
                         self.terminate = True
                         self.error = True
                         continue
@@ -106,7 +112,7 @@ class Command(BaseCommand):
                         self.retry = False
                         continue # nothing to process
                 except OperationalError as ex:
-                    log_error("Queue Processor failed to retrieve the search queue. {0}".format(ex))
+                    log_error(f"Queue Processor failed to retrieve the search queue. {ex}")
                     if not self.retry:
                         time.sleep(10) # wait 10 seconds and re-try
                         self.retry = True
@@ -114,7 +120,7 @@ class Command(BaseCommand):
                     else:
                         self.terminate = True
 
-                logging.info("Downloading items for search: {0}. Skip Value: {1}.".format(self.cur_search.search_id, self.cur_search.skip_value))
+                logging.info(f"Downloading items for search: {self.cur_search.search_id}. Skip Value: {self.cur_search.skip_value}.")
 
                 # check if this is a new search and set the start time
                 if self.cur_search.date_started is None:
@@ -127,10 +133,10 @@ class Command(BaseCommand):
                 all_filters = self.filters.objects.filter(search_id=self.cur_search)
                 self.set_formats = self.download_formats.objects.filter(search_id=self.cur_search)
                 self.set_filters = {}
-                for f in all_filters:
-                    if f.filter_name not in self.set_filters:
-                        self.set_filters[f.filter_name] = []
-                    self.set_filters[f.filter_name].append(f.filter_value)
+                for fltr in all_filters:
+                    if fltr.filter_name not in self.set_filters:
+                        self.set_filters[fltr.filter_name] = []
+                    self.set_filters[fltr.filter_name].append(fltr.filter_value)
 
                 ## call the download function with the parameters
                 results = self.api.download(self.cur_search.query, \
@@ -138,14 +144,14 @@ class Command(BaseCommand):
                     self.cur_search.skip_value)
 
                 if "error_message" in results:
-                    log_error("An error occured processing search id: {0}. {1}".format(self.cur_search.search_id, results["error_message"]), self.cur_search)
+                    log_error(f"An error occured processing search id: {self.cur_search.search_id}. {results['error_message']}", self.cur_search)
                     self.cur_search.retry_count = self.cur_search.retry_count + 1
                     self.cur_search.error_message = results["error_message"]
                     if self.cur_search.retry_count > settings.LN_MAX_RETRY:
                         self.cur_search.failed_date = timezone.now()
                         if not self.cur_search.user_notified and settings.NOTIF_EMAIL_DOMAIN:
                             #  send email notification
-                            send_user_notification(self.cur_search.userid, self.cur_search.query, self.cur_search.date_submitted, 0, True)  
+                            send_user_notification(self.cur_search.userid, self.cur_search.query, self.cur_search.date_submitted, 0, True)
                             self.cur_search.user_notified = True
                     self.cur_search.save()
                     continue
@@ -156,33 +162,34 @@ class Command(BaseCommand):
                     if self.terminate:
                         break
                     if "Document" not in result or "Content" not in result["Document"] or "ResultId" not in result:
-                        log_error("WARNING: Could not parse result value from search for ID: {0}.".format(self.cur_search.search_id), json.dumps(result))
+                        log_error(f"WARNING: Could not parse result value from search for ID: {self.cur_search.search_id}.", json.dumps(result))
                         continue
                     full_text = result["Document"]["Content"]
                     file_name = result["ResultId"]
                     try:
-                        for f in self.set_formats:
-                            save_path = os.path.join(save_location, f.format_id.format_name)
+                        for fmt in self.set_formats:
+                            save_path = os.path.join(save_location, fmt.format_id.format_name)
                             if not os.path.exists(save_location):
                                 os.mkdir(save_location)
                             if not os.path.exists(save_path):
                                 os.mkdir(save_path)
-                            if f.format_id.format_name == "HTML":
-                                with open(os.path.join(save_path, file_name + ".html"), 'w') as fl:
-                                    fl.write(full_text)
-                            elif f.format_id.format_name == "TXT":
-                                with open(os.path.join(save_path, file_name + ".txt"), 'w') as fl:
-                                    fl.write(full_text)
-                            elif f.format_id.format_name == "TXT Only":
+                            if fmt.format_id.format_name == "HTML":
+                                with open(os.path.join(save_path, file_name + ".html"), 'w') as flh:
+                                    flh.write(full_text)
+                            elif fmt.format_id.format_name == "TXT":
+                                with open(os.path.join(save_path, file_name + ".txt"), 'w') as flh:
+                                    flh.write(full_text)
+                            elif fmt.format_id.format_name == "TXT Only":
                                 try:
-                                    cleaned_full_text = self.remove_html(full_text)
-                                except Exception as ex:
-                                    log_error("Unable to create TXT Only output for search {0}, filename {1}. Error. {2}".format(self.cur_search.search_id, file_name, create_error_message(ex, os.path.basename(__file__))))
+                                    cleaned_full_text = remove_html(full_text)
+                                except Exception as exp: # pylint: disable=broad-except
+                                    log_error((f"Unable to create TXT Only output for search {self.cur_search.search_id}, "
+                                               f"filename {file_name}. Error. {create_error_message(exp, os.path.basename(__file__))}"))
                                     cleaned_full_text = full_text ## write the original text to the file instead
-                                with open(os.path.join(save_path, file_name + "_ONLY_TXT.txt"), 'w') as fl:
-                                    fl.write(cleaned_full_text)
-                    except Exception as ex:
-                        log_error("Failed to save downloaded results to the server. {0}".format(create_error_message(ex, os.path.basename(__file__))))
+                                with open(os.path.join(save_path, file_name + "_ONLY_TXT.txt"), 'w') as flh:
+                                    flh.write(cleaned_full_text)
+                    except OSError as ex:
+                        log_error(f"Failed to save downloaded results to the server. {create_error_message(ex, os.path.basename(__file__))}")
                         self.terminate = True
                         self.error = True
                         continue # not adding to retry count since it wasn't a problem with the search
@@ -193,7 +200,7 @@ class Command(BaseCommand):
                     # step if the termination was due to a failure
 
                     ## update the search in the database
-                    logging.info("Finished saving next {0} results for search: {1}".format(settings.LN_DOWNLOAD_PER_CALL, self.cur_search.search_id))
+                    logging.info(f"Finished saving next {settings.LN_DOWNLOAD_PER_CALL} results for search: {self.cur_search.search_id}")
                     self.cur_search.skip_value = self.cur_search.skip_value + settings.LN_DOWNLOAD_PER_CALL
                     self.cur_search.update_date = timezone.now()
                     self.cur_search.run_time_seconds = self.cur_search.run_time_seconds + int(round(time.time() - start_time, 0))
@@ -201,51 +208,29 @@ class Command(BaseCommand):
                     self.cur_search.num_results_downloaded = self.cur_search.num_results_downloaded + len(results["value"])
                     ## check if the search is complete
                     if self.cur_search.num_results_downloaded >= self.cur_search.num_results_in_search:
-                        logging.info("Completed downloading all results for search: {0}".format(self.cur_search.search_id))
+                        logging.info(f"Completed downloading all results for search: {self.cur_search.search_id}")
                         self.cur_search.date_completed = timezone.now()
 
                     ## save the search record
                     self.cur_search.save()
 
 
-            except Exception as e:
+            except Exception as exp: # pylint: disable=broad-except
                 # This scenario shouldn't happen, but handling it just in case
                 # so that the service won't quit on-error
-                log_error("An unexpected error occured while processing the queue. {0}".format(create_error_message(e, os.path.basename(__file__))))
+                log_error(f"An unexpected error occured while processing the queue. {create_error_message(exp, os.path.basename(__file__))}")
                 self.terminate = True # stop the service since something is horribly wrong
                 continue
 
         # any cleanup after terminate
         logging.info("Stopped queue processing.")
 
-    def sig_term(self, sig, frame):
+    def sig_term(self, _, __):
         '''
         Handles command termination
         '''
         self.terminate = True
 
-    def remove_html(self, text):
-        output = []
-
-        bs = BeautifulSoup(text, "html.parser")
-
-        headline = bs.h1.string if bs.h1 is not None and bs.h1.string is not None else ""
-        # check another place for headline
-        if not headline:
-            headline = bs.find('nitf:hedline').text if bs.find('nitf:hedline') is not None else ""
-
-        title = bs.title.string if bs.title is not None and bs.title.string is not None else ""
-
-        # write the title and headline
-        output.append(title)
-        if title != headline: # prevent duplicate output to file
-            output.append(headline)
-    
-        text = bs.find('bodytext').text if bs.find('bodytext') is not None else ""
-        output.append(text)
-        full_output = "\n\n".join(output)
-
-        return full_output
 
     def wait_for_download(self):
         '''
@@ -254,10 +239,36 @@ class Command(BaseCommand):
 
         wait_time = round(self.api.get_time_until_next_download(), 0)
         if wait_time > 0:
-            logging.info("No downloads remaining. Must wait {0} seconds until next available download window is available.".format(wait_time))
+            logging.info(f"No downloads remaining. Must wait {wait_time} seconds until next available download window is available.")
             # Check if we can download every 10 seconds instead of waiting the full wait_time to
             # be able to handle sig_term triggering (i.e. we don't want to sleep for an hour before
             # a kill command is processed)
             while not self.api.check_can_download(True):
                 time.sleep(10)
             logging.info("Resuming processing")
+
+def remove_html(text):
+    '''
+    Strip HTML from a given text
+    '''
+    output = []
+
+    bsp = BeautifulSoup(text, "html.parser")
+
+    headline = bsp.h1.string if bsp.h1 is not None and bsp.h1.string is not None else ""
+    # check another place for headline
+    if not headline:
+        headline = bsp.find('nitf:hedline').text if bsp.find('nitf:hedline') is not None else ""
+
+    title = bsp.title.string if bsp.title is not None and bsp.title.string is not None else ""
+
+    # write the title and headline
+    output.append(title)
+    if title != headline: # prevent duplicate output to file
+        output.append(headline)
+
+    text = bsp.find('bodytext').text if bsp.find('bodytext') is not None else ""
+    output.append(text)
+    full_output = "\n\n".join(output)
+
+    return full_output

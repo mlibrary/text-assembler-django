@@ -9,8 +9,9 @@ from django.conf import settings
 from django.apps import apps
 from django.utils import timezone
 from .utilities import log_error, seconds_to_dhms_string
+from .filters import get_enum_namespace, get_format_type
 
-class LN_API:
+class LNAPI:
     '''
     API for Lexis Nexis
     '''
@@ -26,9 +27,6 @@ class LN_API:
         self.requests_per_min = None
         self.requests_per_hour = None
         self.requests_per_day = None
-        self.downloads_per_min = None
-        self.downloads_per_hour = None
-        self.downloads_per_day = None
 
         self.api_url = settings.LN_API_URL
         if not self.api_url.endswith("/"):
@@ -55,18 +53,18 @@ class LN_API:
             auth=(settings.LN_CLIENT_ID, settings.LN_CLIENT_SECRET), \
             timeout=settings.LN_TIMEOUT)
 
-        if access_token_response.status_code == requests.codes.ok:
+        if access_token_response.status_code == requests.codes.ok: #pylint: disable=no-member
             tokens = access_token_response.json()
             self.access_token = tokens['access_token']
             self.expiration_time = timezone.now() + datetime.timedelta(seconds=int(tokens['expires_in']))
-            return ""
         else:
             results = access_token_response.json()
-            log_error("Error occured obtaining access token. Return code: {0}. Response:".format(access_token_response.status_code), results)
+            log_error(f"Error occured obtaining access token. Return code: {access_token_response.status_code}. Response:", results)
+            error = "An unexpected error occured."
             if "error" in results and "message" in results["error"]:
-                return results["error"]["message"]
-            else:
-                return "An unexpected error occured."
+                error = results["error"]["message"]
+            return error
+        return ""
 
 
     def refresh_throttle_data(self, display=False):
@@ -82,9 +80,11 @@ class LN_API:
 
         # validate trottle settings
         if not settings.SEARCHES_PER_MINUTE or not settings.SEARCHES_PER_HOUR or \
-            not settings.SEARCHES_PER_DAY or not settings.DOWNLOADS_PER_MINUTE or \
-            not settings.DOWNLOADS_PER_HOUR or not settings.DOWNLOADS_PER_DAY:
-            log_error("API limits are not properly configured")
+            not settings.SEARCHES_PER_DAY:
+            log_error("API search limits are not properly configured")
+        if not settings.DOWNLOADS_PER_MINUTE or not settings.DOWNLOADS_PER_HOUR or \
+            not settings.DOWNLOADS_PER_DAY:
+            log_error("API download limits are not properly configured")
 
         if not settings.WEEKDAY_START_TIME or not settings.WEEKDAY_END_TIME or \
             not settings.WEEKEND_START_TIME or not settings.WEEKEND_START_TIME:
@@ -92,18 +92,13 @@ class LN_API:
 
         # Compare against the limits for min/hr/day
         if display:
-            logging.info("Current search limits: {0}/min, {1}/hr, {2}/day out of {3}/min, {4}/hr, {5}/day".format(
-                self.requests_per_min.count(), self.requests_per_hour.count(), 
-                self.requests_per_day.count(),
-                settings.SEARCHES_PER_MINUTE, settings.SEARCHES_PER_HOUR, 
-                settings.SEARCHES_PER_DAY))
+            logging.info((f"Current search limits: {self.requests_per_min.count()}/min, "
+                f"{self.requests_per_hour.count()}/hr, {self.requests_per_day.count()}/day "
+                f"out of {settings.SEARCHES_PER_MINUTE}/min, {settings.SEARCHES_PER_HOUR}/hr, {settings.SEARCHES_PER_DAY}/day"))
 
-            logging.info("Current download limits: {0}/min, {1}/hr, {2}/day out of {3}/min, {4}/hr, {5}/day".format(
-                self.requests_per_min.filter(is_download=True).count(),
-                self.requests_per_hour.filter(is_download=True).count(),
-                self.requests_per_day.filter(is_download=True).count(),
-                settings.DOWNLOADS_PER_MINUTE, settings.DOWNLOADS_PER_HOUR,
-                settings.DOWNLOADS_PER_DAY))
+            logging.info((f"Current download limits: {self.requests_per_min.filter(is_download=True).count()}/min,"
+                f" {self.requests_per_hour.filter(is_download=True).count()}/hr, {self.requests_per_day.filter(is_download=True).count()}/day"
+                f" out of {settings.DOWNLOADS_PER_MINUTE}/min, {settings.DOWNLOADS_PER_HOUR}/hr, {settings.DOWNLOADS_PER_DAY}/day"))
 
     def check_can_search(self):
         '''
@@ -113,7 +108,7 @@ class LN_API:
         '''
 
         self.refresh_throttle_data(True)
-    
+
         if self.requests_per_min.count() < settings.SEARCHES_PER_MINUTE \
             and self.requests_per_hour.count() < settings.SEARCHES_PER_HOUR and \
             self.requests_per_day.count() < settings.SEARCHES_PER_DAY:
@@ -137,13 +132,15 @@ class LN_API:
 
             if is_weekday:
                 end_is_next_day = settings.WEEKDAY_END_TIME < settings.WEEKDAY_START_TIME
-                if datetime.datetime.now().time() < settings.WEEKDAY_START_TIME or (not end_is_next_day and datetime.datetime.now().time() > settings.WEEKDAY_END_TIME):
+                if datetime.datetime.now().time() < settings.WEEKDAY_START_TIME \
+                    or (not end_is_next_day and \
+                    datetime.datetime.now().time() > settings.WEEKDAY_END_TIME):
                     return False
             else:
                 end_is_next_day = settings.WEEKEND_END_TIME < settings.WEEKEND_START_TIME
-                if datetime.datetime.now().time() < settings.WEEKEND_START_TIME or (not end_is_next_day and datetime.now().time() > settings.WEEKEND_END_TIME):
+                if datetime.datetime.now().time() < settings.WEEKEND_START_TIME or (not end_is_next_day and datetime.now().time() > settings.WEEKEND_END_TIME): # pylint: disable=no-member
                     return False
-    
+
         if self.requests_per_min.filter(is_download=True).count() < settings.DOWNLOADS_PER_MINUTE \
             and self.requests_per_hour.filter(is_download=True).count() < settings.DOWNLOADS_PER_HOUR \
             and self.requests_per_day.filter(is_download=True).count() < settings.DOWNLOADS_PER_DAY:
@@ -172,9 +169,11 @@ class LN_API:
         if self.requests_per_min.count() >= settings.SEARCHES_PER_MINUTE:
             return ((timezone.now() + datetime.timedelta(minutes=1)) - timezone.now()).total_seconds()
 
+        return 0
+
     def get_time_until_next_download(self):
         '''
-        Gets the number of seconds until we can perform the next download. 
+        Gets the number of seconds until we can perform the next download.
         Does not account for run window
         '''
 
@@ -194,23 +193,22 @@ class LN_API:
         if self.requests_per_min.filter(is_download=True).count() >= settings.DOWNLOADS_PER_MINUTE:
             seconds = ((timezone.now() + datetime.timedelta(minutes=1)) - timezone.now()).total_seconds()
 
-        
+
         is_weekday = datetime.datetime.today().weekday() < 5
 
         if is_weekday:
             start_date = datetime.datetime.combine(datetime.date.today(), settings.WEEKDAY_START_TIME)
         else:
             start_date = datetime.datetime.combine(datetime.date.today(), settings.WEEKEND_START_TIME)
-        t = start_date  - datetime.datetime.now()
-        seconds_window = t.total_seconds()
+        delta = start_date  - datetime.datetime.now()
+        seconds_window = delta.total_seconds()
 
 
         if seconds > seconds_window:
             return seconds
-        else:
-            return seconds_window
+        return seconds_window
 
-    def api_call(self, req_type='GET', resource='News', params={}):
+    def api_call(self, req_type='GET', resource='News', params=None):
         '''
         Calls the API given the request type, resource, and parameters. Returns the response
         '''
@@ -221,12 +219,12 @@ class LN_API:
         if is_download and not self.check_can_download():
             seconds = self.get_time_until_next_download()
             time = seconds_to_dhms_string(seconds)
-            return {"error_message":"There are no LexisNexis downloads remaining for the current min/hour/day. Next available in {0}".format(time)}
+            return {"error_message":f"There are no LexisNexis downloads remaining for the current min/hour/day. Next available in {time}"}
 
         if not self.check_can_search():
             seconds = self.get_time_until_next_search()
             time = seconds_to_dhms_string(seconds)
-            return {"error_message":"There are no LexisNexis searches remaining for the current min/hour/day. Next available in {0}".format(time)}
+            return {"error_message":f"There are no LexisNexis searches remaining for the current min/hour/day. Next available in {time}"}
 
         error_message = self.authenticate()
         if error_message:
@@ -241,7 +239,7 @@ class LN_API:
             resp = requests.post(url, params=params, headers=headers, timeout=settings.LN_TIMEOUT)
 
         # Log the API call
-        result_count = resp.json()["@odata.count"] if resp.status_code == requests.codes.ok and "@odata.count" in resp.json().keys() else 0
+        result_count = resp.json()["@odata.count"] if resp.status_code == requests.codes.ok and "@odata.count" in resp.json().keys() else 0  #pylint: disable=no-member
         self.api_log.objects.create(
             request_url=resp.url,
             request_type=req_type,
@@ -250,28 +248,27 @@ class LN_API:
             is_download=is_download)
 
         results = resp.json()
-        if resp.status_code == requests.codes.ok:
+        if resp.status_code == requests.codes.ok:   #pylint: disable=no-member
             return results
 
         else:
-            log_error("Call to {0} failed with code {1}. Response: ".format(url, resp.status_code), results)
+            error_message = "An unexpected API error occured."
+            full_error_message = f"Call to {url} failed with code {resp.status_code}. Response: "
+            log_error(full_error_message, results)
             if "error" in results and "message" in results:
-                return {"error_message":"Error: {0}. Message: {1}".format(results["error"], results["message"]),
-                        "response_code": resp.status_code}
+                error_message = f"Error: {results['error']}. Message: {results['message']}"
             elif "ErrorDescription" in results:
-                return {"error_message":"Error: {0}.".format(results["ErrorDescription"]), 
-                        "response_code": resp.status_code}
-            else:
-                return {"error_message": "An unexpected API error occured.", 
-                        "response_code": resp.status_code}
+                error_message = f"Error: {results['ErrorDescription']}."
+            return {"error_message": error_message,
+                    "response_code": resp.status_code}
 
 
-    def search(self, term="", set_filters={}):
+    def search(self, term="", set_filters=None):
         '''
         Search the API given the search term and filters.
         @return API results
         '''
-        filters = self.convert_filters_to_query_string(set_filters)
+        filters = convert_filters_to_query_string(set_filters)
 
         # Always provide the $exand=PostFilters so we can provide them to the UI
         params = {"$search":term, "$expand": "PostFilters"}
@@ -281,12 +278,12 @@ class LN_API:
 
         return self.api_call(resource='News', params=params)
 
-    def download(self, term="", set_filters={}, download_cnt=10, skip=0):
+    def download(self, term="", set_filters=None, download_cnt=10, skip=0):
         '''
         Download the full-text results from the API given the search term and filters.
         @return API results with full text
         '''
-        filters = self.convert_filters_to_query_string(set_filters)
+        filters = convert_filters_to_query_string(set_filters)
 
         # Always provide the $exand=Document so we get the full text result
         params = {"$search":term, "$expand": "Document", "$top": download_cnt, "$skip": skip}
@@ -296,77 +293,81 @@ class LN_API:
 
         return self.api_call(resource='News', params=params)
 
-    def convert_filters_to_query_string(self, set_filters={}):
-        '''
-        Processes the filters and turns them into parameters for the API.
-        Filters from the same field will be treated as AND
-        Filters from different fields will be treated with OR
-        '''
-        from .filters import Filters
+def convert_filters_to_query_string(set_filters=None): # pylint: disable=too-many-branches
+    '''
+    Processes the filters and turns them into parameters for the API.
+    Filters from the same field will be treated as AND
+    Filters from different fields will be treated with OR
+    '''
+    filters = ""
 
-        filters = ""
-        filter_data = Filters()
+    logging.debug("-- Set Filters --")
+    logging.debug(set_filters)
 
-        logging.debug(set_filters)
+    for key, values in set_filters.items():
+        namespace = get_enum_namespace(key)
 
-        for key, values in set_filters.items():
-            namespace = filter_data.getEnumNamespace(key)
-            fmt = filter_data.getFormatType(key)
+        values = encode_if_needed(key, values)
 
-            # convert the value(s) to base64 if the filter expects it
-            if fmt == 'base64':
-                # need to put this in a temp variable first to avoid updating the original variable when returned
-                # this caused a problem for full text results since the 2nd call would double encode the values
-                tmp = [base64.b64encode(val.encode('utf-8')).decode("utf-8").replace("=", "") for val in values]
+        if filters != '':
+            filters += " and "
+
+        # Handle dates separately since they have 2 values (start date and end date)
+        if key == 'Date':
+            if len(values[0]) > 3: # the values are stored together
+                tmp = []
+                for val in values:
+                    tmp.append(val.split(" ")[0])
+                    tmp.append(val.split(" ")[1])
                 values = tmp
+            filters += " ("
+            for i in range(0, len(values), 2):
+                filters += key.replace('_', '/') + " " + values[i] + " " + values[i+1] + " and "
+            filters = filters[:-5] # remove the last AND
+            filters += ")"
 
-            if filters != '':
-                filters += " and "
-
-            # Handle dates separately since they have 2 values (start date and end date)
-            if key == 'Date':
-                if len(values[0]) > 3: # the values are stored together
-                    tmp = []
-                    for val in values:
-                        tmp.append(val.split(" ")[0])
-                        tmp.append(val.split(" ")[1])
-                    values = tmp
+        else:
+            if len(values) == 1:
+                # The API expects strings to have single quotes around the values
+                if isinstance(values[0], int) or string_is_int(values[0]):
+                    filters += key.replace('_', '/') + " eq " + namespace + str(values[0]) + " "
+                else:
+                    filters += key.replace('_', '/') + " eq " + namespace + "'" + values[0] + "' "
+            else:
                 filters += " ("
-                for i in range(0, len(values), 2):
-                    logging.debug("===" + str(values[i]) + " " + str(values[i+1]) + "===")
-                    filters += key.replace('_', '/') + " " + values[i] + " " + values[i+1] + " and "
-                filters = filters[:-5] # remove the last AND
+                for value in values:
+                    # The API expects strings to have single quotes around the values
+                    if isinstance(value, int) or string_is_int(value):
+                        filters += key.replace('_', '/') + " eq " + namespace + str(value) + " or "
+                    else:
+                        filters += key.replace('_', '/') + " eq " + namespace + "'" + value + "' or "
+                filters = filters[:-4] # remove the last OR
                 filters += ")"
 
-            else:
-                if len(values) == 1:
-                    # The API expects strings to have single quoates around the values
-                    if isinstance(values[0], int) or self.string_is_int(values[0]):
-                        filters += key.replace('_', '/') + " eq " + namespace + str(values[0]) + " "
-                    else:
-                        filters += key.replace('_', '/') + " eq " + namespace + "'" + values[0] + "' "
-                else:
-                    filters += " ("
-                    for value in values:
-                        # The API expects strings to have single quoates around the values
-                        if isinstance(value, int) or self.string_is_int(value):
-                            filters += key.replace('_', '/') + " eq " + namespace + str(value) + " or "
-                        else:
-                            filters += key.replace('_', '/') + " eq " + namespace + "'" + value + "' or "
-                    filters = filters[:-4] # remove the last OR
-                    filters += ")"
-
-        return filters
+    return filters
 
 
-    def string_is_int(self, s_val):
-        '''
-        Check if the string contains an integer since isinstance will return
-        false for strings with an integer.
-        '''
+def encode_if_needed(field, values=None):
+    '''
+    Convert the value(s) to base64 if the filter expects it
+    '''
+    fmt = get_format_type(field)
 
-        try:
-            int(s_val)
-            return True
-        except ValueError:
-            return False
+    if fmt == 'base64':
+        # need to put this in a temp variable first to avoid updating the original variable when returned
+        # this caused a problem for full text results since the 2nd call would double encode the values
+        tmp = [base64.b64encode(val.encode('utf-8')).decode("utf-8").replace("=", "") for val in values]
+        values = tmp
+    return values
+
+def string_is_int(s_val):
+    '''
+    Check if the string contains an integer since isinstance will return
+    false for strings with an integer.
+    '''
+
+    try:
+        int(s_val)
+        return True
+    except ValueError:
+        return False

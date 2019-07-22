@@ -1,0 +1,21 @@
+stages:
+ - linting
+ - unittest_job
+
+linting_job:
+ stage: linting
+ tags:
+  - msul
+ script:
+  - pylint3 --max-line-length=160 --load-plugins=pylint_django manage.py
+  - pylint3 --max-line-length=160 --load-plugins=pylint_django textassembler_web
+  - pylint3 --max-line-length=160 --load-plugins=pylint_django textassembler_processor
+  - pylint3 --max-line-length=160 --load-plugins=pylint_django textassembler_web/templatetags/custom_tags.py
+  - pylint3 --max-line-length=160 --load-plugins=pylint_django --disable=duplicate-code textassembler_processor/management/commands/*.py
+
+unittest_job:
+ stage: unittest
+ tags:
+  - msul
+ script: ./manage.py test
+

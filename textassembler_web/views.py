@@ -1,45 +1,42 @@
-from django.http import HttpResponse, JsonResponse, Http404
-from django.shortcuts import render, redirect
-from .forms import TextAssemblerWebForm
-from requests_oauthlib import OAuth2Session
-import logging
-import base64
-import sys
-import os
-from django.conf import settings
-from django.db import connections
-from .ln_api import LN_API
-from .oauth_client import OAUTH_CLIENT
-from .filters import Filters
-from .utilities import log_error, create_error_message, estimate_days_to_complete_search 
-from .models import available_formats, download_formats, searches, filters
+'''
+Handles all web requests for the application
+'''
 import json
 import logging
-from django.utils import timezone
 import datetime
 import shutil
-from django.core.exceptions import PermissionDenied
+import base64
+import os
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import render, redirect
+from django.conf import settings
+from .forms import TextAssemblerWebForm
+from .ln_api import LNAPI
+from .oauth_client import OAuthClient
+from .filters import get_available_filters, get_filter_values, get_enum_namespace, get_format_type
+from .utilities import log_error, create_error_message, est_days_to_complete_search
+from .models import available_formats, download_formats, searches, filters
 
 """ ------------------------------
     Login
     ------------------------------
-"""
+""" # pylint: disable=pointless-string-statement
 def login(request):
     '''
     Handles login requests
     '''
     # If they are already logged in, send users to search page
     if request.session.get('userid', False):
-        logging.debug("User already logged in: " + request.session['userid']) 
+        logging.debug(f"User already logged in: {request.session['userid']}")
         return redirect('/search')
 
     # Initialize the OAuth client
-    app_auth = OAUTH_CLIENT(settings.APP_CLIENT_ID, settings.APP_CLIENT_SECRET, \
+    app_auth = OAuthClient(settings.APP_CLIENT_ID, settings.APP_CLIENT_SECRET, \
         settings.APP_REDIRECT_URL, settings.APP_AUTH_URL, \
-        settings.APP_TOKEN_URL, settings.APP_PROFILE_URL) 
+        settings.APP_TOKEN_URL, settings.APP_PROFILE_URL)
 
     # Check if the logon was successful already
-    if 'code' in request.GET and request.session.get('state',False):
+    if 'code' in request.GET and request.session.get('state', False):
         logging.debug("Getting OAuth access token from the code")
         app_auth.set_state(request.session['state'])
         request.session['access_token'] = app_auth.get_access_token(request.GET['code'])
@@ -59,8 +56,8 @@ def login(request):
         request.session['userid'] = results['info'][settings.APP_USER_ID_FIELD]
 
     # Check if the userid is still not set
-    if not request.session.get('userid',False):
-        logging.warn("UserID was still not set after authentication against OAuth")
+    if not request.session.get('userid', False):
+        logging.warning("UserID was still not set after authentication against OAuth")
         return HttpResponse('Unable to log in. You must be an active MSU user to use this resource.')
 
     # Send users to the search page on sucessful login
@@ -69,7 +66,7 @@ def login(request):
 """ ------------------------------
     Logout
     ------------------------------
-"""
+""" # pylint: disable=pointless-string-statement
 def logout(request):
     '''
     Handles logout requests
@@ -85,17 +82,17 @@ def logout(request):
 """ ------------------------------
     Search Page
     ------------------------------
-"""
-def search(request):
+""" # pylint: disable=pointless-string-statement
+def search(request): # pylint:disable=too-many-locals, too-many-branches, too-many-statements
     '''
     Render the search page
     '''
 
     # Verify that the user is logged in
-    if not request.session.get('userid',False):
+    if not request.session.get('userid', False):
         return redirect('/login')
 
-    filter_data = get_filter_opts()
+    filter_data = get_available_filters()
     set_filters = {}
     set_formats = []
     set_post_filters = []
@@ -105,7 +102,7 @@ def search(request):
 
     # Set the initial form data
     form = TextAssemblerWebForm(request.POST or None)
-    form.set_fields(get_ui_filter_opts(), request.POST['search'] if 'search' in request.POST else '')
+    form.set_fields(get_available_filters(False), request.POST['search'] if 'search' in request.POST else '')
 
     response = {
         "form": form,
@@ -115,9 +112,9 @@ def search(request):
 
     # Parse the POST data
     for opt in filter_data:
-            filter_data = {k:v for k,v in dict(request.POST).items() if k.lower() == opt['id'].lower()}
-            for k,v in filter_data.items():
-                set_filters[k] = v
+        filter_data = {k:v for k, v in dict(request.POST).items() if k.lower() == opt['id'].lower()}
+        for fld, vals in filter_data.items():
+            set_filters[fld] = vals
     if "selected-formats" in dict(request.POST):
         set_formats = dict(request.POST)['selected-formats']
     if "post_filters" in dict(request.POST):
@@ -127,7 +124,7 @@ def search(request):
     for post_filter in set_post_filters:
         name = post_filter.split("||")[0]
         value = post_filter.split("||")[-1]
-        fmt = get_filter_format(name)
+        fmt = get_format_type(name)
         # convert the value(s) from base64 if the filter expects it
         if fmt == 'base64':
             value = base64.b64decode(value + "=========").decode('utf-8')
@@ -147,14 +144,14 @@ def search(request):
         ## Make sure Year is an integer
         if key == 'year(Date)':
             for value in values:
-                if not string_is_int(value) and not isinstance(value,int):
+                if not string_is_int(value) and not isinstance(value, int):
                     response['error_message'] += \
-                        "The 'Year' field requires only numeric input, provided: {0}.".format(value)
+                        f"The 'Year' field requires only numeric input, provided: {value}."
         else:
             for value in values:
                 if not value:
                     response['error_message'] += \
-                        "The '{0}' field can not be blank, please provide a value or remove the filter.".format(key)
+                        f"The '{key}' field can not be blank, please provide a value or remove the filter."
                     break
     if 'Date' in set_filters and 'year(Date)' in set_filters:
         response['error_message'] += \
@@ -164,100 +161,37 @@ def search(request):
     response["post_data"] = json.dumps(set_filters)
 
     # Set the last result data to be used in event of form failure to prevent another call to LN API
-    if 'result_data' in request.POST and len(request.POST['result_data']) > 0:
+    if 'result_data' in request.POST and request.POST['result_data']:
         response["result_data"] = json.loads(request.POST['result_data'])
 
     if request.method == 'POST' and form.is_valid() and response['error_message'] == '':
 
         clean = form.cleaned_data
 
-        if clean["search"]  != "":
-                try:
-                    if "preview-search" in dict(request.POST) or "add-filters" in dict(request.POST):
-                        '''
-                        Preview Search button selected
-                        '''
-                        search_api = LN_API()
-                        results = search_api.search(clean["search"], set_filters)
-                        if "value" in results:
-                            # add estimated number of days to complete to result set
-                            results['est_days_to_complete'] = estimate_days_to_complete_search(int(results['@odata.count']))
-                            results['count'] = results['@odata.count']
-                            results['postFilters'] = clean_post_filters(results['value'])
-                            response['search_results'] = results
-                            response["search_results_json"] = json.dumps(results) # used in the event of failure after search
-                        if "error_message" in results:
-                            response['error_message'] = \
-                                "Error returned from LexisNexis: {0}".format( \
-                                    "[Not Set]" if not results["error_message"] else results["error_message"])
+        if clean["search"] != "":
+            try:
+                if "preview-search" in dict(request.POST) or "add-filters" in dict(request.POST):
+                    # Preview Search button selected
+                    response = handle_preview_search(clean['search'], set_filters, response)
 
-                        elif settings.PREVIEW_FORMAT == "FULL":
-                            # Get the full-text for the 10 results to display on the page
-                            results = search_api.download(clean["search"], set_filters)
-                            if "value" in results:
-                                results['count'] = results['@odata.count']
-                                results['postFilters'] = response['search_results']['postFilters']
-                                response['search_results'] = results
-                                response["search_results_json"] = json.dumps(results) # used in the event of failure after search
-                            if "error_message" in results:
-                                response['error_message'] = \
-                                    "Error returned from LexisNexis: {0}".format( \
-                                        "[Not Set]" if not results["error_message"] \
-                                            else results["error_message"])
-                            
+                elif "submit-search" in dict(request.POST):
+                    # Submit Search button selected
+                    response = handle_save_search(request.session['userid'], clean['search'], set_filters, set_formats, response)
+                    return response
 
+            except Exception as exp: # pylint: disable=broad-except
+                error = create_error_message(exp, os.path.basename(__file__))
+                log_error(f"Error occured while processing search request. {error}", json.dumps(dict(request.POST)))
 
-                    elif "submit-search" in dict(request.POST):
-                        '''
-                        Submit Search button selected
-                        '''
-                        # Perform any validation before saving
-                        if len(set_formats) == 0:
-                            response["error_message"] = "At least one download format must be selected."
-                            # Set the result data with the previous results if an error occurs
-                            # only do this if there are not already results since we don't want to overwrite those
-                            if "result_data" in response and 'search_results' not in response:
-                                response['search_results'] = response['result_data']
+                if settings.DEBUG:
+                    response["error_message"] = error
+                else:
+                    response["error_message"] = "An unexpected error has occured."
 
-                        if response["error_message"] == "":
-                            # Save the search record
-                            search_obj = searches(userid = request.session['userid'], query=clean["search"])
-
-                            search_obj.save()
-
-                            # Save the selected filters
-                            for k,v in set_filters.items():
-                                if k == "Date":
-                                    for i in range(0,len(v),2):
-                                        filter_obj = filters(search_id = search_obj, filter_name = k, filter_value = v[i] + " " + v[i+1])
-                                        filter_obj.save()
-                                else:
-                                    for val in v:
-                                        filter_obj = filters(search_id = search_obj, filter_name = k, filter_value = val)
-                                        filter_obj.save()
-
-                            # Save the selected download formats
-                            for set_format in set_formats:
-                                format_item = available_formats.objects.get(format_id=set_format)
-                                format_obj = download_formats(search_id = search_obj, format_id = format_item)
-                                format_obj.save()
-
-                            response = redirect('/mysearches')
-                            return response
-
-                except Exception as e:
-                    error = create_error_message(e, os.path.basename(__file__))
-                    log_error("Error occured while processing search request. {0}".format(error), json.dumps(dict(request.POST)))
-
-                    if settings.DEBUG:
-                        response["error_message"] = error
-                    else:
-                        response["error_message"] = "An unexpected error has occured."
-
-                    # Set the result data with the previous results if an error occurs
-                    # only do this if there are not already results since we don't want to overwrite those
-                    if "result_data" in response and 'search_results' not in response:
-                        response['search_results'] = response['result_data']
+                # Set the result data with the previous results if an error occurs
+                # only do this if there are not already results since we don't want to overwrite those
+                if "result_data" in response and 'search_results' not in response:
+                    response['search_results'] = response['result_data']
 
     elif request.method == 'POST' and not form.is_valid():
         # If there are any form errors, add them to the fields to they highlight the issues
@@ -267,81 +201,132 @@ def search(request):
 
     return render(request, "textassembler_web/search.html", response)
 
+
+def handle_preview_search(term, set_filters, response):
+    '''
+    Gets the preview results from the API and populates the response object
+    '''
+    search_api = LNAPI()
+    results = search_api.search(term, set_filters)
+    if "value" in results:
+        # add estimated number of days to complete to result set
+        results['est_days_to_complete'] = est_days_to_complete_search(int(results['@odata.count']))
+        results['count'] = results['@odata.count']
+        results['postFilters'] = clean_post_filters(results['value'])
+        response['search_results'] = results
+        response["search_results_json"] = json.dumps(results) # used in the event of failure after search
+    if "error_message" in results:
+        response['error_message'] = \
+            f"Error returned from LexisNexis: {'[Not Set]' if not results['error_message'] else results['error_message']}"
+
+    elif settings.PREVIEW_FORMAT == "FULL":
+        # Get the full-text for the 10 results to display on the page
+        results = search_api.download(term, set_filters)
+        if "value" in results:
+            results['count'] = results['@odata.count']
+            results['postFilters'] = response['search_results']['postFilters']
+            response['search_results'] = results
+            response["search_results_json"] = json.dumps(results) # used in the event of failure after search
+        if "error_message" in results:
+            response['error_message'] = \
+                f"Error returned from LexisNexis: {'[Not Set]' if not results['error_message'] else results['error_message']}"
+
+    return response
+
+
+def handle_save_search(userid, term, set_filters, set_formats, response):
+    '''
+    Handles the search being queued for full download
+    '''
+    # Perform any validation before saving
+    if not set_formats:
+        response["error_message"] = "At least one download format must be selected."
+        # Set the result data with the previous results if an error occurs
+        # only do this if there are not already results since we don't want to overwrite those
+        if "result_data" in response and 'search_results' not in response:
+            response['search_results'] = response['result_data']
+
+    if response["error_message"] == "":
+        # Save the search record
+        search_obj = searches(userid=userid, query=term)
+
+        search_obj.save()
+
+        # Save the selected filters
+        for k, vals in set_filters.items():
+            if k == "Date":
+                for i in range(0, len(vals), 2):
+                    filter_obj = filters(search_id=search_obj, filter_name=k, filter_value=vals[i] + " " + vals[i+1])
+                    filter_obj.save()
+            else:
+                for val in vals:
+                    filter_obj = filters(search_id=search_obj, filter_name=k, filter_value=val)
+                    filter_obj.save()
+
+        # Save the selected download formats
+        for set_format in set_formats:
+            format_item = available_formats.objects.get(format_id=set_format)
+            format_obj = download_formats(search_id=search_obj, format_id=format_item)
+            format_obj.save()
+
+        response = redirect('/mysearches')
+    return response
+
 def clean_post_filters(results):
     '''
     Take the full results from the search and parse out only the post filters.
     Provide them back in a format that can be added to the display.
     '''
 
-    postFilters = {}
-    filters = Filters()
+    post_filters = {}
     for result in results:
-        for postFilter in result['PostFilters']:
-            for item in postFilter['FilterItems']:
+        for post_filter in result['PostFilters']:
+            for item in post_filter['FilterItems']:
                 if item['Count'] != None and item['Count'] != 'null' and item['Count'] > 0:
                     # Clean the URL to get only the name of the filter and the value of the filter
                     # The benefit to using this instead of the PostFilterId field is that is has a better
                     # display name for the UI (PublicationType vs publicationtype)
                     url = item['SearchResults@odata.navigationLink']
-                    only_filters = url[url.find('$filter='):].replace("$filter=","")
+                    only_filters = url[url.find('$filter='):].replace("$filter=", "")
                     if '%20and%20' in only_filters:
                         only_filter = only_filters.split('%20and%20')[-1]
                     else:
                         only_filter = only_filters
-                    filter_name = only_filter.split("%20eq%20")[0].replace("/","_")
+                    filter_name = only_filter.split("%20eq%20")[0].replace("/", "_")
                     if filter_name[0] == '(':
                         filter_name = filter_name[1:]
 
                     value = only_filter.split("%20eq%20")[1]
-                    namespace = filters.getEnumNamespace(filter_name)
-                    value = value.replace(namespace,'') # remove the namespace from the value since we add it in at search time
+                    namespace = get_enum_namespace(filter_name)
+                    value = value.replace(namespace, '') # remove the namespace from the value since we add it in at search time
                     if "'" in value:
-                        value = value.replace("'","")
+                        value = value.replace("'", "")
                     else:
                         value = int(value)
 
                     # Add the filter option and value to the results, grouped by the filter name
-                    if filter_name not in postFilters:
-                        postFilters[filter_name] = {}
-                    postFilters[filter_name][item['Name']] = {"Count":item['Count'], "Value": value, "est_days_to_complete": estimate_days_to_complete_search(item['Count']) }
-    return postFilters
-
-
-def get_filter_opts():
-    '''
-    get the available filters for the API
-    '''
-    filters = Filters()
-    return filters.getAvailableFilters()
-
-def get_ui_filter_opts():
-    '''
-    get the available filters that the ui can use
-    '''
-    filters = Filters()
-    return filters.getAvailableFilters(False)
+                    if filter_name not in post_filters:
+                        post_filters[filter_name] = {}
+                    post_filters[filter_name][item['Name']] = {
+                        "Count":item['Count'], \
+                        "Value": value, \
+                        "est_days_to_complete": est_days_to_complete_search(item['Count'])
+                        }
+    return post_filters
 
 def get_filter_val_input(request, filter_type):
     '''
     Get the type and available values for the given filter
     '''
-    filters = Filters()
-    return JsonResponse(filters.getFilterValues(filter_type))
+    return JsonResponse(get_filter_values(filter_type))
 
-def get_filter_format(filter_type):
-    '''
-    Get the format type of the given filter (base64 or text)
-    '''
-    filters = Filters()
-    return filters.getFormatType(filter_type)
-
-def string_is_int(s):
+def string_is_int(sval):
     '''
     Check if the string contains an integer (because checking isinstance will return false for
     a string variable containing an integer.
     '''
     try:
-        int(s)
+        int(sval)
         return True
     except ValueError:
         return False
@@ -349,14 +334,14 @@ def string_is_int(s):
 """ ------------------------------
     My Searches Page
     ------------------------------
-"""
+""" # pylint: disable=pointless-string-statement
 def mysearches(request):
     '''
     Render the My Searches page
     '''
 
     # Verify that the user is logged in
-    if not request.session.get('userid',False):
+    if not request.session.get('userid', False):
         return redirect('/login')
 
     response = {}
@@ -368,15 +353,15 @@ def mysearches(request):
 
     all_user_searches = searches.objects.all().filter(userid=request.session['userid']).order_by('-date_submitted')
 
-    for search in all_user_searches:
-        search = set_search_info(search)
+    for search_obj in all_user_searches:
+        search_obj = set_search_info(search_obj)
 
     response["searches"] = all_user_searches
     response["num_months_keep_searches"] = settings.NUM_MONTHS_KEEP_SEARCHES
 
     return render(request, 'textassembler_web/mysearches.html', response)
 
-def set_search_info(search):
+def set_search_info(search_obj):
     '''
     Add additional information to each search result object for the page to use when rendering
     '''
@@ -385,60 +370,60 @@ def set_search_info(search):
     actions = []
 
     delete = {
-         "method": "POST",
-         "label": "Delete",
-         "action": "delete",
-         "class": "btn-danger",
-         "args": str(search.search_id)
+        "method": "POST",
+        "label": "Delete",
+        "action": "delete",
+        "class": "btn-danger",
+        "args": str(search_obj.search_id)
         }
     download = {
-         "method": "POST",
-         "label": "Download",
-         "action": "download",
-         "class": "btn-primary",
-         "args": str(search.search_id)
+        "method": "POST",
+        "label": "Download",
+        "action": "download",
+        "class": "btn-primary",
+        "args": str(search_obj.search_id)
         }
 
-    if search.date_completed_compression != None:
+    if search_obj.date_completed_compression != None:
         actions.append(download)
     actions.append(delete)
-    search.actions = actions
+    search_obj.actions = actions
 
     # Build progress data
-    search.filters = filters.objects.filter(search_id=search.search_id)
-    formats = download_formats.objects.filter(search_id=search.search_id)
-    search.download_formats = []
+    search_obj.filters = filters.objects.filter(search_id=search_obj.search_id)
+    formats = download_formats.objects.filter(search_id=search_obj.search_id)
+    search_obj.download_formats = []
 
-    for f in formats:
-        search.download_formats.append(available_formats.objects.get(format_id=f.format_id.format_id))
+    for fmt in formats:
+        search_obj.download_formats.append(available_formats.objects.get(format_id=fmt.format_id.format_id))
 
     # determine the status
-    search.status = "Queued"
-    if search.date_started != None:
-        search.status = "In Progress"
-    if search.date_started_compression != None:
-        search.status = "Preparing Results for Download"
-    if search.date_completed_compression != None:
-        search.status = "Completed"
-    if search.failed_date != None:
-        search.status = "Failed"
+    search_obj.status = "Queued"
+    if search_obj.date_started != None:
+        search_obj.status = "In Progress"
+    if search_obj.date_started_compression != None:
+        search_obj.status = "Preparing Results for Download"
+    if search_obj.date_completed_compression != None:
+        search_obj.status = "Completed"
+    if search_obj.failed_date != None:
+        search_obj.status = "Failed"
 
-    # set date the search is set to be deleted on
-    if search.status == "Completed":
-        search.delete_date = search.date_completed_compression + datetime.timedelta(days=settings.NUM_MONTHS_KEEP_SEARCHES * 30)
-    if search.status == "Failed":
-        search.delete_date = search.failed_date + datetime.timedelta(days=settings.NUM_MONTHS_KEEP_SEARCHES * 30)
+    # set date the search_obj is set to be deleted on
+    if search_obj.status == "Completed":
+        search_obj.delete_date = search_obj.date_completed_compression + datetime.timedelta(days=settings.NUM_MONTHS_KEEP_SEARCHES * 30)
+    if search_obj.status == "Failed":
+        search_obj.delete_date = search_obj.failed_date + datetime.timedelta(days=settings.NUM_MONTHS_KEEP_SEARCHES * 30)
 
-    if (search.status == "Queued" or search.status == "In Progress") and search.num_results_in_search and search.num_results_in_search > 0:
-        search.est_days_to_complete = estimate_days_to_complete_search(search.num_results_in_search - search.num_results_downloaded)
+    if (search_obj.status == "Queued" or search_obj.status == "In Progress") and search_obj.num_results_in_search and search_obj.num_results_in_search > 0:
+        search_obj.est_days_to_complete = est_days_to_complete_search(search_obj.num_results_in_search - search_obj.num_results_downloaded)
 
     # calculate percent complete
-    if search.num_results_in_search == None or search.num_results_in_search == 0:
-        search.percent_complete = 0
+    if search_obj.num_results_in_search is None or search_obj.num_results_in_search == 0:
+        search_obj.percent_complete = 0
     else:
-        search.percent_complete = round((search.num_results_downloaded / search.num_results_in_search) * 100,0)
+        search_obj.percent_complete = round((search_obj.num_results_downloaded / search_obj.num_results_in_search) * 100, 0)
 
-    return search
+    return search_obj
 
 def delete_search(request, search_id):
     '''
@@ -447,44 +432,44 @@ def delete_search(request, search_id):
 
     error_message = ""
     # Verify that the user is logged in
-    if not request.session.get('userid',False):
+    if not request.session.get('userid', False):
         return redirect('/login')
 
     try:
-        search = searches.objects.get(search_id=search_id)
-        logging.info("Deleting search: {0}. {1}".format(search_id, search))
+        search_obj = searches.objects.get(search_id=search_id)
+        logging.info(f"Deleting search: {search_id}. {search_obj}")
 
         # delete files on the server
         ## verify the storage location is accessibly
         if not os.access(settings.STORAGE_LOCATION, os.W_OK) or not os.path.isdir(settings.STORAGE_LOCATION):
-            log_error("Could not delete files for search {0} due to storage location being inaccessible or not writable. {1}".format(search_id, settings.STORAGE_LOCATION), search)
-
+            msg = f"Could not delete files for search {search_id} due to storage location being inaccessible or not writable. {settings.STORAGE_LOCATION}"
+            log_error(msg, search_obj)
         else:
-            save_location = os.path.join(settings.STORAGE_LOCATION,search_id)
+            save_location = os.path.join(settings.STORAGE_LOCATION, search_id)
             zip_path = find_zip_file(search_id)
 
             if os.path.isdir(save_location):
                 try:
                     shutil.rmtree(save_location)
-                except Exception as e1:
-                    log_error("Could not delete files for search {0}. {1}".format(search_id,e1), search)
+                except OSError as ex1:
+                    log_error(f"Could not delete files for search {search_id}. {ex1}", search_obj)
             if zip_path != None and os.path.exists(zip_path):
                 try:
                     os.remove(zip_path)
-                except Exception as e2:
-                    log_error("Could not delete the zipped file for search {0}. {1}".format(search_id, e2), search)
+                except OSError as ex2:
+                    log_error(f"Could not delete the zipped file for search {search_id}. {ex2}", search_obj)
             if os.path.isdir(save_location):
                 try:
-                    shutil.rmdir(save_location)
-                except Exception as e3:
-                    log_error("Could not delete root directory for search {0}. {1}".format(search_id,e3), search)
+                    os.rmdir(save_location)
+                except OSError as ex3:
+                    log_error(f"Could not delete root directory for search {search_id}. {ex3}", search_obj)
 
         # delete the records from the database regardless of if we can delete the files
-        search.delete()
+        search_obj.delete()
 
-    except Exception as e:
-        error = create_error_message(e, os.path.basename(__file__))
-        log_error("Error deleting search {0}. {1}".format(str(search_id), error), json.dumps(dict(request.POST)))
+    except Exception as exp: # pylint: disable=broad-except
+        error = create_error_message(exp, os.path.basename(__file__))
+        log_error(f"Error deleting search {search_id}. {error}", json.dumps(dict(request.POST)))
 
         if settings.DEBUG:
             error_message = error
@@ -500,38 +485,38 @@ def download_search(request, search_id):
     '''
 
     # Verify that the user is logged in
-    if not request.session.get('userid',False):
+    if not request.session.get('userid', False):
         return redirect('/login')
 
     error_message = ""
     try:
         # make sure the search documents requested are for the user that made the search (HTTP 403)
-        search = searches.objects.filter(search_id=search_id)
-        if len(search) == 1:
-            search = search[0]
+        search_obj = searches.objects.filter(search_id=search_id)
+        if len(search_obj) == 1:
+            search_obj = search_obj[0]
         else:
             error_message = \
                 "The search record could not be located on the server. please contact a system administator."
-        if search.userid != str(request.session['userid']):
+        if search_obj.userid != str(request.session['userid']):
             error_message = "You do not have permissions to download searches other than ones you requested."
 
         # make sure the search file exists (HTTP 404)
         if error_message == "":
             zipfile = find_zip_file(search_id)
-            if zipfile == None or not os.path.exists(zipfile) or not os.access(zipfile, os.R_OK):
+            if zipfile is None or not os.path.exists(zipfile) or not os.access(zipfile, os.R_OK):
                 error_message = \
                     "The search results can not be located on the server. please contact a system administator."
 
         if error_message == "":
             # download the search zip
-            with open(zipfile, 'rb') as fh:
-                    response = HttpResponse(fh.read(), content_type="application/force-download")
-                    response['Content-Disposition'] = 'attachment; filename=' + os.path.basename(zipfile)
-                    request.session["error_message"] = error_message
-                    return response
-    except Exception as e:
-        error = create_error_message(e, os.path.basename(__file__))
-        log_error("Error downloading search {0}. {1}".format(str(search_id), error), json.dumps(dict(request.POST)))
+            with open(zipfile, 'rb') as flh:
+                response = HttpResponse(flh.read(), content_type="application/force-download")
+                response['Content-Disposition'] = 'attachment; filename=' + os.path.basename(zipfile)
+                request.session["error_message"] = error_message
+                return response
+    except Exception as exp: # pylint: disable=broad-except
+        error = create_error_message(exp, os.path.basename(__file__))
+        log_error(f"Error downloading search {search_id}. {error}", json.dumps(dict(request.POST)))
 
         if settings.DEBUG:
             error_message = error
@@ -546,24 +531,24 @@ def find_zip_file(search_id):
     '''
     For the given search ID, it will locate the full path for the zip file
     '''
-    filepath = os.path.join(settings.STORAGE_LOCATION,search_id)
-    for root, dirs, files in os.walk(filepath):
+    filepath = os.path.join(settings.STORAGE_LOCATION, search_id)
+    for root, _, files in os.walk(filepath):
         for name in files:
             if name.endswith("zip"):
-                return os.path.join(root,name)
+                return os.path.join(root, name)
     return None
 
 """ ------------------------------
     About Page
     ------------------------------
-"""
+""" # pylint: disable=pointless-string-statement
 def about(request):
     '''
     Render the About page
     '''
 
     # Verify that the user is logged in
-    if not request.session.get('userid',False):
+    if not request.session.get('userid', False):
         return redirect('/login')
 
     return render(request, 'textassembler_web/about.html', {})

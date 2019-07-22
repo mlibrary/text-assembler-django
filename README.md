@@ -258,6 +258,8 @@ Development Notes
 
 TODO
 -------
+* lint processor files
+* full regression test
 * Contact LN about multiple values not allowed in Language and Source fields for search
 * Finalize exact run limitation times and amounts
 

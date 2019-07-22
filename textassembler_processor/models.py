@@ -1,6 +1,12 @@
+'''
+Database models for the processor
+'''
 from django.db import models
 
-class api_log(models.Model):
+class api_log(models.Model): # pylint: disable=invalid-name
+    '''
+    Log table for all API calls
+    '''
     log_id = models.AutoField(primary_key=True)
     request_url = models.TextField()
     request_type = models.CharField(max_length=10) # POST, GET

@@ -1,20 +1,31 @@
+'''
+Database models for the web interface
+'''
 from django.db import models
 from django.dispatch import receiver
 from django.db.models.signals import pre_delete
 
 
-class sources(models.Model):
-    """Searchable sources in the LexisNexis API"""
+class sources(models.Model): # pylint: disable=invalid-name
+    '''
+    Searchable sources in the LexisNexis API
+    '''
     source_id = models.CharField(max_length=255)
     source_name = models.CharField(max_length=255)
     active = models.BooleanField(default=False)
 
-class available_formats(models.Model):
+class available_formats(models.Model): # pylint: disable=invalid-name
+    '''
+    Available download formats
+    '''
     format_id = models.AutoField(primary_key=True)
     format_name = models.CharField(max_length=20)
     help_text = models.CharField(max_length=255)
 
-class searches(models.Model):
+class searches(models.Model): # pylint: disable=invalid-name
+    '''
+    User searches and their status
+    '''
     search_id = models.AutoField(primary_key=True)
     userid = models.CharField(max_length=50) # user ID for the user requesting the search
     date_submitted = models.DateTimeField(auto_now_add=True) # date the user submitted the search request
@@ -34,22 +45,31 @@ class searches(models.Model):
     failed_date = models.DateTimeField(null=True) # date the search failed
 
     def __str__(self):
-        return "(ID: {0}) userid: {1}. Date Submitted: {2}. Date Started: {3}. Date Completed: {4}. Number of Results Downloaded: {5}. Query: {6}".format(self.search_id, self.userid, 
-            self.date_submitted, 
-            self.date_started, 
-            self.date_completed, 
-            str(self.num_results_downloaded), self.query)
+        '''
+        Printable string of the object with basic information
+        '''
+        obj_str = f"(ID: {self.search_id}) userid: {self.userid}. Date Submitted: {self.date_submitted}. "
+        obj_str += f"Date Started: {self.date_started}. Date Completed: {self.date_completed}. "
+        obj_str += f"Number of Results Downloaded: {self.num_results_downloaded}. Query: {self.query}"
 
-class filters(models.Model):
+        return obj_str
+
+class filters(models.Model): # pylint: disable=invalid-name
+    '''
+    Filters selected for the search
+    '''
     search_id = models.ForeignKey("searches", models.CASCADE)
     filter_name = models.CharField(max_length=255) # name of the filter in the LN API
     filter_value = models.CharField(max_length=255)
 
-class download_formats(models.Model):
+class download_formats(models.Model): # pylint: disable=invalid-name
+    '''
+    Selected download formats for the search
+    '''
     search_id = models.ForeignKey("searches", models.CASCADE)
     format_id = models.ForeignKey("available_formats", models.CASCADE)
 
-class historical_searches(models.Model):
+class historical_searches(models.Model): # pylint: disable=invalid-name
     '''
     Used to store deleted searches for later querying for reporting purposes.
     '''
@@ -61,26 +81,29 @@ class historical_searches(models.Model):
     date_completed = models.DateTimeField(null=True)
     num_results_downloaded = models.IntegerField(default=0)
     num_results_in_search = models.IntegerField(default=0)
-    skip_value = models.IntegerField(default=0) 
-    date_started_compression = models.DateTimeField(null=True) 
+    skip_value = models.IntegerField(default=0)
+    date_started_compression = models.DateTimeField(null=True)
     date_completed_compression = models.DateTimeField(null=True)
     user_notified = models.BooleanField(default=False)
     run_time_seconds = models.IntegerField(default=0)
-    retry_count = models.IntegerField(default=0) 
+    retry_count = models.IntegerField(default=0)
     error_message = models.TextField(null=True)
     failed_date = models.DateTimeField(null=True)
     date_deleted = models.DateTimeField(auto_now_add=True)
 
 @receiver(pre_delete, sender=searches)
-def save_historical_search_data(sender, instance, **kwargs):
+def save_historical_search_data(sender, instance, **kwargs): # pylint: disable=unused-argument
     '''
     Once a record is deleted from the searches table, add it to the historical_searches table.
     '''
-    search_obj = historical_searches( search_id=instance.search_id, date_submitted=instance.date_submitted, update_date=instance.update_date,
-        query=instance.query, date_started=instance.date_started, date_completed=instance.date_completed,
-        num_results_downloaded=instance.num_results_downloaded, num_results_in_search=instance.num_results_in_search,
-        skip_value=instance.skip_value, date_started_compression=instance.date_started_compression,
-        date_completed_compression=instance.date_completed_compression, user_notified=instance.user_notified,
-        run_time_seconds=instance.run_time_seconds, retry_count=instance.retry_count,
-        error_message=instance.error_message, failed_date=instance.failed_date)
+    search_obj = historical_searches(search_id=instance.search_id, date_submitted=instance.date_submitted,
+                                     update_date=instance.update_date, query=instance.query,
+                                     date_started=instance.date_started, date_completed=instance.date_completed,
+                                     num_results_downloaded=instance.num_results_downloaded,
+                                     num_results_in_search=instance.num_results_in_search,
+                                     skip_value=instance.skip_value, date_started_compression=instance.date_started_compression,
+                                     date_completed_compression=instance.date_completed_compression,
+                                     user_notified=instance.user_notified, run_time_seconds=instance.run_time_seconds,
+                                     retry_count=instance.retry_count, error_message=instance.error_message,
+                                     failed_date=instance.failed_date)
     search_obj.save()
