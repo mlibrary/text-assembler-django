@@ -93,12 +93,12 @@ class LNAPI:
         # Compare against the limits for min/hr/day
         if display:
             logging.info((f"Current search limits: {self.requests_per_min.count()}/min, "
-                f"{self.requests_per_hour.count()}/hr, {self.requests_per_day.count()}/day "
-                f"out of {settings.SEARCHES_PER_MINUTE}/min, {settings.SEARCHES_PER_HOUR}/hr, {settings.SEARCHES_PER_DAY}/day"))
+                          f"{self.requests_per_hour.count()}/hr, {self.requests_per_day.count()}/day "
+                          f"out of {settings.SEARCHES_PER_MINUTE}/min, {settings.SEARCHES_PER_HOUR}/hr, {settings.SEARCHES_PER_DAY}/day"))
 
             logging.info((f"Current download limits: {self.requests_per_min.filter(is_download=True).count()}/min,"
-                f" {self.requests_per_hour.filter(is_download=True).count()}/hr, {self.requests_per_day.filter(is_download=True).count()}/day"
-                f" out of {settings.DOWNLOADS_PER_MINUTE}/min, {settings.DOWNLOADS_PER_HOUR}/hr, {settings.DOWNLOADS_PER_DAY}/day"))
+                          f" {self.requests_per_hour.filter(is_download=True).count()}/hr, {self.requests_per_day.filter(is_download=True).count()}/day"
+                          f" out of {settings.DOWNLOADS_PER_MINUTE}/min, {settings.DOWNLOADS_PER_HOUR}/hr, {settings.DOWNLOADS_PER_DAY}/day"))
 
     def check_can_search(self):
         '''
