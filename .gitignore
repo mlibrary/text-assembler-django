@@ -9,6 +9,7 @@ textassembler_web/templates/header.html
 textassembler_web/templates/footer.html
 textassembler_web/templates/textassembler_web/about.html
 textassembler_web/static/*
+!textassembler_web/static/LexisNexis.gif
 !textassembler_web/static/MSU.css
 !textassembler_web/static/textassembler.css
 !textassembler_web/static/textassembler.js

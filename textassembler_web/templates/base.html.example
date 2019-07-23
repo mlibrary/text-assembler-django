@@ -15,7 +15,7 @@
 
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous"/>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-select@1.13.7/dist/css/bootstrap-select.min.css">
-    /* Include your own css file here, added to the textassembler_web/static folder */
+    <!-- Include your own css file here, added to the textassembler_web/static folder -->
     <link rel="stylesheet" type="text/css" href="{% static 'MSU.css' %}"/>
     <link rel="stylesheet" type="text/css" href="{% static 'textassembler.css' %}"/>
     
