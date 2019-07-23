@@ -25,6 +25,12 @@ def login(request):
     '''
     Handles login requests
     '''
+    # Check if bypass mode is enabled
+    if settings.OAUTH_BYPASS:
+        request.session['userid'] = settings.OAUTH_BYPASS_USER
+        logging.debug(f"OAuth bypass mode is enabled. Logging in as {request.session['userid']}")
+        return redirect('/search')
+
     # If they are already logged in, send users to search page
     if request.session.get('userid', False):
         logging.debug(f"User already logged in: {request.session['userid']}")

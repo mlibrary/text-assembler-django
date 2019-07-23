@@ -17,6 +17,7 @@ Assumptions
 This project does not include documentation for setting up an OAuth provider, just the code for using it as an 
 OAuth client.
 * This application was built on Ubuntu 18.04 and has not been tested on other versions or distributions.
+* This application was built using Python 3.6 and has not been tested on other versions.
 * This application was built using MariaDB 10.2 and has not been tested on other versions or another DBMS.
 
 Install & Setup
@@ -25,6 +26,8 @@ Install & Setup
 ```
 sudo aptitude install python3
 sudo apt install python3-pip
+sudo apt-get install libmysqlclient-dev
+sudo apt-get install python3-venv
 sudo pip3 install Django
 sudo aptitude install libapache2-mod-wsgi-py3
 ```
@@ -43,7 +46,7 @@ source ta_env/bin/activate
 pip install -r requirements.txt
 deactivate
 ```
-* Update environment variables in `/etc/apache2/envars`
+* Update environment variables in `/etc/apache2/envvars`
 ```
 export LANG='en_US.UTF-8'
 export LC_ALL='en_US.UTF-8'

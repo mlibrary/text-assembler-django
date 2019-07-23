@@ -63,6 +63,12 @@ WEEKEND_START_TIME = 00:00
 WEEKEND_END_TIME = 00:00
 
 [oauth]
+# If you want to test code without going through an OAuth setup, set this to
+# TRUE and provide a test user id to use. This cannot be used in production
+# since it would then have no way to distinguish user's searches from
+# one and other
+BYPASS = TRUE
+BYPASS_USER = testuser
 AUTH_URL = https://oauth.itservices.msu.edu/oauth/authorize
 TOKEN_URL = https://oauth.itservices.msu.edu/oauth/token
 PROFILE_URL = https://oauth.itservices.msu.edu/oauth/me

@@ -75,6 +75,8 @@ WEEKEND_START_TIME = datetime.datetime.strptime(CONFIGS.get("api.limits", "WEEKE
 WEEKEND_END_TIME = datetime.datetime.strptime(CONFIGS.get("api.limits", "WEEKEND_END_TIME"), '%H:%M').time()
 
 # App OAuth Configs
+OAUTH_BYPASS = CONFIGS.get("oauth", "BYPASS").lower() == 'true'
+OAUTH_BYPASS_USER = CONFIGS.get("oauth", "BYPASS_USER")
 APP_AUTH_URL = CONFIGS.get("oauth", "AUTH_URL")
 APP_TOKEN_URL = CONFIGS.get("oauth", "TOKEN_URL")
 APP_PROFILE_URL = CONFIGS.get("oauth", "PROFILE_URL")
