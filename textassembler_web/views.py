@@ -229,6 +229,7 @@ def handle_preview_search(term, set_filters, response):
         # Get the full-text for the 10 results to display on the page
         results = search_api.download(term, set_filters)
         if "value" in results:
+            results['est_days_to_complete'] = est_days_to_complete_search(int(results['@odata.count']))
             results['count'] = results['@odata.count']
             results['postFilters'] = response['search_results']['postFilters']
             response['search_results'] = results
