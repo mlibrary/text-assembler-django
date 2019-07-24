@@ -43,7 +43,6 @@ deploy_dev_job:
      - ssh $CONNECT_DEVEL sudo systemctl restart tassemblerd
      - ssh $CONNECT_DEVEL sudo systemctl restart tassemblerzipd
      - ssh $CONNECT_DEVEL sudo systemctl restart tassemblerdeld
-     - ssh $CONNECT_DEVEL '[[ $( curl -s -k -o /dev/null -I -w "%{http_code}" "https://schanzme3-ta.test.lib.msu.edu/") -eq 200 ]]'
      
 deploy_prod_job:
   stage: deploy_prod
@@ -59,4 +58,3 @@ deploy_prod_job:
      - ssh $CONNECT_PROD sudo systemctl restart tassemblerd
      - ssh $CONNECT_PROD sudo systemctl restart tassemblerzipd
      - ssh $CONNECT_PROD sudo systemctl restart tassemblerdeld
-     - ssh $CONNECT_PROD '[[ $( curl -s -o /dev/null -I -w "%{http_code}" "http://textassembler.lib.msu.edu/") -eq 200 ]]'
