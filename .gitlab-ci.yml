@@ -53,7 +53,7 @@ deploy_dev_job:
      - ssh $CONNECT_DEVEL git -C $REPO_PATH fetch origin development
      - ssh $CONNECT_DEVEL git -C $REPO_PATH checkout development
      - ssh $CONNECT_DEVEL git -C $REPO_PATH pull origin development
-     - ssh $CONNECT_DEVEL /bin/bash -c '"cd $REPO_PATH && source ta_env/bin/activate && pip install -r requirements.txt && deactivate"'
+     - ssh $CONNECT_DEVEL $REPO_PATH/ta_env/bin/pip install -r $REPO_PATH/requirements.txt
      - ssh $CONNECT_DEVEL $REPO_PATH/ta_env/bin/python $REPO_PATH/manage.py migrate
      - ssh $CONNECT_DEVEL sudo systemctl restart apache2
      - ssh $CONNECT_DEVEL sudo systemctl restart tassemblerd
@@ -70,7 +70,7 @@ deploy_prod_job:
      - ssh $CONNECT_PROD git -C $REPO_PATH fetch origin deploy
      - ssh $CONNECT_PROD git -C $REPO_PATH checkout deploy
      - ssh $CONNECT_PROD git -C $REPO_PATH pull origin deploy
-     - ssh $CONNECT_PROD /bin/bash -c '"cd $REPO_PATH && source ta_env/bin/activate && pip install -r requirements.txt && deactivate"'
+     - ssh $CONNECT_PROD $REPO_PATH/ta_env/bin/pip install -r $REPO_PATH/requirements.txt
      - ssh $CONNECT_PROD $REPO_PATH/ta_env/bin/python $REPO_PATH/manage.py migrate
      - ssh $CONNECT_PROD sudo systemctl restart apache2
      - ssh $CONNECT_PROD sudo systemctl restart tassemblerd
