@@ -1,3 +1,12 @@
+# CI/CD to perform automated testing and deployment of code
+# The workflow for code changes are as follows:
+# - Changes are made in (or merged into) the development branch
+# - The pipeline will then deploy the changes to the development server for testing
+# - Once verified, merge the changes into the deploy branch
+# - The pipeline will then deploy the changes to the production server
+# - Once verified, merge the changes into the master branch (to be used by others)
+#    The master branch does not have CI/CD in order to keep it as re-usable as possible
+
 stages:
  - linting
  - unittest
@@ -13,6 +22,8 @@ linting_job:
  stage: linting
  tags:
   - msul
+ only:
+  - development
  script:
   - pip3 install -r requirements.txt
   - pylint3 --max-line-length=160 --load-plugins=pylint_django manage.py
@@ -25,6 +36,9 @@ unittest_job:
  stage: unittest
  tags:
   - msul
+ only:
+  - development
+  - deploy
  script:
   - pip3 install -r requirements.txt
   - python3 manage.py test
@@ -39,6 +53,8 @@ deploy_dev_job:
      - ssh $CONNECT_DEVEL git -C $REPO_PATH fetch origin development
      - ssh $CONNECT_DEVEL git -C $REPO_PATH checkout development
      - ssh $CONNECT_DEVEL git -C $REPO_PATH pull origin development
+     - ssh $CONNECT_DEVEL $REPO_PATH/ta_env/bin/pip install -r $REPO_PATH/requirements.txt
+     - ssh $CONNECT_DEVEL $REPO_PATH/ta_env/bin/python $REPO_PATH/manage.py migrate
      - ssh $CONNECT_DEVEL sudo systemctl restart apache2
      - ssh $CONNECT_DEVEL sudo systemctl restart tassemblerd
      - ssh $CONNECT_DEVEL sudo systemctl restart tassemblerzipd
@@ -54,6 +70,8 @@ deploy_prod_job:
      - ssh $CONNECT_PROD git -C $REPO_PATH fetch origin deploy
      - ssh $CONNECT_PROD git -C $REPO_PATH checkout deploy
      - ssh $CONNECT_PROD git -C $REPO_PATH pull origin deploy
+     - ssh $CONNECT_PROD $REPO_PATH/ta_env/bin/pip install -r $REPO_PATH/requirements.txt
+     - ssh $CONNECT_PROD $REPO_PATH/ta_env/bin/python $REPO_PATH/manage.py migrate
      - ssh $CONNECT_PROD sudo systemctl restart apache2
      - ssh $CONNECT_PROD sudo systemctl restart tassemblerd
      - ssh $CONNECT_PROD sudo systemctl restart tassemblerzipd
