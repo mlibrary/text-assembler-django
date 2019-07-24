@@ -19,7 +19,7 @@ OAuth client.
 * This application was built on Ubuntu 18.04 and has not been tested on other versions or distributions.
 * This application was built using Python 3.6 and has not been tested on other versions.
 * This application was built using MariaDB 10.2 and has not been tested on other versions or another DBMS.
-* The (development)[https://gitlab.msu.edu/msu-libraries/public/text-assembler/tree/development] and (deploy)[https://gitlab.msu.edu/msu-libraries/public/text-assembler/tree/deploy] branches of code are configured to perform (CI/CD)[https://gitlab.msu.edu/msu-libraries/public/text-assembler/blob/master/.gitlab-ci.yml] steps with validate the code and deploy it. Others using this code will want to use the (master)[https://gitlab.msu.edu/msu-libraries/public/text-assembler/tree/master] branch, which will skip these steps. For more information on setting up CI/CD in your environment, see (this documentation)[https://gitlab.msu.edu/msu-libraries/public/gitlab-ci-cd-guide].
+* The [development](https://gitlab.msu.edu/msu-libraries/public/text-assembler/tree/development) and [deploy](https://gitlab.msu.edu/msu-libraries/public/text-assembler/tree/deploy) branches of code are configured to perform [CI/CD](https://gitlab.msu.edu/msu-libraries/public/text-assembler/blob/master/.gitlab-ci.yml) steps with validate the code and deploy it. Others using this code will want to use the (master)[https://gitlab.msu.edu/msu-libraries/public/text-assembler/tree/master] branch, which will skip these steps. For more information on setting up CI/CD in your environment, see [this documentation](https://gitlab.msu.edu/msu-libraries/public/gitlab-ci-cd-guide).
 
 Install & Setup
 ---------------
