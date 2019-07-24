@@ -139,9 +139,27 @@ class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
                     self.set_filters[fltr.filter_name].append(fltr.filter_value)
 
                 ## call the download function with the parameters
-                results = self.api.download(self.cur_search.query, \
-                    self.set_filters, settings.LN_DOWNLOAD_PER_CALL, \
-                    self.cur_search.skip_value)
+                try:
+                    results = self.api.download(self.cur_search.query, \
+                        self.set_filters, settings.LN_DOWNLOAD_PER_CALL, \
+                        self.cur_search.skip_value)
+                except Exception as exp: # pylint: disable=broad-except
+                    log_error((f"Failed to downloaded results from the API ",
+                               f"for {self.cur_search.search_id}. ",
+                               f"{create_error_message(exp, os.path.basename(__file__))}"))
+                    # Try one more time before stopping processing (in event of connection reset)
+                    time.sleep(30)
+                    try:
+                        results = self.api.download(self.cur_search.query, \
+                            self.set_filters, settings.LN_DOWNLOAD_PER_CALL, \
+                            self.cur_search.skip_value)
+                    except Exception as exp1: # pylint: disable=broad-except
+                        log_error((f"Stopping processing. Failed second attempt to downloaded ",
+                                   f"results from the API for search {self.cur_search.search_id}. ",
+                                   f"{create_error_message(exp1, os.path.basename(__file__))}"))
+                        self.error = True
+                        self.terminate = True
+                        continue # not adding to retry count since it wasn't a problem with the search
 
                 if "error_message" in results:
                     log_error(f"An error occured processing search id: {self.cur_search.search_id}. {results['error_message']}", self.cur_search)
@@ -218,7 +236,9 @@ class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
             except Exception as exp: # pylint: disable=broad-except
                 # This scenario shouldn't happen, but handling it just in case
                 # so that the service won't quit on-error
-                log_error(f"An unexpected error occured while processing the queue. {create_error_message(exp, os.path.basename(__file__))}")
+                log_error((f"An unexpected error occured while processing the queue ",
+                           f"(search id={'N/A' if self.cur_search is None else self.cur_search.search_id}.",
+                           f" {create_error_message(exp, os.path.basename(__file__))}"))
                 self.terminate = True # stop the service since something is horribly wrong
                 continue
 
