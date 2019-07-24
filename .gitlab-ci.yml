@@ -1,6 +1,13 @@
 stages:
  - linting
  - unittest
+ - deploy_dev
+ - deploy_prod
+
+variables:
+  REPO_PATH: "/var/www/text-assembler/"
+  CONNECT_DEVEL: "deploy@schanzme3.test.lib.msu.edu"
+  CONNECT_PROD: "deploy@lexnex.lib.msu.edu"
 
 linting_job:
  stage: linting
@@ -22,3 +29,32 @@ unittest_job:
   - pip3 install -r requirements.txt
   - python3 manage.py test
 
+deploy_dev_job:
+  stage: deploy_dev
+  tags:
+    - msul
+  only:
+    - development
+  script:
+     - ssh $CONNECT_DEVEL git -C $REPO_PATH fetch origin development
+     - ssh $CONNECT_DEVEL git -C $REPO_PATH checkout development
+     - ssh $CONNECT_DEVEL git -C $REPO_PATH pull origin development
+     - ssh $CONNECT_DEVEL sudo systemctl restart apache2
+     - ssh $CONNECT_DEVEL sudo systemctl restart tassemblerd
+     - ssh $CONNECT_DEVEL sudo systemctl restart tassemblerzipd
+     - ssh $CONNECT_DEVEL sudo systemctl restart tassemblerdeld
+     
+deploy_prod_job:
+  stage: deploy_prod
+  tags:
+    - msul
+  only:
+    - deploy
+  script:
+     - ssh $CONNECT_PROD git -C $REPO_PATH fetch origin deploy
+     - ssh $CONNECT_PROD git -C $REPO_PATH checkout deploy
+     - ssh $CONNECT_PROD git -C $REPO_PATH pull origin deploy
+     - ssh $CONNECT_PROD sudo systemctl restart apache2
+     - ssh $CONNECT_PROD sudo systemctl restart tassemblerd
+     - ssh $CONNECT_PROD sudo systemctl restart tassemblerzipd
+     - ssh $CONNECT_PROD sudo systemctl restart tassemblerdeld
