@@ -217,13 +217,11 @@ class LNAPI:
 
         # Make sure we are within the API throttling limits
         if is_download and not self.check_can_download():
-            seconds = self.get_time_until_next_download()
-            time = seconds_to_dhms_string(seconds)
+            time = seconds_to_dhms_string(self.get_time_until_next_download())
             return {"error_message":f"There are no LexisNexis downloads remaining for the current min/hour/day. Next available in {time}"}
 
         if not self.check_can_search():
-            seconds = self.get_time_until_next_search()
-            time = seconds_to_dhms_string(seconds)
+            time = seconds_to_dhms_string(self.get_time_until_next_search())
             return {"error_message":f"There are no LexisNexis searches remaining for the current min/hour/day. Next available in {time}"}
 
         error_message = self.authenticate()
@@ -233,10 +231,23 @@ class LNAPI:
         headers = {"Authorization": "Bearer " + self.access_token}
         url = self.api_url + resource
 
-        if req_type == "GET":
-            resp = requests.get(url, params=params, headers=headers, timeout=settings.LN_TIMEOUT)
-        if req_type == "POST":
-            resp = requests.post(url, params=params, headers=headers, timeout=settings.LN_TIMEOUT)
+        try:
+            if req_type == "GET":
+                resp = requests.get(url, params=params, headers=headers, timeout=settings.LN_TIMEOUT)
+            if req_type == "POST":
+                resp = requests.post(url, params=params, headers=headers, timeout=settings.LN_TIMEOUT)
+        except Exception as exp: # pylint: disable=broad-except
+            self.api_log.objects.create(
+                request_url=url,
+                request_type=req_type,
+                response_code=-1,
+                num_results=0,
+                is_download=is_download)
+            error_message = "An unexpected API error occured."
+            full_error_message = f"Call to {url} failed with an exception. Exception: "
+            log_error(full_error_message, exp)
+            return {"error_message": exp,
+                    "response_code": -1}
 
         # Log the API call
         result_count = resp.json()["@odata.count"] if resp.status_code == requests.codes.ok and "@odata.count" in resp.json().keys() else 0  #pylint: disable=no-member
