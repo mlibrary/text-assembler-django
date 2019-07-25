@@ -430,6 +430,10 @@ def set_search_info(search_obj):
     else:
         search_obj.percent_complete = round((search_obj.num_results_downloaded / search_obj.num_results_in_search) * 100, 0)
 
+    # Clear out the error message from the display if the status is not Failed
+    if search_obj.status != "Failed":
+        search_obj.error_message = ""
+
     return search_obj
 
 def delete_search(request, search_id):
