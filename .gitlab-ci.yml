@@ -14,6 +14,7 @@ stages:
  - deploy_prod
 
 variables:
+  GIT_DEPTH: 5
   REPO_PATH: "/var/www/text-assembler/"
   CONNECT_DEVEL: "deploy@schanzme3.test.lib.msu.edu"
   CONNECT_PROD: "deploy@lexnex.lib.msu.edu"
