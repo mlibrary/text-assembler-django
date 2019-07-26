@@ -42,7 +42,7 @@ class Command(BaseCommand):
 
         # check for errors
         if "error_message" in sources:
-            logging.error(f"Error occured refreshing the sources. Message: {sources['error_message']}")
+            logging.error(f"Error occurred refreshing the sources. Message: {sources['error_message']}")
             return
 
         total = int(sources['@odata.count'])
@@ -64,7 +64,7 @@ class Command(BaseCommand):
                         logging.error("Went over throttling limit! will recalculate next available window.")
                         continue
                     else:
-                        logging.error(f"Error occured refreshing the sources. Message: {sources['error_message']}")
+                        logging.error(f"Error occurred refreshing the sources. Message: {sources['error_message']}")
                         return
                 if sources is not None and "value" in sources and sources["value"]:
                     total = int(sources['@odata.count'])

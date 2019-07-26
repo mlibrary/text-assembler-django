@@ -58,13 +58,14 @@ class Command(BaseCommand):
                         self.retry = False
                         continue # nothing to process
                 except Exception as ex: # pylint: disable=broad-except
-                    log_error(f"Deletion Processor failed to retrieve the pending deletion queue. {ex}")
                     if not self.retry:
                         time.sleep(10) # wait 10 seconds and re-try
                         self.retry = True
                         continue
                     else:
+                        log_error(f"Stopping. Deletion Processor failed to retrieve the pending deletion queue. {ex}")
                         self.terminate = True
+                        continue
 
 
                 # verify the storage location is accessibly
@@ -74,6 +75,30 @@ class Command(BaseCommand):
                     time.sleep(60*5)
                     if not os.access(settings.STORAGE_LOCATION, os.W_OK) or not os.path.isdir(settings.STORAGE_LOCATION):
                         log_error(f"Stopping. Deletion Processor failed due to {settings.STORAGE_LOCATION} being inaccessible or not writable.")
+                        self.terminate = True
+                        continue
+
+                # check that there are items in the queue to be deleted based on date completed/failed
+                # we need to recheck this in case it changed while waiting for the storage
+                # location to become accessible
+                try:
+                    # delete searches completed/failed before this date
+                    delete_date = timezone.now() -  datetime.timedelta(days=settings.NUM_MONTHS_KEEP_SEARCHES * 30)
+                    queue = self.searches.objects.filter(
+                        Q(date_completed_compression__lte=delete_date)|Q(failed_date__lte=delete_date)).order_by('-update_date')
+                    if queue:
+                        self.cur_search = queue[0]
+                        self.retry = False
+                    else:
+                        self.retry = False
+                        continue # nothing to process
+                except Exception as ex: # pylint: disable=broad-except
+                    if not self.retry:
+                        time.sleep(10) # wait 10 seconds and re-try
+                        self.retry = True
+                        continue
+                    else:
+                        log_error(f"Stopping. Deletion Processor failed to retrieve the pending deletion queue. {ex}")
                         self.terminate = True
                         continue
 
@@ -106,7 +131,7 @@ class Command(BaseCommand):
             except Exception as exp: #pylint: disable=broad-except
                 # This scenario shouldn't happen, but handling it just in case
                 # so that the service won't quit on-error
-                log_error(f"An unexpected error occured while deleting old searches. {create_error_message(exp, os.path.basename(__file__))}")
+                log_error(f"An unexpected error occurred while deleting old searches. {create_error_message(exp, os.path.basename(__file__))}")
                 self.terminate = True # stop the service since something is horribly wrong
                 continue
 

@@ -4,6 +4,7 @@ ta_env/
 .pyc
 __pycache__/
 activate.sh
+run_lint_and_test.sh
 textassembler_web/templates/base.html
 textassembler_web/templates/header.html
 textassembler_web/templates/footer.html

@@ -58,13 +58,14 @@ class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
                         self.retry = False
                         continue # nothing to process
                 except OperationalError as ex:
-                    log_error(f"Queue Processor failed to retrieve the search queue. {ex}")
                     if not self.retry:
                         time.sleep(10) # wait 10 seconds and re-try
                         self.retry = True
                         continue
                     else:
+                        log_error(f"Stopping. Queue Processor failed to retrieve the search queue. {ex}")
                         self.terminate = True
+                        continue
 
                 # verify the storage location is accessibly
                 if not os.access(settings.STORAGE_LOCATION, os.W_OK) or not os.path.isdir(settings.STORAGE_LOCATION):
@@ -112,13 +113,14 @@ class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
                         self.retry = False
                         continue # nothing to process
                 except OperationalError as ex:
-                    log_error(f"Queue Processor failed to retrieve the search queue. {ex}")
                     if not self.retry:
                         time.sleep(10) # wait 10 seconds and re-try
                         self.retry = True
                         continue
                     else:
+                        log_error(f"Stopping. Queue Processor failed to retrieve the search queue. {ex}")
                         self.terminate = True
+                        continue
 
                 logging.info(f"Downloading items for search: {self.cur_search.search_id}. Skip Value: {self.cur_search.skip_value}.")
 
@@ -144,9 +146,9 @@ class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
                         self.set_filters, settings.LN_DOWNLOAD_PER_CALL, \
                         self.cur_search.skip_value)
                 except Exception as exp: # pylint: disable=broad-except
-                    log_error((f"Failed to downloaded results from the API ",
-                               f"for {self.cur_search.search_id}. ",
-                               f"{create_error_message(exp, os.path.basename(__file__))}"))
+                    logging.error((f"Failed to downloaded results from the API ",
+                                   f"for {self.cur_search.search_id}. ",
+                                   f"{create_error_message(exp, os.path.basename(__file__))}"))
                     # Try one more time before stopping processing (in event of connection reset)
                     time.sleep(30)
                     try:
@@ -162,16 +164,19 @@ class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
                         continue # not adding to retry count since it wasn't a problem with the search
 
                 if "error_message" in results:
-                    log_error(f"An error occured processing search id: {self.cur_search.search_id}. {results['error_message']}", self.cur_search)
+                    send_email = False
+                    log_error(f"An error occurred processing search id: {self.cur_search.search_id}. {results['error_message']}", self.cur_search)
                     self.cur_search.retry_count = self.cur_search.retry_count + 1
                     self.cur_search.error_message = results["error_message"]
                     if self.cur_search.retry_count > settings.LN_MAX_RETRY:
                         self.cur_search.failed_date = timezone.now()
                         if not self.cur_search.user_notified and settings.NOTIF_EMAIL_DOMAIN:
-                            #  send email notification
-                            send_user_notification(self.cur_search.userid, self.cur_search.query, self.cur_search.date_submitted, 0, True)
                             self.cur_search.user_notified = True
+                            send_email = True
                     self.cur_search.save()
+                    #  send email notification after we're able to save to the database
+                    if send_email:
+                        send_user_notification(self.cur_search.userid, self.cur_search.query, self.cur_search.date_submitted, 0, True)
                     continue
 
                 ## save the results to the server
@@ -236,7 +241,7 @@ class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
             except Exception as exp: # pylint: disable=broad-except
                 # This scenario shouldn't happen, but handling it just in case
                 # so that the service won't quit on-error
-                log_error((f"An unexpected error occured while processing the queue ",
+                log_error((f"An unexpected error occurred while processing the queue ",
                            f"(search id={'N/A' if self.cur_search is None else self.cur_search.search_id}.",
                            f" {create_error_message(exp, os.path.basename(__file__))}"))
                 self.terminate = True # stop the service since something is horribly wrong
