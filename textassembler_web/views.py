@@ -187,12 +187,12 @@ def search(request): # pylint:disable=too-many-locals, too-many-branches, too-ma
 
             except Exception as exp: # pylint: disable=broad-except
                 error = create_error_message(exp, os.path.basename(__file__))
-                log_error(f"Error occured while processing search request. {error}", json.dumps(dict(request.POST)))
+                log_error(f"Error occurred while processing search request. {error}", json.dumps(dict(request.POST)))
 
                 if settings.DEBUG:
                     response["error_message"] = error
                 else:
-                    response["error_message"] = "An unexpected error has occured."
+                    response["error_message"] = "An unexpected error has occurred."
 
                 # Set the result data with the previous results if an error occurs
                 # only do this if there are not already results since we don't want to overwrite those
@@ -485,7 +485,7 @@ def delete_search(request, search_id):
         if settings.DEBUG:
             error_message = error
         else:
-            error_message = "An unexpected error has occured."
+            error_message = "An unexpected error has occurred."
 
     request.session["error_message"] = error_message
     return redirect(mysearches)
@@ -532,7 +532,7 @@ def download_search(request, search_id):
         if settings.DEBUG:
             error_message = error
         else:
-            error_message = "An unexpected error has occured."
+            error_message = "An unexpected error has occurred."
 
     request.session["error_message"] = error_message
     return redirect(mysearches)

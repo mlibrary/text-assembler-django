@@ -59,8 +59,8 @@ class LNAPI:
             self.expiration_time = timezone.now() + datetime.timedelta(seconds=int(tokens['expires_in']))
         else:
             results = access_token_response.json()
-            log_error(f"Error occured obtaining access token. Return code: {access_token_response.status_code}. Response:", results)
-            error = "An unexpected error occured."
+            log_error(f"Error occurred obtaining access token. Return code: {access_token_response.status_code}. Response:", results)
+            error = "An unexpected error occurred."
             if "error" in results and "message" in results["error"]:
                 error = results["error"]["message"]
             return error
@@ -92,13 +92,13 @@ class LNAPI:
 
         # Compare against the limits for min/hr/day
         if display:
-            logging.info((f"Current search limits: {self.requests_per_min.count()}/min, "
-                          f"{self.requests_per_hour.count()}/hr, {self.requests_per_day.count()}/day "
-                          f"out of {settings.SEARCHES_PER_MINUTE}/min, {settings.SEARCHES_PER_HOUR}/hr, {settings.SEARCHES_PER_DAY}/day"))
+            logging.debug((f"Current search limits: {self.requests_per_min.count()}/min, "
+                           f"{self.requests_per_hour.count()}/hr, {self.requests_per_day.count()}/day "
+                           f"out of {settings.SEARCHES_PER_MINUTE}/min, {settings.SEARCHES_PER_HOUR}/hr, {settings.SEARCHES_PER_DAY}/day"))
 
-            logging.info((f"Current download limits: {self.requests_per_min.filter(is_download=True).count()}/min,"
-                          f" {self.requests_per_hour.filter(is_download=True).count()}/hr, {self.requests_per_day.filter(is_download=True).count()}/day"
-                          f" out of {settings.DOWNLOADS_PER_MINUTE}/min, {settings.DOWNLOADS_PER_HOUR}/hr, {settings.DOWNLOADS_PER_DAY}/day"))
+            logging.debug((f"Current download limits: {self.requests_per_min.filter(is_download=True).count()}/min,"
+                           f" {self.requests_per_hour.filter(is_download=True).count()}/hr, {self.requests_per_day.filter(is_download=True).count()}/day"
+                           f" out of {settings.DOWNLOADS_PER_MINUTE}/min, {settings.DOWNLOADS_PER_HOUR}/hr, {settings.DOWNLOADS_PER_DAY}/day"))
 
     def check_can_search(self):
         '''
@@ -250,7 +250,7 @@ class LNAPI:
             return results
 
         else:
-            error_message = "An unexpected API error occured."
+            error_message = "An unexpected API error occurred."
             full_error_message = f"Call to {url} failed with code {resp.status_code}. Response: "
             log_error(full_error_message, results)
             if "error" in results and "message" in results:

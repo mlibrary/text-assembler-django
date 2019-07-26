@@ -8,6 +8,7 @@ import os
 import zipfile
 import shutil
 from django.core.management.base import BaseCommand
+from django.db import OperationalError
 from django.apps import apps
 from django.conf import settings
 from django.utils import timezone
@@ -53,23 +54,46 @@ class Command(BaseCommand):
                         self.retry = False
                         continue # nothing to process
                 except Exception as ex: # pylint: disable=broad-except
-                    log_error(f"Compression Processor failed to retrieve the compress queue. {ex}")
                     if not self.retry:
                         time.sleep(10) # wait 10 seconds and re-try
                         self.retry = True
                         continue
                     else:
+                        log_error(f"Stopping. Compression Processor failed to retrieve the compress queue.  {ex}")
                         self.terminate = True
+                        continue
 
 
                 # verify the storage location is accessibly
                 if not os.access(settings.STORAGE_LOCATION, os.W_OK) or not os.path.isdir(settings.STORAGE_LOCATION):
-                    log_error(f"Compression Processor failed due to storage location being inaccessible or not writable. {settings.STORAGE_LOCATION}")
+                    logging.warning((f"Compression Processor failed to connect to storage location. "
+                                     f"Either being inaccessible or not writable. {settings.STORAGE_LOCATION}"))
                     # wait 5 minutes, if the storage is still not available, then terminate
                     time.sleep(60*5)
                     if not os.access(settings.STORAGE_LOCATION, os.W_OK) or \
                         not os.path.isdir(settings.STORAGE_LOCATION):
                         log_error(f"Stopping. Compression Processor failed due to {settings.STORAGE_LOCATION} being inaccessible or not writable.")
+                        self.terminate = True
+                        continue
+
+                # check that there are items in the queue to process after verifying the storage
+                # location is accessible. This is necessary in case it has changed during that time.
+                try:
+                    queue = self.searches.objects.filter(
+                        date_completed__isnull=False, date_completed_compression__isnull=True, failed_date__isnull=True).order_by('-update_date')
+                    if queue:
+                        self.cur_search = queue[0]
+                        self.retry = False
+                    else:
+                        self.retry = False
+                        continue # nothing to process
+                except Exception as ex: # pylint: disable=broad-except
+                    if not self.retry:
+                        time.sleep(10) # wait 10 seconds and re-try
+                        self.retry = True
+                        continue
+                    else:
+                        log_error(f"Stopping. Compression Processor failed to retrieve the compress queue.  {ex}")
                         self.terminate = True
                         continue
 
@@ -103,28 +127,46 @@ class Command(BaseCommand):
                         shutil.rmtree(os.path.join(root, dirn))
 
                 logging.info(f"Completed cleanup of non-compressed files for search {self.cur_search.search_id}")
-                #  send email notification
-                send_user_notification(self.cur_search.userid, self.cur_search.query, self.cur_search.date_submitted, self.cur_search.num_results_downloaded)
-                self.cur_search.user_notified = True
 
                 # update the search record
                 self.cur_search.update_date = timezone.now()
                 self.cur_search.date_completed_compression = timezone.now()
+                if not self.cur_search.user_notified and settings.NOTIF_EMAIL_DOMAIN:
+                    self.cur_search.user_notified = True
+                    send_email = True
+                else:
+                    send_email = False
 
                 # save the search record
-                self.cur_search.save()
+                try:
+                    self.cur_search.save()
+                except OperationalError as oexp:
+                    # DB connection probably just hiccuped. Wait and try again
+                    time.sleep(10) # wait 10 seconds and re-try
+                    try:
+                        self.cur_search.save()
+                    except OperationalError as oexp:
+                        log_error("Stopping. A database error occured while trying to save the record to the database", oexp)
+                        self.terminate = True
+                        continue
 
+                #  send email notification
+                #   sending this after the DB save in case that fails for some reason
+                #   this is to prevent users from receiving multiple notifications
+                if send_email:
+                    send_user_notification(self.cur_search.userid, self.cur_search.query,
+                                           self.cur_search.date_submitted, self.cur_search.num_results_downloaded)
 
             except Exception as exp: # pylint: disable=broad-except
                 # This scenario shouldn't happen, but handling it just in case
                 # so that the service won't quit on-error
-                log_error(f"An unexpected error occured while compressing the completed search queue. {create_error_message(exp, os.path.basename(__file__))}")
+                log_error((f"Stopping. An unexpected error occurred while compressing the completed search queue. "
+                           f"{create_error_message(exp, os.path.basename(__file__))}"))
                 self.terminate = True # stop the service since something is horribly wrong
                 continue
 
         # any cleanup after terminate
         logging.info("Stopped compression processing.")
-
 
     def sig_term(self, _, __):
         '''
