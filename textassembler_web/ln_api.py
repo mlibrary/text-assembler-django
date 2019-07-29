@@ -251,7 +251,7 @@ class LNAPI:
 
         else:
             error_message = "An unexpected API error occurred."
-            full_error_message = f"Call to {url} failed with code {resp.status_code}. Response: "
+            full_error_message = f"Call to {resp.url} failed with code {resp.status_code}. Response: "
             log_error(full_error_message, results)
             if "error" in results and "message" in results:
                 error_message = f"Error: {results['error']}. Message: {results['message']}"
