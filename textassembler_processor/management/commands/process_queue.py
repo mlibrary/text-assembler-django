@@ -6,6 +6,7 @@ import logging
 import signal
 import os
 import json
+from datetime import datetime
 from bs4 import BeautifulSoup # pylint: disable=import-error
 from django.core.management.base import BaseCommand
 from django.apps import apps
@@ -196,11 +197,23 @@ class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
                                 os.mkdir(save_location)
                             if not os.path.exists(save_path):
                                 os.mkdir(save_path)
+                            file_path = os.path.join(save_path, file_name)
+                            unique_timestamp = datetime.now().strftime('%d%H%M%S%f')
                             if fmt.format_id.format_name == "HTML":
-                                with open(os.path.join(save_path, file_name + ".html"), 'w') as flh:
+                                if os.path.isfile(os.path.join(save_path, file_name + ".html")):
+                                    logging.warning(f"Search: {self.cur_search.search_id}. File path already exists for {file_path + '.html'}")
+                                    file_path = file_path + f"_{unique_timestamp}.html"
+                                else:
+                                    file_path = file_path + ".html"
+                                with open(file_path, 'w') as flh:
                                     flh.write(full_text)
                             elif fmt.format_id.format_name == "TXT":
-                                with open(os.path.join(save_path, file_name + ".txt"), 'w') as flh:
+                                if os.path.isfile(os.path.join(save_path, file_name + ".txt")):
+                                    logging.warning(f"Search: {self.cur_search.search_id}. File path already exists for {file_path + '.txt'}")
+                                    file_path = file_path + f"_{unique_timestamp}.txt"
+                                else:
+                                    file_path = file_path + ".txt"
+                                with open(file_path, 'w') as flh:
                                     flh.write(full_text)
                             elif fmt.format_id.format_name == "TXT Only":
                                 try:
@@ -209,7 +222,12 @@ class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
                                     log_error((f"Unable to create TXT Only output for search {self.cur_search.search_id}, "
                                                f"filename {file_name}. Error. {create_error_message(exp, os.path.basename(__file__))}"))
                                     cleaned_full_text = full_text ## write the original text to the file instead
-                                with open(os.path.join(save_path, file_name + "_ONLY_TXT.txt"), 'w') as flh:
+                                if os.path.isfile(os.path.join(save_path, file_name + ".txt")):
+                                    logging.warning(f"Search: {self.cur_search.search_id}. File path already exists for {file_path + '.txt'}")
+                                    file_path = file_path + f"_{unique_timestamp}.txt"
+                                else:
+                                    file_path = file_path + ".txt"
+                                with open(file_path, 'w') as flh:
                                     flh.write(cleaned_full_text)
                     except OSError as ex:
                         log_error(f"Failed to save downloaded results to the server. {create_error_message(ex, os.path.basename(__file__))}")
