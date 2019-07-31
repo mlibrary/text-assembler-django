@@ -26,7 +26,10 @@ ALLOWED_HOSTS = textassembler.lib.msu.edu
 PREFERED_HOST_URL = https://textassembler.lib.msu.edu
 
 [debug]
-DEBUG = true
+DEBUG = false
+# This can be set to true without DEBUG being true to allow for the log files to contain full debug information
+# without having it print to the screen, which DEBUG will do on error
+LOG_DEBUG_LEVEL = true
 
 [secretkey]
 SECRET_KEY = secretkey
