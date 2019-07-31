@@ -92,8 +92,9 @@ SECRET_KEY = CONFIGS.get("secretkey", "SECRET_KEY")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = CONFIGS.get("debug", "DEBUG").lower() == 'true'
+LOG_DEBUG_LEVEL = CONFIGS.get("debug", "LOG_DEBUG_LEVEL").lower() == 'true'
 
-if DEBUG:
+if LOG_DEBUG_LEVEL:
     # will output to console
     logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(levelname)-8s %(message)s', datefmt='%a, %d %b %Y %H:%M:%S', filemode='w')
 else:
