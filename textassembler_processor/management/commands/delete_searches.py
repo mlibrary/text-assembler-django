@@ -8,6 +8,7 @@ import os
 import shutil
 import datetime
 from django.core.management.base import BaseCommand
+from django.db import OperationalError
 from django.apps import apps
 from django.conf import settings
 from django.utils import timezone
