@@ -88,7 +88,7 @@ function addFilterRow(data, selected_filter, selected_filter_value='') {
             newRow += "</select>";
             break;
         case "date":
-            newRow += "<select name='" + selected_filter + "' class='sp comp-dd' data-width='15%' aria-label='" + selected_filter + "' >";
+            newRow += "<select name='" + selected_filter + "' class='sp comp-dd' data-width='75%' aria-label='" + selected_filter + "' >";
             var i = 0;
             for (i=0; i< data["choices"].length; i++){
                 newRow += "<option value='" + data["choices"][i]['val'] + "'";
