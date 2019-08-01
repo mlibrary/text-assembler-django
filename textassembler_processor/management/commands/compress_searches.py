@@ -55,7 +55,7 @@ class Command(BaseCommand):
                         continue # nothing to process
                 except Exception as ex: # pylint: disable=broad-except
                     if not self.retry:
-                        time.sleep(10) # wait 10 seconds and re-try
+                        time.sleep(settings.DB_WAIT_TIME) # wait and re-try (giving this more time in case db server is being rebooted)
                         self.retry = True
                         continue
                     else:
@@ -68,8 +68,8 @@ class Command(BaseCommand):
                 if not os.access(settings.STORAGE_LOCATION, os.W_OK) or not os.path.isdir(settings.STORAGE_LOCATION):
                     logging.warning((f"Compression Processor failed to connect to storage location. "
                                      f"Either being inaccessible or not writable. {settings.STORAGE_LOCATION}"))
-                    # wait 5 minutes, if the storage is still not available, then terminate
-                    time.sleep(60*5)
+                    # wait and retry, if the storage is still not available, then terminate
+                    time.sleep(settings.STORAGE_WAIT_TIME)
                     if not os.access(settings.STORAGE_LOCATION, os.W_OK) or \
                         not os.path.isdir(settings.STORAGE_LOCATION):
                         log_error(f"Stopping. Compression Processor failed due to {settings.STORAGE_LOCATION} being inaccessible or not writable.")
@@ -89,7 +89,8 @@ class Command(BaseCommand):
                         continue # nothing to process
                 except Exception as ex: # pylint: disable=broad-except
                     if not self.retry:
-                        time.sleep(10) # wait 10 seconds and re-try
+                        self.retry = True
+                        time.sleep(settings.DB_WAIT_TIME) # wait and re-try (giving this more time in case db server is being rebooted)
                         self.retry = True
                         continue
                     else:
@@ -141,8 +142,7 @@ class Command(BaseCommand):
                 try:
                     self.cur_search.save()
                 except OperationalError as oexp:
-                    # DB connection probably just hiccuped. Wait and try again
-                    time.sleep(10) # wait 10 seconds and re-try
+                    time.sleep(settings.DB_WAIT_TIME) # wait and re-try (giving this more time in case db server is being rebooted)
                     try:
                         self.cur_search.save()
                     except OperationalError as oexp:

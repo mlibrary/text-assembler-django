@@ -60,7 +60,7 @@ class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
                         continue # nothing to process
                 except OperationalError as ex:
                     if not self.retry:
-                        time.sleep(10) # wait 10 seconds and re-try
+                        time.sleep(settings.DB_WAIT_TIME) # wait and re-try (giving this more time in case db server is being rebooted)
                         self.retry = True
                         continue
                     else:
@@ -71,8 +71,8 @@ class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
                 # verify the storage location is accessibly
                 if not os.access(settings.STORAGE_LOCATION, os.W_OK) or not os.path.isdir(settings.STORAGE_LOCATION):
                     log_error(f"Queue Processor failed due to storage location being inaccessible or not writable. {settings.STORAGE_LOCATION}")
-                    # wait 30 seconds, if the storage is still not available, then terminate
-                    time.sleep(30)
+                    # wait and retry, if the storage is still not available, then terminate
+                    time.sleep(settings.STORAGE_WAIT_TIME)
                     if not os.access(settings.STORAGE_LOCATION, os.W_OK) or not os.path.isdir(settings.STORAGE_LOCATION):
                         log_error(f"Stopping. Queue Processor failed due to storage location being inaccessible or not writable. {settings.STORAGE_LOCATION}")
                         self.terminate = True
@@ -83,8 +83,8 @@ class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
                 response = self.api.authenticate()
                 if response != "":
                     log_error(f"Queue Processor failed to authenticate against LexisNexis API. Response: {response}")
-                    # wait 5 minutes, if the storage is still not able to authenticate, then terminate
-                    time.sleep(60*5)
+                    # wait and retry, if the storage is still not available, then terminate
+                    time.sleep(settings.STORAGE_WAIT_TIME)
                     response = self.api.authenticate()
                     if response != "":
                         log_error(f"Stopping. Queue Processor failed to authenticate against LexisNexis API. Response: {response}")
@@ -115,7 +115,7 @@ class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
                         continue # nothing to process
                 except OperationalError as ex:
                     if not self.retry:
-                        time.sleep(10) # wait 10 seconds and re-try
+                        time.sleep(settings.DB_WAIT_TIME) # wait and re-try (giving this more time in case db server is being rebooted)
                         self.retry = True
                         continue
                     else:
@@ -151,7 +151,7 @@ class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
                                    f"for {self.cur_search.search_id}. ",
                                    f"{create_error_message(exp, os.path.basename(__file__))}"))
                     # Try one more time before stopping processing (in event of connection reset)
-                    time.sleep(30)
+                    time.sleep(settings.LN_WAIT_TIME)
                     try:
                         results = self.api.download(self.cur_search.query, \
                             self.set_filters, settings.LN_DOWNLOAD_PER_CALL, \

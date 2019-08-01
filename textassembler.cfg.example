@@ -11,6 +11,15 @@ NOTIF_EMAIL_DOMAIN = msu.edu
 # If set to true, all notification emails will have the MAINTAINER_EMAILS BCC'd
 BCC_MAINTAINERS_ON_NOTIF = true
 
+[processor]
+# configs related to the backend processors (download, compress, delete)
+# (60 * 5) number of seconds to wait before failing out due to the DB not being available
+DB_WAIT_TIME = 300 
+# (60 * 5) number of seconds to wait before failing out due to storage not being accessible
+STORAGE_WAIT_TIME = 300 
+# number of seconds to wait before failing out due to LN calls failing
+LN_WAIT_TIME = 30 
+
 [database.default]
 ENGINE = django.db.backends.mysql
 NAME = name

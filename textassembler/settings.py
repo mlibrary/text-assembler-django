@@ -62,6 +62,11 @@ LN_TIMEOUT = int(CONFIGS.get("lexisnexis", "TIMEOUT_SECONDS"))
 PREVIEW_FORMAT = CONFIGS.get("lexisnexis", "PREVIEW_FORMAT")
 NUM_MONTHS_KEEP_SEARCHES = int(CONFIGS.get("lexisnexis", "NUM_MONTHS_KEEP_SEARCHES"))
 
+# Processor configs
+DB_WAIT_TIME = int(CONFIGS.get("processor", "DB_WAIT_TIME"))
+STORAGE_WAIT_TIME = int(CONFIGS.get("processor", "STORAGE_WAIT_TIME"))
+LN_WAIT_TIME = int(CONFIGS.get("processor", "LN_WAIT_TIME"))
+
 # API Limits
 SEARCHES_PER_MINUTE = int(CONFIGS.get("api.limits", "SEARCHES_PER_MINUTE"))
 SEARCHES_PER_HOUR = int(CONFIGS.get("api.limits", "SEARCHES_PER_HOUR"))
