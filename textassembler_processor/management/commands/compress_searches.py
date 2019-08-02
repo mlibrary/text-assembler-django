@@ -46,7 +46,7 @@ class Command(BaseCommand):
                 # that have completed downloading results and haven't already completed compression
                 try:
                     queue = self.searches.objects.filter(
-                        date_completed__isnull=False, date_completed_compression__isnull=True, failed_date__isnull=True).order_by('-update_date')
+                        date_completed__isnull=False, date_completed_compression__isnull=True, failed_date__isnull=True, deleted=False).order_by('-update_date')
                     if queue:
                         self.cur_search = queue[0]
                         self.retry = False
@@ -80,7 +80,7 @@ class Command(BaseCommand):
                 # location is accessible. This is necessary in case it has changed during that time.
                 try:
                     queue = self.searches.objects.filter(
-                        date_completed__isnull=False, date_completed_compression__isnull=True, failed_date__isnull=True).order_by('-update_date')
+                        date_completed__isnull=False, date_completed_compression__isnull=True, failed_date__isnull=True, deleted=False).order_by('-update_date')
                     if queue:
                         self.cur_search = queue[0]
                         self.retry = False
