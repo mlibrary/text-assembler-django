@@ -4,7 +4,6 @@ Handles all web requests for the application
 import json
 import logging
 import datetime
-import shutil
 import base64
 import os
 from django.http import HttpResponse, JsonResponse
