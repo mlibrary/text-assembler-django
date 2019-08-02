@@ -43,6 +43,7 @@ class searches(models.Model): # pylint: disable=invalid-name
     retry_count = models.IntegerField(default=0) # number of times a call to the API failed
     error_message = models.TextField(null=True)
     failed_date = models.DateTimeField(null=True) # date the search failed
+    deleted = models.BooleanField(default=False) # flag the search for deletion
 
     def __str__(self):
         '''
@@ -89,6 +90,7 @@ class historical_searches(models.Model): # pylint: disable=invalid-name
     retry_count = models.IntegerField(default=0)
     error_message = models.TextField(null=True)
     failed_date = models.DateTimeField(null=True)
+    deleted = models.BooleanField(default=False)
     date_deleted = models.DateTimeField(auto_now_add=True)
 
 @receiver(pre_delete, sender=searches)
@@ -105,5 +107,5 @@ def save_historical_search_data(sender, instance, **kwargs): # pylint: disable=u
                                      date_completed_compression=instance.date_completed_compression,
                                      user_notified=instance.user_notified, run_time_seconds=instance.run_time_seconds,
                                      retry_count=instance.retry_count, error_message=instance.error_message,
-                                     failed_date=instance.failed_date)
+                                     failed_date=instance.failed_date, deleted=instance.deleted)
     search_obj.save()

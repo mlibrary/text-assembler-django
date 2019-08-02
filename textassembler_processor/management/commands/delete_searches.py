@@ -42,7 +42,7 @@ class Command(BaseCommand):
         # Grab the necessary models
         self.searches = apps.get_model('textassembler_web', 'searches')
 
-        logging.info(f"Starting deletion processing. Removing searches more than {settings.NUM_MONTHS_KEEP_SEARCHES} months old")
+        logging.info(f"Starting deletion processing. Removing searches more than {settings.NUM_MONTHS_KEEP_SEARCHES} months old or marked as deleted")
         while not self.terminate:
             time.sleep(1) # take a quick break!
             try:
@@ -51,7 +51,7 @@ class Command(BaseCommand):
                     # delete searches completed/failed before this date
                     delete_date = timezone.now() -  datetime.timedelta(days=settings.NUM_MONTHS_KEEP_SEARCHES * 30)
                     queue = self.searches.objects.filter(
-                        Q(date_completed_compression__lte=delete_date)|Q(failed_date__lte=delete_date)).order_by('-update_date')
+                        Q(date_completed_compression__lte=delete_date)|Q(failed_date__lte=delete_date)|Q(deleted=True)).order_by('-update_date')
                     if queue:
                         self.cur_search = queue[0]
                         self.retry = False
@@ -67,7 +67,6 @@ class Command(BaseCommand):
                         log_error(f"Stopping. Deletion Processor failed to retrieve the pending deletion queue. {ex}")
                         self.terminate = True
                         continue
-
 
                 # verify the storage location is accessibly
                 if not os.access(settings.STORAGE_LOCATION, os.W_OK) or not os.path.isdir(settings.STORAGE_LOCATION):
@@ -86,7 +85,7 @@ class Command(BaseCommand):
                     # delete searches completed/failed before this date
                     delete_date = timezone.now() -  datetime.timedelta(days=settings.NUM_MONTHS_KEEP_SEARCHES * 30)
                     queue = self.searches.objects.filter(
-                        Q(date_completed_compression__lte=delete_date)|Q(failed_date__lte=delete_date)).order_by('-update_date')
+                        Q(date_completed_compression__lte=delete_date)|Q(failed_date__lte=delete_date)|Q(deleted=True)).order_by('-update_date')
                     if queue:
                         self.cur_search = queue[0]
                         self.retry = False
@@ -94,6 +93,7 @@ class Command(BaseCommand):
                         self.retry = False
                         continue # nothing to process
                 except Exception as ex: # pylint: disable=broad-except
+                    logging.error(ex)
                     if not self.retry:
                         time.sleep(settings.DB_WAIT_TIME) # wait and re-try (giving this more time in case db server is being rebooted)
                         self.retry = True

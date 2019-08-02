@@ -4,7 +4,6 @@ Handles all web requests for the application
 import json
 import logging
 import datetime
-import shutil
 import base64
 import os
 from django.http import HttpResponse, JsonResponse
@@ -358,7 +357,7 @@ def mysearches(request):
         response["error_message"] = request.session["error_message"]
         request.session["error_message"] = "" # clear it out so it won't show on refresh
 
-    all_user_searches = searches.objects.all().filter(userid=request.session['userid']).order_by('-date_submitted')
+    all_user_searches = searches.objects.all().filter(userid=request.session['userid'], deleted=False).order_by('-date_submitted')
 
     for search_obj in all_user_searches:
         search_obj = set_search_info(search_obj)
@@ -438,7 +437,8 @@ def set_search_info(search_obj):
 
 def delete_search(request, search_id):
     '''
-    Will remove the search from the database and delete files on the server
+    Will flag the search as deleted, which the deletion processor will pick up
+    and remove from the DB and the storage location
     '''
 
     error_message = ""
@@ -448,39 +448,14 @@ def delete_search(request, search_id):
 
     try:
         search_obj = searches.objects.get(search_id=search_id)
-        logging.info(f"Deleting search: {search_id}. {search_obj}")
+        logging.info(f"Marking search as deleted: {search_id}. {search_obj}")
 
-        # delete files on the server
-        ## verify the storage location is accessibly
-        if not os.access(settings.STORAGE_LOCATION, os.W_OK) or not os.path.isdir(settings.STORAGE_LOCATION):
-            msg = f"Could not delete files for search {search_id} due to storage location being inaccessible or not writable. {settings.STORAGE_LOCATION}"
-            log_error(msg, search_obj)
-        else:
-            save_location = os.path.join(settings.STORAGE_LOCATION, search_id)
-            zip_path = find_zip_file(search_id)
-
-            if os.path.isdir(save_location):
-                try:
-                    shutil.rmtree(save_location)
-                except OSError as ex1:
-                    log_error(f"Could not delete files for search {search_id}. {ex1}", search_obj)
-            if zip_path != None and os.path.exists(zip_path):
-                try:
-                    os.remove(zip_path)
-                except OSError as ex2:
-                    log_error(f"Could not delete the zipped file for search {search_id}. {ex2}", search_obj)
-            if os.path.isdir(save_location):
-                try:
-                    os.rmdir(save_location)
-                except OSError as ex3:
-                    log_error(f"Could not delete root directory for search {search_id}. {ex3}", search_obj)
-
-        # delete the records from the database regardless of if we can delete the files
-        search_obj.delete()
+        search_obj.deleted = True
+        search_obj.save()
 
     except Exception as exp: # pylint: disable=broad-except
         error = create_error_message(exp, os.path.basename(__file__))
-        log_error(f"Error deleting search {search_id}. {error}", json.dumps(dict(request.POST)))
+        log_error(f"Error marking search as deleted:  {search_id}. {error}", json.dumps(dict(request.POST)))
 
         if settings.DEBUG:
             error_message = error
