@@ -138,7 +138,9 @@ class LNAPI:
                     return False
             else:
                 end_is_next_day = settings.WEEKEND_END_TIME < settings.WEEKEND_START_TIME
-                if datetime.datetime.now().time() < settings.WEEKEND_START_TIME or (not end_is_next_day and datetime.now().time() > settings.WEEKEND_END_TIME): # pylint: disable=no-member
+                if datetime.datetime.now().time() < settings.WEEKEND_START_TIME or \
+                    (not end_is_next_day and \
+                    datetime.datetime.now().time() > settings.WEEKEND_END_TIME):
                     return False
 
         if self.requests_per_min.filter(is_download=True).count() < settings.DOWNLOADS_PER_MINUTE \
