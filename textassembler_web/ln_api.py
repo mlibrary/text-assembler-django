@@ -129,19 +129,33 @@ class LNAPI:
         if processing:
             # determine if it is currently a weekend or weekday
             is_weekday = datetime.datetime.today().weekday() < 5
+            now = datetime.datetime.now()
 
             if is_weekday:
+                start_time = datetime.datetime.now().replace(hour=settings.WEEKDAY_START_TIME.hour,\
+                    minute=settings.WEEKDAY_START_TIME.minute, second=0, microsecond=0)
+                end_time = datetime.datetime.now().replace(hour=settings.WEEKDAY_END_TIME.hour,\
+                    minute=settings.WEEKDAY_END_TIME.minute, second=0, microsecond=0)
+
                 end_is_next_day = settings.WEEKDAY_END_TIME < settings.WEEKDAY_START_TIME
-                if datetime.datetime.now().time() < settings.WEEKDAY_START_TIME \
-                    or (not end_is_next_day and \
-                    datetime.datetime.now().time() > settings.WEEKDAY_END_TIME):
-                    return False
             else:
+                start_time = datetime.datetime.now().replace(hour=settings.WEEKEND_START_TIME.hour,\
+                    minute=settings.WEEKEND_START_TIME.minute, second=0, microsecond=0)
+                end_time = datetime.datetime.now().replace(hour=settings.WEEKEND_END_TIME.hour,\
+                    minute=settings.WEEKEND_END_TIME.minute, second=0, microsecond=0)
+
                 end_is_next_day = settings.WEEKEND_END_TIME < settings.WEEKEND_START_TIME
-                if datetime.datetime.now().time() < settings.WEEKEND_START_TIME or \
-                    (not end_is_next_day and \
-                    datetime.datetime.now().time() > settings.WEEKEND_END_TIME):
-                    return False
+
+            if end_is_next_day:
+                end_time = end_time + datetime.timedelta(days=1)
+
+            if now < start_time or now > end_time:
+                message = (
+                    f"Not during the valid processing window. "
+                    f"Start time: {start_time.strftime('%A %I:%M%p')} "
+                    f"End time: {end_time.strftime('%A %I:%M%p')}")
+                logging.debug(message)
+                return False
 
         if self.requests_per_min.filter(is_download=True).count() < settings.DOWNLOADS_PER_MINUTE \
             and self.requests_per_hour.filter(is_download=True).count() < settings.DOWNLOADS_PER_HOUR \
