@@ -133,22 +133,22 @@ class LNAPI:
 
             if is_weekday:
                 start_time = datetime.datetime.now().replace(hour=settings.WEEKDAY_START_TIME.hour,\
-                    minute=settings.WEEKDAY_START_TIME.minute,second=0,microsecond=0)
+                    minute=settings.WEEKDAY_START_TIME.minute, second=0, microsecond=0)
                 end_time = datetime.datetime.now().replace(hour=settings.WEEKDAY_END_TIME.hour,\
-                    minute=settings.WEEKDAY_END_TIME.minute,second=0,microsecond=0)
+                    minute=settings.WEEKDAY_END_TIME.minute, second=0, microsecond=0)
 
                 end_is_next_day = settings.WEEKDAY_END_TIME < settings.WEEKDAY_START_TIME
             else:
                 start_time = datetime.datetime.now().replace(hour=settings.WEEKEND_START_TIME.hour,\
-                    minute=settings.WEEKEND_START_TIME.minute,second=0,microsecond=0)
+                    minute=settings.WEEKEND_START_TIME.minute, second=0, microsecond=0)
                 end_time = datetime.datetime.now().replace(hour=settings.WEEKEND_END_TIME.hour,\
-                    minute=settings.WEEKEND_END_TIME.minute,second=0,microsecond=0)
+                    minute=settings.WEEKEND_END_TIME.minute, second=0, microsecond=0)
 
                 end_is_next_day = settings.WEEKEND_END_TIME < settings.WEEKEND_START_TIME
-                
+
             if end_is_next_day:
                 end_time = end_time + datetime.timedelta(days=1)
-            
+
             if now < start_time or now > end_time:
                 message = (
                     f"Not during the valid processing window. "

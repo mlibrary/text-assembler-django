@@ -264,8 +264,8 @@ class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
                     continue
                 else:
                     log_error((f"Stopping. Queue Processor failed due to a database connectivity issue.",
-                              f"(search id={'N/A' if self.cur_search is None else self.cur_search.search_id}.",
-                              f" {create_error_message(ex, os.path.basename(__file__))}"))
+                               f"(search id={'N/A' if self.cur_search is None else self.cur_search.search_id}.",
+                               f" {create_error_message(ex, os.path.basename(__file__))}"))
                     self.terminate = True
             except Exception as exp: # pylint: disable=broad-except
                 # This scenario shouldn't happen, but handling it just in case
