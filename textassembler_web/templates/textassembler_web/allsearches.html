@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+
+{% load humanize %}
+{% load custom_tags %}
+
+{% block content %}
+
+<h1>Active Searches</h1><hr/>
+
+<p>This page contains all of the actively queued searches. Each record will display it's current status. Searches will automatically be deleted from the system after {{ num_months_keep_searches }} months. The exact date each search will be removed is located in the details section of the progress column. </p>
+
+{% if error_message %}
+<br/><p class='error'>{{ error_message }}</p>
+{% endif %}
+<br/>
+{% with is_admin=True %}
+{% include 'textassembler_web/searches_grid.html' %}
+{% endwith %}
+{% endblock %}

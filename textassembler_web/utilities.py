@@ -9,9 +9,10 @@ import sys
 import math
 import smtplib
 import socket
+import datetime
 from email.message import EmailMessage
 from django.conf import settings
-from .models import searches
+from .models import searches, filters, download_formats, available_formats
 
 def log_error(error_message, json_data=None):
     '''
@@ -172,3 +173,47 @@ def est_days_to_complete_search(num_results_in_search):
     queue_cnt = 1 if queue_cnt == 0 else queue_cnt
 
     return math.ceil(int(num_results_in_search) / ((int(settings.DOWNLOADS_PER_DAY) * int(settings.LN_DOWNLOAD_PER_CALL)) / int(queue_cnt)))
+
+def build_search_info(search_obj):
+    '''
+    Add additional information to each search result object for the page to use when rendering
+    '''
+    # Build progress data
+    search_obj.filters = filters.objects.filter(search_id=search_obj.search_id)
+    formats = download_formats.objects.filter(search_id=search_obj.search_id)
+    search_obj.download_formats = []
+
+    for fmt in formats:
+        search_obj.download_formats.append(available_formats.objects.get(format_id=fmt.format_id.format_id))
+
+    # determine the status
+    search_obj.status = "Queued"
+    if search_obj.date_started != None:
+        search_obj.status = "In Progress"
+    if search_obj.date_started_compression != None:
+        search_obj.status = "Preparing Results for Download"
+    if search_obj.date_completed_compression != None:
+        search_obj.status = "Completed"
+    if search_obj.failed_date != None:
+        search_obj.status = "Failed"
+
+    # set date the search_obj is set to be deleted on
+    if search_obj.status == "Completed":
+        search_obj.delete_date = search_obj.date_completed_compression + datetime.timedelta(days=settings.NUM_MONTHS_KEEP_SEARCHES * 30)
+    if search_obj.status == "Failed":
+        search_obj.delete_date = search_obj.failed_date + datetime.timedelta(days=settings.NUM_MONTHS_KEEP_SEARCHES * 30)
+
+    if (search_obj.status == "Queued" or search_obj.status == "In Progress") and search_obj.num_results_in_search and search_obj.num_results_in_search > 0:
+        search_obj.est_days_to_complete = est_days_to_complete_search(search_obj.num_results_in_search - search_obj.num_results_downloaded)
+
+    # calculate percent complete
+    if search_obj.num_results_in_search is None or search_obj.num_results_in_search == 0:
+        search_obj.percent_complete = 0
+    else:
+        search_obj.percent_complete = round((search_obj.num_results_downloaded / search_obj.num_results_in_search) * 100, 0)
+
+    # Clear out the error message from the display if the status is not Failed
+    if search_obj.status != "Failed":
+        search_obj.error_message = ""
+
+    return search_obj

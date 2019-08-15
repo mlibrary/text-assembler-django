@@ -60,8 +60,7 @@ def login(request):
     return redirect('/search')
 
 def get_is_admin(userid):
-    admin_user = admin_users.objects.all().filter(userid=userid)
-    if admin_user:
-        return True
-    else:
-        return False
+    '''
+    Determine if the user is a system admin or not
+    '''
+    return bool(admin_users.objects.all().filter(userid=userid))
