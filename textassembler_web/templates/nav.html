@@ -1,18 +1,44 @@
 {% block nav %}
 {% load static %}
-<div id="navbar-wrapper">
-    <ul class="menu">
-        <li><a href="/">Search</a></li>
-        <li><a href="/mysearches">My Searches</a></li>
-        <li><a href="/about">About</a></li>
-        {% if request.session.is_admin %}
-            <li><a href="/admin/searches">Admin</a></li>
-        {% endif %}
-        <li id='user_logout'><span>Logged in as: {{ request.session.userid }} (<a href='/logout' class='logout'>logout</a>)</span></li>
+<div class="navbar-container">
+    <a href="/" role="button"
+        class="btn btn-primary btn-green {% if '/search' == request.path %} btn-selected {% endif %}">
+        Search
+    </a>
+    
+    <a href="/mysearches" role="button"
+        class="btn btn-primary btn-green {% if '/mysearches' == request.path %} btn-selected {% endif %}">
+        My Search
+    </a>
+
+
+    <a href="/about" role="button"
+        class="btn btn-primary btn-green {% if '/about' == request.path %} btn-selected {% endif %}">
+        About
+    </a>
+
+    {% if request.session.is_admin %}
+        <div class="dropdown">
+            <a href="/admin/searches" role="button"
+                class="btn btn-primary dropdown-toggle btn-green {% if '/admin' in  request.path %} btn-selected {% endif %}"
+                id="ddAdmin" data-toggle="dropdown">Admin</a>
+
+            <div class="dropdown-menu nav-dropdown" aria-labelledby="ddAdmin">
+                <a class="dropdown-item" href="/admin/searches">All Searches</a>
+                <a class="dropdown-item" href="/admin/users">Admin Users</a>
+                <a class="dropdown-item" href="/admin/statistics">Statistics</a>
+            </div>
+        </div>
+    {% endif %}
+
+    <a href="/logout" role="button" class="btn btn-primary btn-green right">schanzme (logout)</a>
+
 </div>
+
 <span style='float:left;'>
     <a href='https://www.lexisnexis.com'>
         <img src="{% static 'LexisNexis.gif' %}" alt="LexisNexis(R)" style="width:200px;height:61px">
     </a>
 </span>
+
 {% endblock %}

@@ -70,7 +70,7 @@ class download_formats(models.Model): # pylint: disable=invalid-name
     search_id = models.ForeignKey("searches", models.CASCADE)
     format_id = models.ForeignKey("available_formats", models.CASCADE)
 
-class admin_users(models.Model): # pylint: disable=invalid-name
+class administrative_users(models.Model): # pylint: disable=invalid-name
     '''
     Administrative users
     '''

@@ -6,7 +6,7 @@ from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.conf import settings
 from textassembler_web.oauth_client import OAuthClient
-from textassembler_web.models import admin_users
+from textassembler_web.models import administrative_users
 
 def login(request):
     '''
@@ -63,4 +63,4 @@ def get_is_admin(userid):
     '''
     Determine if the user is a system admin or not
     '''
-    return bool(admin_users.objects.all().filter(userid=userid))
+    return bool(administrative_users.objects.all().filter(userid=userid))

@@ -4,7 +4,7 @@ Handles all requests to the admin page
 from django.shortcuts import render, redirect
 from django.conf import settings
 from textassembler_web.utilities import build_search_info
-from textassembler_web.models import searches, admin_users
+from textassembler_web.models import searches, administrative_users
 
 def admin_searches(request):
     '''
@@ -15,7 +15,7 @@ def admin_searches(request):
         return redirect('/login')
 
     # Verify that the user is an admin
-    admin_user = admin_users.objects.all().filter(userid=request.session['userid'])
+    admin_user = administrative_users.objects.all().filter(userid=request.session['userid'])
     if not admin_user:
         return redirect('/login')
 
