@@ -5,6 +5,9 @@
         <li><a href="/">Search</a></li>
         <li><a href="/mysearches">My Searches</a></li>
         <li><a href="/about">About</a></li>
+        {% if request.session.is_admin %}
+            <li><a href="/admin/searches">Admin</a></li>
+        {% endif %}
         <li id='user_logout'><span>Logged in as: {{ request.session.userid }} (<a href='/logout' class='logout'>logout</a>)</span></li>
 </div>
 <span style='float:left;'>

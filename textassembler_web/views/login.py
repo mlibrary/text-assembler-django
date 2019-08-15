@@ -6,6 +6,7 @@ from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.conf import settings
 from textassembler_web.oauth_client import OAuthClient
+from textassembler_web.models import admin_users
 
 def login(request):
     '''
@@ -14,11 +15,13 @@ def login(request):
     # Check if bypass mode is enabled
     if settings.OAUTH_BYPASS:
         request.session['userid'] = settings.OAUTH_BYPASS_USER
+        request.session['is_admin'] = get_is_admin(request.session['userid'])
         logging.debug(f"OAuth bypass mode is enabled. Logging in as {request.session['userid']}")
         return redirect('/search')
 
     # If they are already logged in, send users to search page
     if request.session.get('userid', False):
+        request.session['is_admin'] = get_is_admin(request.session['userid'])
         logging.debug(f"User already logged in: {request.session['userid']}")
         return redirect('/search')
 
@@ -46,6 +49,7 @@ def login(request):
         app_auth.set_access_token(request.session['access_token'])
         results = app_auth.fetch()
         request.session['userid'] = results['info'][settings.APP_USER_ID_FIELD]
+        request.session['is_admin'] = get_is_admin(request.session['userid'])
 
     # Check if the userid is still not set
     if not request.session.get('userid', False):
@@ -54,3 +58,10 @@ def login(request):
 
     # Send users to the search page on sucessful login
     return redirect('/search')
+
+def get_is_admin(userid):
+    admin_user = admin_users.objects.all().filter(userid=userid)
+    if admin_user:
+        return True
+    else:
+        return False
