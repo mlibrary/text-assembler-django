@@ -6,7 +6,7 @@ from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.conf import settings
 from textassembler_web.oauth_client import OAuthClient
-from textassembler_web.models import administrative_users
+from textassembler_web.utilities import get_is_admin
 
 def login(request):
     '''
@@ -58,9 +58,3 @@ def login(request):
 
     # Send users to the search page on sucessful login
     return redirect('/search')
-
-def get_is_admin(userid):
-    '''
-    Determine if the user is a system admin or not
-    '''
-    return bool(administrative_users.objects.all().filter(userid=userid))

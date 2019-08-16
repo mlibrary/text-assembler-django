@@ -3,6 +3,7 @@ Handles all web requests for the users page
 '''
 from django.shortcuts import render, redirect
 from textassembler_web.models import administrative_users
+from textassembler_web.utilities import get_is_admin
 
 
 
@@ -11,13 +12,18 @@ def admin_users(request):
     Render the users page
     '''
 
-    # Verify that the user is logged in
-    if not request.session.get('userid', False):
+    # Verify that the user is logged in and an admin
+    if not request.session.get('userid', False) or not get_is_admin(request.session['userid']):
         return redirect('/login')
 
-    # Verify that the user is an admin
-    admin_user = administrative_users.objects.all().filter(userid=request.session['userid'])
-    if not admin_user:
-        return redirect('/login')
+    response = {}
+    response["headings"] = ["User", "Action"]
 
-    return render(request, 'textassembler_web/users.html', {})
+    if "error_message" in request.session:
+        response["error_message"] = request.session["error_message"]
+        request.session["error_message"] = "" # clear it out so it won't show on refresh
+
+    response["users"] = administrative_users.objects.all().order_by('userid')
+
+
+    return render(request, 'textassembler_web/users.html', response)

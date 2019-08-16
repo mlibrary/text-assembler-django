@@ -12,7 +12,7 @@ import socket
 import datetime
 from email.message import EmailMessage
 from django.conf import settings
-from .models import searches, filters, download_formats, available_formats
+from .models import searches, filters, download_formats, available_formats, administrative_users
 
 def log_error(error_message, json_data=None):
     '''
@@ -217,3 +217,10 @@ def build_search_info(search_obj):
         search_obj.error_message = ""
 
     return search_obj
+
+def get_is_admin(userid):
+    '''
+    Determine if the user is a system admin or not
+    '''
+    return bool(administrative_users.objects.all().filter(userid=userid))
+
