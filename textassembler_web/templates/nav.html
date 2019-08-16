@@ -18,12 +18,12 @@
     </a>
 
     {% if request.session.is_admin %}
-        <div class="dropdown">
+        <div class="nav-dropdown dropdown">
             <a href="/admin/searches" role="button"
                 class="btn btn-primary dropdown-toggle btn-green {% if '/admin' in  request.path %} btn-selected {% endif %}"
                 id="ddAdmin" data-toggle="dropdown">Admin</a>
 
-            <div class="dropdown-menu nav-dropdown" aria-labelledby="ddAdmin">
+            <div class="dropdown-menu nav-subdropdown" aria-labelledby="ddAdmin">
                 <a class="dropdown-item" href="/admin/searches">All Searches</a>
                 <a class="dropdown-item" href="/admin/users">Admin Users</a>
                 <a class="dropdown-item" href="/admin/statistics">Statistics</a>
