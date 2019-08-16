@@ -223,4 +223,3 @@ def get_is_admin(userid):
     Determine if the user is a system admin or not
     '''
     return bool(administrative_users.objects.all().filter(userid=userid))
-

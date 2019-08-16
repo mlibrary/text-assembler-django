@@ -38,11 +38,9 @@ def add_admin_user(request):
     # Parse the userid to add
     if "userid" in request.POST:
         userid = request.POST["userid"]
-        if len(userid) > 1:
-            userid == userid[0]
 
     # Validate the userid meets minimum requirements
-    if len(userid) == 0:
+    if not userid:
         request.session["error_message"] = "the User ID must be at least 1 character long."
 
     # Make sure the user is not already marked as an administrator
@@ -67,12 +65,12 @@ def delete_admin_user(request, userid):
 
     # Validate that the user is not the current user
     if userid == request.session['userid']:
-       request.session["error_message"] = "Can not remove the currently logged in user as an administrator." 
+        request.session["error_message"] = "Can not remove the currently logged in user as an administrator."
 
     # Check if the user is in the administrators table
     admin_record = administrative_users.objects.all().filter(userid=userid)
     if not admin_record:
-         request.session["error_message"] = "The User ID provided was not found in the database! If this persists, please contact a system administrator."
+        request.session["error_message"] = "The User ID provided was not found in the database! If this persists, please contact a system administrator."
 
     # If they are, delete the record
     if request.session["error_message"] == "":
