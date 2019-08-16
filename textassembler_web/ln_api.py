@@ -4,6 +4,7 @@ Search the LexisNexis API
 import logging
 import base64
 import datetime
+import json
 import requests
 from django.conf import settings
 from django.apps import apps
@@ -268,8 +269,13 @@ class LNAPI:
             num_results=result_count,
             is_download=is_download)
 
-        results = resp.json()
-        if resp.status_code == requests.codes.ok:   #pylint: disable=no-member
+        results = {}
+        try:
+            results = resp.json()
+        except json.decoder.JSONDecodeError:
+            pass # we will handle this in the else statement below
+
+        if resp.status_code == requests.codes.ok: # pylint: disable=no-member
             return results
 
         else:
