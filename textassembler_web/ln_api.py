@@ -154,7 +154,8 @@ class LNAPI:
             # then it would still be within that window instead of the next day's
             not_todays = now < start_time or now > end_time
             not_yesterdays = now < (start_time - datetime.timedelta(days=1)) or now > (end_time - datetime.timedelta(days=1))
-            if not_todays and not_yesterdays:
+            not_all_day = start_time != end_time
+            if not_todays and not_yesterdays and not_all_day:
                 message = (
                     f"Not during the valid processing window. "
                     f"Start time: {(start_time-datetime.timedelta(days=1)).strftime('%A %I:%M%p')} "
