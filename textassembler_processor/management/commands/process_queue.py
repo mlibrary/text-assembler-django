@@ -201,7 +201,7 @@ class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
                             unique_timestamp = datetime.now().strftime('%d%H%M%S%f')
                             if fmt.format_id.format_name == "HTML":
                                 if os.path.isfile(os.path.join(save_path, file_name + ".html")):
-                                    logging.warning(f"Search: {self.cur_search.search_id}. File path already exists for {file_path + '.html'}")
+                                    logging.debug(f"Search: {self.cur_search.search_id}. File path already exists for {file_path + '.html'}")
                                     file_path = file_path + f"_{unique_timestamp}.html"
                                 else:
                                     file_path = file_path + ".html"
@@ -209,7 +209,7 @@ class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
                                     flh.write(full_text)
                             elif fmt.format_id.format_name == "TXT":
                                 if os.path.isfile(os.path.join(save_path, file_name + ".txt")):
-                                    logging.warning(f"Search: {self.cur_search.search_id}. File path already exists for {file_path + '.txt'}")
+                                    logging.debug(f"Search: {self.cur_search.search_id}. File path already exists for {file_path + '.txt'}")
                                     file_path = file_path + f"_{unique_timestamp}.txt"
                                 else:
                                     file_path = file_path + ".txt"
@@ -223,7 +223,7 @@ class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
                                                f"filename {file_name}. Error. {create_error_message(exp, os.path.basename(__file__))}"))
                                     cleaned_full_text = full_text ## write the original text to the file instead
                                 if os.path.isfile(os.path.join(save_path, file_name + ".txt")):
-                                    logging.warning(f"Search: {self.cur_search.search_id}. File path already exists for {file_path + '.txt'}")
+                                    logging.debug(f"Search: {self.cur_search.search_id}. File path already exists for {file_path + '.txt'}")
                                     file_path = file_path + f"_{unique_timestamp}.txt"
                                 else:
                                     file_path = file_path + ".txt"
