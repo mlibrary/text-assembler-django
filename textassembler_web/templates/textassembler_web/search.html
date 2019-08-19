@@ -14,7 +14,7 @@
         {% csrf_token %}
         <div class="row form-row spacer">
             <div class="col-4">
-                <label>{{form.search.label}}</label>
+                <label for="id_search">{{form.search.label}}</label>
             </div>
             <div class="col-6">
                 <div class="input-group">
@@ -25,7 +25,7 @@
         </div>
         <div class="row form-row spacer">
             <div class="col-4">
-                <label>{{form.filter_opts.label}}</label>
+                <label for="id_filter_opts">{{form.filter_opts.label}}</label>
             </div>
             <div class="col-6">
                 <div class="input-group">
