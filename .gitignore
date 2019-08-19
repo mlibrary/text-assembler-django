@@ -1,6 +1,6 @@
 textassembler.cfg
 ta_env/
-.swp
+*.swp
 .pyc
 __pycache__/
 activate.sh
