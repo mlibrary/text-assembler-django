@@ -33,7 +33,7 @@ def admin_statistics(request):
 
     # Get the statistics from the database
     search_recs = searches.objects.filter(Q(date_completed_compression__lte=to_date) & Q(date_completed_compression__gte=from_date))
-    search_hist_recs = searches.objects.filter(Q(date_completed_compression__lte=to_date) & Q(date_completed_compression__gte=from_date))
+    search_hist_recs = historical_searches.objects.filter(Q(date_completed_compression__lte=to_date) & Q(date_completed_compression__gte=from_date))
     searches_complete = len(search_recs) + len(search_hist_recs)
 
     num_results_downloaded = 0
