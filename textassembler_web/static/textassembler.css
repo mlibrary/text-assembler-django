@@ -2,6 +2,9 @@
 * General CSS shared by all the pages *
 ***************************************/
 /* CONTENT*/
+a {
+    color:#0053b1;
+}
 .content {
     padding-left:10px;
     padding-right:10px;
