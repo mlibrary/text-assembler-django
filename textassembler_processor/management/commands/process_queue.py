@@ -54,7 +54,7 @@ class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
             try:
                 try:
                     # check that there are items in the queue to process
-                    queue = self.searches.objects.filter(date_completed__isnull=True, failed_date__isnull=True, deleted=False).order_by('-update_date')
+                    queue = self.searches.objects.filter(date_completed__isnull=True, failed_date__isnull=True, deleted=False).order_by('update_date')
                     if not queue:
                         self.retry = False
                         continue # nothing to process
@@ -106,7 +106,7 @@ class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
                 ## we are doing this again in case the search has been deleted
                 ## while waiting for the API to be available
                 try:
-                    queue = self.searches.objects.filter(date_completed__isnull=True, failed_date__isnull=True, deleted=False).order_by('-update_date')
+                    queue = self.searches.objects.filter(date_completed__isnull=True, failed_date__isnull=True, deleted=False).order_by('update_date')
                     if queue:
                         self.cur_search = queue[0]
                         self.retry = False
