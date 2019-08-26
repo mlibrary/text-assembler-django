@@ -20,7 +20,7 @@
 <table id='statistics' class="table">
     <tr>
         <td>
-        Searches Complete
+        Searches Complete During Time Period
         </td>
         <td>
         {{searches_complete|intcomma}}
@@ -28,15 +28,23 @@
     </tr>
     <tr>
         <td>
-        Files Downloaded
+        Files Downloaded for Completed Searches
         </td>
         <td>
-        {{files_downloaded|intcomma}}
+        {{num_results_downloaded|intcomma}}
         </td>
     </tr>
     <tr>
         <td>
-        Site Searches Run
+        Files Downloaded During Time Period
+        </td>
+        <td>
+        {{download_cnt|intcomma}}
+        </td>
+    </tr>
+    <tr>
+        <td>
+        Site Searches Run During Time Period
         </td>
         <td>
         {{site_searches_run|intcomma}}

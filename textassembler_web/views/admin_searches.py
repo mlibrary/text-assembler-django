@@ -30,6 +30,7 @@ def admin_searches(request):
 
     for search_obj in all_user_searches_hist:
         search_obj = build_search_info(search_obj)
+        search_obj.status = "Deleted"
 
     response["searches"] = chain(all_user_searches,all_user_searches_hist)
     response["num_months_keep_searches"] = settings.NUM_MONTHS_KEEP_SEARCHES
