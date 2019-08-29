@@ -119,6 +119,11 @@ systemctl start tassemblerdeld
 @monthly    root        /var/www/text-assembler/ta_env/bin/python /var/www/text-assembler/manage.py update_sources
 ```
 
+* Create an initial admin user to use the admin interface
+```
+mysql -h [DB_HOST] -p [DB_NAME] -e "INSERT INTO textassembler_web_administrative_users (userid) VALUES ('[USERID]');"
+```
+
 Applying Updates
 ----------------
 As improvements are made to the application, they will be pushed to the primary branch of this Git repository.
@@ -135,6 +140,11 @@ systemctl restart apache2
 systemctl restart tassemberd
 systemctl restart tassemberzipd
 systemctl restart tassemberdeld
+```
+
+* Create an initial admin user to use the admin interface, if you have not already done so
+```
+mysql -h [DB_HOST] -p [DB_NAME] -e "INSERT INTO textassembler_web_administrative_users (userid) VALUES ('[USERID]');"
 ```
 
 WSK to API Transition

@@ -165,7 +165,7 @@ $(document).on('change', '#id_filter_opts', function(e) {
 
 });
 
-/* 
+/*
 Handle POST data to pre-populate the filters
 */
 $( document ).ready(function() {
@@ -181,8 +181,33 @@ $( document ).ready(function() {
     }
     $(".sp").selectpicker();
     $('[data-toggle="popover"]').popover();
-    $('#mysearches').DataTable({
-        "order": [[ 0, "desc" ]]
-    }); 
+    var table = $('#mysearches').DataTable({
+        "order": [[ 0, "desc" ]],
+        "columnDefs": [
+         { "width": "20%", "targets": 0 },
+         { "width": "50%", "targets": 1 },
+         { "width": "30%", "targets": 2 }
+         ]
+    });
+
+    $.fn.dataTable.ext.search.push(
+      function(settings, data, dataIndex) {
+         return !data[2].includes("Status: Deleted");
+      }
+    )
+    table.draw();
+
+    $('#hide_deleted').on('change', function() {
+      if ($(this).is(':checked')) {
+        $.fn.dataTable.ext.search.push(
+          function(settings, data, dataIndex) {
+             return !data[2].includes("Status: Deleted");
+          }
+        )
+      } else {
+        $.fn.dataTable.ext.search.pop();
+      }
+      table.draw();
+    });
 });
 
