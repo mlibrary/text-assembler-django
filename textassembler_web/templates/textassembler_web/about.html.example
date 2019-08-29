@@ -2,7 +2,7 @@
 
 {% block content %}
 
-<h1>About</h1><hr/>
+<h2>About</h2><hr/>
 
 <p>Text Assembler enables construction and bulk download of full text corpora derived from newspapers, newswires, web-based news publications, broadcast news transcripts, magazines, and legal and trade publications published between 1980 and the present. Consult the Lexis Nexis <a href="https://w3.nexis.com/sources/scripts/eslClient.pl?GSDTYPE=News">A-Z list of sources and dates</a> to orient yourself to available data. 
 

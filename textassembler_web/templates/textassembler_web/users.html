@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% load humanize %}
+{% block content %}
+
+<h2>Administrative Users</h2><hr/>
+
+{% if error_message %}
+<br/><p class='error'>{{ error_message }}</p>
+{% endif %}
+<br/>
+
+<table id='users' class="table">
+    <thead><tr>
+    {% for h in headings %}
+        <th scop='col' class="{{ h|lower|slugify }}-column">{{ h }}</th>
+    {% endfor %}
+    </tr></thead>
+    <tbody>
+        {% for u in users %}
+        <tr>
+            <td class="user-column {{ headings.0|lower|slugify }}-column" data-order="{{ u.userid }}">
+                {{ u.userid }}
+            </td>
+            {% if u.userid != request.session.userid %} 
+            <td class="user-column {{ headings.3|lower|slugify }}-column">
+                <form method="POST" action="/delete/admin/{{u.userid}}/" class='action-btn'>
+                    {% csrf_token %} 
+                    <button type="submit" class="btn btn-danger">Remove</button>
+                </form>
+            </td>
+            {% else %}
+            <td></td>
+            {% endif %}
+         </tr>
+         {% endfor %}
+        <tr>
+            <form method="POST" action="/add/admin" novalidate class="action-btn">
+                {% csrf_token %}
+                <td class="user-column {{ headings.3|lower|slugify }}-column">
+                    <input type="text" class="form-control" name="userid"/>
+                </td><td>
+                    <button type="submit" name="add" class="btn btn-primary">Add</button>
+                </td>
+            </form>
+        </tr>
+    </tbody>
+</table>
+
+{% endblock %}

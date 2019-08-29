@@ -26,9 +26,6 @@ def load_configs(path_to_configs):
         configs.read_file(conf_file)
     return configs
 
-
-RUNNING_TESTS = (len(sys.argv) > 1 and sys.argv[1] == 'test')
-
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -36,10 +33,10 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 APPEND_SLASH = False
 
 # Secure settings (including passwords) stored in additional settings file, and loaded below.
-if RUNNING_TESTS:
-    SECURE_SETTINGS = os.path.join(BASE_DIR, "textassembler.cfg.example")
-else:
+if os.path.exists(os.path.join(BASE_DIR, "textassembler.cfg")):
     SECURE_SETTINGS = os.path.join(BASE_DIR, "textassembler.cfg")
+else:
+    SECURE_SETTINGS = os.path.join(BASE_DIR, "textassembler.cfg.example")
 
 # Load configs from location in SECURE_SETTINGS
 CONFIGS = load_configs(SECURE_SETTINGS)
