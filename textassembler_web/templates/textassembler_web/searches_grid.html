@@ -1,5 +1,11 @@
 {% load humanize %}
 {% load custom_tags %}
+<label>
+ <input type="checkbox" id="hide_deleted" checked> Hide Deleted Searches
+</label>
+{% if is_admin %}
+
+{% endif %}
 <table id='mysearches' class="table">
     <thead><tr>
     {% for h in headings %}

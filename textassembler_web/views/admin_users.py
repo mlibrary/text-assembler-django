@@ -35,6 +35,9 @@ def add_admin_user(request):
     if not request.session.get('userid', False) or not get_is_admin(request.session['userid']):
         return redirect('/login')
 
+    # Clear past error messages
+    request.session["error_message"] = ""
+
     # Parse the userid to add
     if "userid" in request.POST:
         userid = request.POST["userid"]
@@ -62,6 +65,9 @@ def delete_admin_user(request, userid):
     # Verify that the user is logged in and an admin
     if not request.session.get('userid', False) or not get_is_admin(request.session['userid']):
         return redirect('/login')
+
+    # Clear past error messages
+    request.session["error_message"] = ""
 
     # Validate that the user is not the current user
     if userid == request.session['userid']:
