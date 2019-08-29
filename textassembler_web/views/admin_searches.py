@@ -1,9 +1,9 @@
 '''
 Handles all requests to the admin page
 '''
-from django.shortcuts import render, redirect
 from itertools import chain
 from django.conf import settings
+from django.shortcuts import render, redirect
 from textassembler_web.utilities import build_search_info, get_is_admin
 from textassembler_web.models import searches, historical_searches
 
@@ -24,7 +24,7 @@ def admin_searches(request):
 
     all_user_searches = searches.objects.all().filter(deleted=False).order_by('-date_submitted')
     all_user_searches_hist = historical_searches.objects.all().filter(deleted=False).order_by('-date_submitted')
-    
+
     for search_obj in all_user_searches:
         search_obj = build_search_info(search_obj)
 
@@ -32,7 +32,7 @@ def admin_searches(request):
         search_obj = build_search_info(search_obj)
         search_obj.status = "Deleted"
 
-    response["searches"] = chain(all_user_searches,all_user_searches_hist)
+    response["searches"] = chain(all_user_searches, all_user_searches_hist)
     response["num_months_keep_searches"] = settings.NUM_MONTHS_KEEP_SEARCHES
 
     return render(request, 'textassembler_web/allsearches.html', response)
