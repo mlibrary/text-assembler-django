@@ -44,8 +44,8 @@ def admin_statistics(request):
         "num_results_downloaded":num_results_downloaded,
         "download_cnt":download_cnt,
         "site_searches_run":site_searches_run,
-        "from_date": from_date,
-        "to_date": to_date}
+        "from_date": datetime.datetime.strftime(from_date, '%Y-%m-%d'),
+        "to_date": datetime.datetime.strftime(to_date, '%Y-%m-%d')}
 
     return render(request, 'textassembler_web/statistics.html', response)
 
@@ -55,6 +55,9 @@ def get_processed_search_stats(from_date, to_date):
     returns:
         searches_processed(int): Number of searches processed during time period
     '''
+    # Add one day to to_date to be inclusive
+    to_date = to_date + datetime.timedelta(days=1)
+
     search_recs_processed = searches.objects.filter(Q(update_date__lte=to_date) & Q(update_date__gte=from_date))
     search_hist_recs_processed = historical_searches.objects.filter(Q(update_date__lte=to_date) & Q(update_date__gte=from_date))
     searches_processed = len(search_recs_processed) + len(search_hist_recs_processed)
@@ -68,6 +71,9 @@ def get_completed_search_stats(from_date, to_date):
         searches_complete(int): Number of completed searches in date range
         num_results_downloaded(int): Number of results downloaded for completed_searches
     '''
+    # Add one day to to_date to be inclusive
+    to_date = to_date + datetime.timedelta(days=1)
+
     search_recs = searches.objects.filter(Q(date_completed_compression__lte=to_date) & Q(date_completed_compression__gte=from_date))
     search_hist_recs = historical_searches.objects.filter(Q(date_completed_compression__lte=to_date) & Q(date_completed_compression__gte=from_date))
     searches_complete = len(search_recs) + len(search_hist_recs)
@@ -88,6 +94,9 @@ def get_api_log_stats(from_date, to_date):
         site_searches_run(int): Number of site searches run (on search page)
         download_cnt(int): Number of files downloaded from the API in the date range
     '''
+    # Add one day to to_date to be inclusive
+    to_date = to_date + datetime.timedelta(days=1)
+
     api_log = apps.get_model('textassembler_processor', 'api_log')
     api_recs = api_log.objects.filter(Q(request_date__lte=to_date) & Q(request_date__gte=from_date) & Q(request_url__icontains="expand=PostFilters"))
     site_searches_run = len(api_recs)
