@@ -10,10 +10,10 @@
 {% csrf_token %}
 <table>
 <tr>
-<td>From</td>
-<td><input type="date" name="FromDate" class="form-control filter-date" value="{{from_date|date:'Y-m-d'}}" aria-label="From Date"></td>
+<td>From: </td>
+<td><input type="date" name="FromDate" class="form-control filter-date" value="{{from_date}}" aria-label="From Date"></td>
 <td>To:</td>
-<td><input type="date" name="ToDate" class="form-control filter-date" value="{{to_date|date:'Y-m-d'}}" aria-label="To Date"></td>
+<td><input type="date" name="ToDate" class="form-control filter-date" value="{{to_date}}" aria-label="To Date"></td>
 <td><input type='submit' name='refresh' class='btn btn-primary' value="Refresh"></input></td>
 </table></br>
 </form>
