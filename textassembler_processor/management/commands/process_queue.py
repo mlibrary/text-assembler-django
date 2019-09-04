@@ -60,6 +60,7 @@ class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
                         continue # nothing to process
                 except OperationalError as ex:
                     if not self.retry:
+                        logging.warning(f"Queue Processor failed to retrieve the search queue. Will try again in {settings.DB_WAIT_TIME} seconds. {ex}")
                         time.sleep(settings.DB_WAIT_TIME) # wait and re-try (giving this more time in case db server is being rebooted)
                         self.retry = True
                         continue
@@ -115,6 +116,7 @@ class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
                         continue # nothing to process
                 except OperationalError as ex:
                     if not self.retry:
+                        logging.warning(f"Queue Processor failed to retrieve the search queue. Will try again in {settings.DB_WAIT_TIME} seconds. {ex}")
                         time.sleep(settings.DB_WAIT_TIME) # wait and re-try (giving this more time in case db server is being rebooted)
                         self.retry = True
                         continue

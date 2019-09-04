@@ -55,6 +55,7 @@ class Command(BaseCommand):
                         continue # nothing to process
                 except Exception as ex: # pylint: disable=broad-except
                     if not self.retry:
+                        logging.warning(f"Compression Processor failed to retrieve the compress queue. Will try again in {settings.DB_WAIT_TIME} seconds. {ex}")
                         time.sleep(settings.DB_WAIT_TIME) # wait and re-try (giving this more time in case db server is being rebooted)
                         self.retry = True
                         continue
@@ -89,6 +90,7 @@ class Command(BaseCommand):
                         continue # nothing to process
                 except Exception as ex: # pylint: disable=broad-except
                     if not self.retry:
+                        logging.warning(f"Compression Processor failed to retrieve the compress queue. Will try again in {settings.DB_WAIT_TIME} seconds. {ex}")
                         self.retry = True
                         time.sleep(settings.DB_WAIT_TIME) # wait and re-try (giving this more time in case db server is being rebooted)
                         self.retry = True
