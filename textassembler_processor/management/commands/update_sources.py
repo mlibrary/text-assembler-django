@@ -37,7 +37,7 @@ class Command(BaseCommand):
         # Get all the sources
         self.api = LNAPI()
 
-        self.wait_for_search(self.api)
+        self.wait_for_sources(self.api)
         sources = self.api.api_call(resource="Sources", params={"$top":100, "$skip":skip})
 
         # check for errors
@@ -57,7 +57,7 @@ class Command(BaseCommand):
             while skip < total:
                 skip += 100
                 time.sleep(1) # take a brief break to free up CPU usage
-                self.wait_for_search(self.api)
+                self.wait_for_sources(self.api)
                 sources = self.api.api_call(resource="Sources", params={"$top":100, "$skip":skip})
                 if "error_message" in sources:
                     if "response_code" in sources and sources["response_code"] == 429:
@@ -88,16 +88,16 @@ class Command(BaseCommand):
 
         logging.info(f"Completed refresh of sources. {total} found.")
 
-    def wait_for_search(self, api):
+    def wait_for_sources(self, api):
         '''
         Wait for the next available search window
         '''
-        wait_time = api.get_time_until_next_search()
+        wait_time = api.get_time_until_next_sources()
         if wait_time > 0:
-            logging.info(f"No searches remaining. Must wait {wait_time} seconds until next available searching is available.")
+            logging.info(f"No sources calls remaining. Must wait {wait_time} seconds until next available call is available.")
             # Check if we can download every 10 seconds instead of waiting the full wait_time to
             # be able to handle sig_term triggering (i.e. we don't want to sleep for an hour before
             # a kill command is processed)
-            while not self.api.check_can_search():
+            while not self.api.check_can_sources():
                 time.sleep(10)
             logging.info("Resuming processing")

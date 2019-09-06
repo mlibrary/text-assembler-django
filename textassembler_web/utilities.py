@@ -12,7 +12,8 @@ import socket
 import datetime
 from email.message import EmailMessage
 from django.conf import settings
-from .models import searches, filters, download_formats, available_formats, administrative_users
+from django.core.exceptions import ObjectDoesNotExist
+from .models import searches, filters, download_formats, available_formats, administrative_users, api_limits, CallTypeChoice
 
 def log_error(error_message, json_data=None):
     '''
@@ -158,21 +159,24 @@ def est_days_to_complete_search(num_results_in_search):
     It will compare against the number of items currently in the queue that are sharing those downloads.
     '''
     # validate trottle settings
-    if not settings.SEARCHES_PER_MINUTE or not settings.SEARCHES_PER_HOUR or \
-        not settings.SEARCHES_PER_DAY:
-        log_error("API search limits are not properly configured")
+    limits = None
     if not settings.DOWNLOADS_PER_MINUTE or not settings.DOWNLOADS_PER_HOUR or \
         not settings.DOWNLOADS_PER_DAY:
-        log_error("API download limits are not properly configured")
-
-    if not settings.WEEKDAY_START_TIME or not settings.WEEKDAY_END_TIME or \
-        not settings.WEEKEND_START_TIME or not settings.WEEKEND_START_TIME:
-        log_error("API processing start and end times not properly configured")
+        try:
+            limits = api_limits.objects.get(limit_type=CallTypeChoice.DWL)
+        except ObjectDoesNotExist:
+            log_error("API download limits are not properly configured. Run: manage.py update_limits")
+    else:
+        limits = api_limits(
+            limit_type=CallTypeChoice.DWL,
+            per_minute=settings.DOWNLOADS_PER_MINUTE,
+            per_hour=settings.DOWNLOADS_PER_HOUR,
+            per_day=settings.DOWNLOADS_PER_DAY)
 
     queue_cnt = searches.objects.filter(date_completed__isnull=True, failed_date__isnull=True).count()
     queue_cnt = 1 if queue_cnt == 0 else queue_cnt
 
-    return math.ceil(int(num_results_in_search) / ((int(settings.DOWNLOADS_PER_DAY) * int(settings.LN_DOWNLOAD_PER_CALL)) / int(queue_cnt)))
+    return math.ceil(int(num_results_in_search) / ((int(limits.per_day) * int(settings.LN_DOWNLOAD_PER_CALL)) / int(queue_cnt)))
 
 def build_search_info(search_obj):
     '''

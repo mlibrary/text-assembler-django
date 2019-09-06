@@ -11,7 +11,7 @@ https://docs.djangoproject.com/en/2.2/ref/settings/
 """
 
 import os
-from configparser import ConfigParser
+from configparser import ConfigParser, NoOptionError
 import logging
 import datetime
 import sys
@@ -65,12 +65,43 @@ STORAGE_WAIT_TIME = int(CONFIGS.get("processor", "STORAGE_WAIT_TIME"))
 LN_WAIT_TIME = int(CONFIGS.get("processor", "LN_WAIT_TIME"))
 
 # API Limits
-SEARCHES_PER_MINUTE = int(CONFIGS.get("api.limits", "SEARCHES_PER_MINUTE"))
-SEARCHES_PER_HOUR = int(CONFIGS.get("api.limits", "SEARCHES_PER_HOUR"))
-SEARCHES_PER_DAY = int(CONFIGS.get("api.limits", "SEARCHES_PER_DAY"))
-DOWNLOADS_PER_MINUTE = int(CONFIGS.get("api.limits", "DOWNLOADS_PER_MINUTE"))
-DOWNLOADS_PER_HOUR = int(CONFIGS.get("api.limits", "DOWNLOADS_PER_HOUR"))
-DOWNLOADS_PER_DAY = int(CONFIGS.get("api.limits", "DOWNLOADS_PER_DAY"))
+try:
+    SEARCHES_PER_MINUTE = int(CONFIGS.get("api.limits", "SEARCHES_PER_MINUTE"))
+except NoOptionError:
+    SEARCHES_PER_MINUTE = None
+try:
+    SEARCHES_PER_HOUR = int(CONFIGS.get("api.limits", "SEARCHES_PER_HOUR"))
+except NoOptionError:
+    SEARCHES_PER_HOUR = None
+try:
+    SEARCHES_PER_DAY = int(CONFIGS.get("api.limits", "SEARCHES_PER_DAY"))
+except NoOptionError:
+    SEARCHES_PER_DAY = None
+try:
+    DOWNLOADS_PER_MINUTE = int(CONFIGS.get("api.limits", "DOWNLOADS_PER_MINUTE"))
+except NoOptionError:
+    DOWNLOADS_PER_MINUTE = None
+try:
+    DOWNLOADS_PER_HOUR = int(CONFIGS.get("api.limits", "DOWNLOADS_PER_HOUR"))
+except NoOptionError:
+    DOWNLOADS_PER_HOUR = None
+try:
+    DOWNLOADS_PER_DAY = int(CONFIGS.get("api.limits", "DOWNLOADS_PER_DAY"))
+except NoOptionError:
+    DOWNLOADS_PER_DAY = None
+try:
+    SOURCES_PER_MINUTE = int(CONFIGS.get("api.limits", "SOURCES_PER_MINUTE"))
+except NoOptionError:
+    SOURCES_PER_MINUTE = None
+try:
+    SOURCES_PER_HOUR = int(CONFIGS.get("api.limits", "SOURCES_PER_HOUR"))
+except NoOptionError:
+    SOURCES_PER_HOUR = None
+try:
+    SOURCES_PER_DAY = int(CONFIGS.get("api.limits", "SOURCES_PER_DAY"))
+except NoOptionError:
+    SOURCES_PER_DAY = None
+
 WEEKDAY_START_TIME = datetime.datetime.strptime(CONFIGS.get("api.limits", "WEEKDAY_START_TIME"), '%H:%M').time()
 WEEKDAY_END_TIME = datetime.datetime.strptime(CONFIGS.get("api.limits", "WEEKDAY_END_TIME"), '%H:%M').time()
 WEEKEND_START_TIME = datetime.datetime.strptime(CONFIGS.get("api.limits", "WEEKEND_START_TIME"), '%H:%M').time()
@@ -168,7 +199,9 @@ DATABASES['default']['ATOMIC_REQUESTS'] = ATOMIC_REQUESTS
 
 # Activating STRICT_ALL_TABLES mode forces truncated strings inserted into
 # the database to produce errors instead of warnings.
-DATABASES['default']['OPTIONS'] = {'sql_mode': 'STRICT_ALL_TABLES'}
+DATABASES['default']['OPTIONS'] = {
+    'sql_mode': 'STRICT_ALL_TABLES', 
+}
 
 
 # Password validation
