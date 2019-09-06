@@ -9,8 +9,10 @@ import requests
 from django.conf import settings
 from django.apps import apps
 from django.utils import timezone
+from django.core.exceptions import ObjectDoesNotExist
 from .utilities import log_error, seconds_to_dhms_string
 from .filters import get_enum_namespace, get_format_type
+from .models import api_limits, CallTypeChoice
 
 class LNAPI:
     '''
@@ -25,9 +27,13 @@ class LNAPI:
         self.access_token = None
         self.expiration_time = None
 
-        self.requests_per_min = None
-        self.requests_per_hour = None
-        self.requests_per_day = None
+        self.requests = {
+            "per_min": None,
+            "per_hour": None,
+            "per_day": None,
+        }
+
+        self.limits = {}
 
         self.api_url = settings.LN_API_URL
         if not self.api_url.endswith("/"):
@@ -72,34 +78,73 @@ class LNAPI:
         '''
         Get the current throttle data from the database
         '''
-
         # Get the current number of searches and downloads per the current min/hr/day
 
-        self.requests_per_min = self.api_log.objects.filter(request_date__gte=timezone.now() - datetime.timedelta(minutes=1))
-        self.requests_per_hour = self.api_log.objects.filter(request_date__gte=timezone.now()- datetime.timedelta(hours=1))
-        self.requests_per_day = self.api_log.objects.filter(request_date__gte=timezone.now() - datetime.timedelta(days=1))
+        self.requests['per_min'] = self.api_log.objects.filter(request_date__gte=timezone.now() - datetime.timedelta(minutes=1))
+        self.requests['per_hour'] = self.api_log.objects.filter(request_date__gte=timezone.now()- datetime.timedelta(hours=1))
+        self.requests['per_day'] = self.api_log.objects.filter(request_date__gte=timezone.now() - datetime.timedelta(days=1))
 
-        # validate trottle settings
+        # validate trottle settings, if not set, pull from the database api_limits table
+        ## Search
         if not settings.SEARCHES_PER_MINUTE or not settings.SEARCHES_PER_HOUR or \
             not settings.SEARCHES_PER_DAY:
-            log_error("API search limits are not properly configured")
+            try:
+                self.limits['search'] = api_limits.objects.get(limit_type=CallTypeChoice.SRH)
+            except ObjectDoesNotExist:
+                log_error("API search limits are not properly configured. Run: manage.py update_limits")
+        else:
+            self.limits['search'] = api_limits(
+                limit_type=CallTypeChoice.SRH,
+                per_minute=settings.SEARCHES_PER_MINUTE,
+                per_hour=settings.SEARCHES_PER_HOUR,
+                per_day=settings.SEARCHES_PER_DAY)
+
+        ## Download
         if not settings.DOWNLOADS_PER_MINUTE or not settings.DOWNLOADS_PER_HOUR or \
             not settings.DOWNLOADS_PER_DAY:
-            log_error("API download limits are not properly configured")
+            try:
+                self.limits['download'] = api_limits.objects.get(limit_type=CallTypeChoice.DWL)
+            except ObjectDoesNotExist:
+                log_error("API download limits are not properly configured. Run: manage.py update_limits")
+        else:
+            self.limits['download'] = api_limits(
+                limit_type=CallTypeChoice.DWL,
+                per_minute=settings.DOWNLOADS_PER_MINUTE,
+                per_hour=settings.DOWNLOADS_PER_HOUR,
+                per_day=settings.DOWNLOADS_PER_DAY)
 
+        ## Sources
+        if not settings.SOURCES_PER_MINUTE or not settings.SOURCES_PER_HOUR or \
+            not settings.SOURCES_PER_DAY:
+            try:
+                self.limits['sources'] = api_limits.objects.get(limit_type=CallTypeChoice.SRC)
+            except ObjectDoesNotExist:
+                log_error("API sources limits are not properly configured. Run: manage.py update_limits")
+        else:
+            self.limits['sources'] = api_limits(
+                limit_type=CallTypeChoice.SRC,
+                per_minute=settings.SOURCES_PER_MINUTE,
+                per_hour=settings.SOURCES_PER_HOUR,
+                per_day=settings.SOURCES_PER_DAY)
+
+        ## Start and End Times
         if not settings.WEEKDAY_START_TIME or not settings.WEEKDAY_END_TIME or \
             not settings.WEEKEND_START_TIME or not settings.WEEKEND_START_TIME:
             log_error("API processing start and end times not properly configured")
 
         # Compare against the limits for min/hr/day
         if display:
-            logging.debug((f"Current search limits: {self.requests_per_min.count()}/min, "
-                           f"{self.requests_per_hour.count()}/hr, {self.requests_per_day.count()}/day "
-                           f"out of {settings.SEARCHES_PER_MINUTE}/min, {settings.SEARCHES_PER_HOUR}/hr, {settings.SEARCHES_PER_DAY}/day"))
+            logging.debug((f"Current search limits: {self.requests['per_min'].count()}/min, "
+                           f"{self.requests['per_hour'].count()}/hr, {self.requests['per_day'].count()}/day "
+                           f"out of {self.limits['search'].per_minute}/min, "
+                           f"{self.limits['search'].per_hour}/hr, "
+                           f"{self.limits['search'].per_day}/day"))
 
-            logging.debug((f"Current download limits: {self.requests_per_min.filter(is_download=True).count()}/min,"
-                           f" {self.requests_per_hour.filter(is_download=True).count()}/hr, {self.requests_per_day.filter(is_download=True).count()}/day"
-                           f" out of {settings.DOWNLOADS_PER_MINUTE}/min, {settings.DOWNLOADS_PER_HOUR}/hr, {settings.DOWNLOADS_PER_DAY}/day"))
+            logging.debug((f"Current download limits: {self.requests['per_min'].filter(is_download=True).count()}/min,"
+                           f" {self.requests['per_hour'].filter(is_download=True).count()}/hr, {self.requests['per_day'].filter(is_download=True).count()}/day"
+                           f" out of {self.limits['download'].per_minute}/min, "
+                           f"{self.limits['download'].per_hour}/hr, "
+                           f"{self.limits['download'].per_day}/day"))
 
     def check_can_search(self):
         '''
@@ -110,9 +155,25 @@ class LNAPI:
 
         self.refresh_throttle_data(True)
 
-        if self.requests_per_min.count() < settings.SEARCHES_PER_MINUTE \
-            and self.requests_per_hour.count() < settings.SEARCHES_PER_HOUR and \
-            self.requests_per_day.count() < settings.SEARCHES_PER_DAY:
+        if self.requests['per_min'].count() < self.limits['search'].per_minute \
+            and self.requests['per_hour'].count() < self.limits['search'].per_hour and \
+            self.requests['per_day'].count() < self.limits['search'].per_day:
+            return True
+
+        return False
+
+    def check_can_sources(self):
+        '''
+        Checks the remaining sources calls available per min/hr/day to see if we are able to do any more
+
+        returns: bool can_sources
+        '''
+
+        self.refresh_throttle_data(True)
+
+        if self.requests['per_min'].count() < self.limits['sources'].per_minute \
+            and self.requests['per_hour'].count() < self.limits['sources'].per_hour and \
+            self.requests['per_day'].count() < self.limits['sources'].per_day:
             return True
 
         return False
@@ -166,9 +227,9 @@ class LNAPI:
                 logging.debug(message)
                 return False
 
-        if self.requests_per_min.filter(is_download=True).count() < settings.DOWNLOADS_PER_MINUTE \
-            and self.requests_per_hour.filter(is_download=True).count() < settings.DOWNLOADS_PER_HOUR \
-            and self.requests_per_day.filter(is_download=True).count() < settings.DOWNLOADS_PER_DAY:
+        if self.requests['per_min'].filter(is_download=True).count() < self.limits['download'].per_minute \
+            and self.requests['per_hour'].filter(is_download=True).count() < self.limits['download'].per_hour \
+            and self.requests['per_day'].filter(is_download=True).count() < self.limits['download'].per_day:
             return True
 
         return False
@@ -181,17 +242,38 @@ class LNAPI:
         self.refresh_throttle_data()
 
         # Available now
-        if self.requests_per_min.count() < settings.SEARCHES_PER_MINUTE  \
-            and self.requests_per_hour.count() < settings.SEARCHES_PER_HOUR \
-            and self.requests_per_day.count() < settings.SEARCHES_PER_DAY:
+        if self.requests['per_min'].count() < self.limits['search'].per_minute  \
+            and self.requests['per_hour'].count() < self.limits['search'].per_hour \
+            and self.requests['per_day'].count() < self.limits['search'].per_day:
             return 0
 
         # Calculate
-        if self.requests_per_day.count() >= settings.SEARCHES_PER_DAY:
+        if self.requests['per_day'].count() >= self.limits['search'].per_day:
             return ((timezone.now() + datetime.timedelta(days=1)) - timezone.now()).total_seconds()
-        if self.requests_per_hour.count() >= settings.SEARCHES_PER_HOUR:
+        if self.requests['per_hour'].count() >= self.limits['search'].per_hour:
             return ((timezone.now() + datetime.timedelta(hours=1)) - timezone.now()).total_seconds()
-        if self.requests_per_min.count() >= settings.SEARCHES_PER_MINUTE:
+        if self.requests['per_min'].count() >= self.limits['search'].per_minute:
+            return ((timezone.now() + datetime.timedelta(minutes=1)) - timezone.now()).total_seconds()
+
+        return 0
+
+    def get_time_until_next_sources(self):
+        '''
+        Gets the number of seconds until we can perform the next sources call
+        '''
+
+        self.refresh_throttle_data()
+
+        # Available now
+        if self.check_can_sources():
+            return 0
+
+        # Calculate
+        if self.requests['per_day'].count() >= self.limits['sources'].per_day:
+            return ((timezone.now() + datetime.timedelta(days=1)) - timezone.now()).total_seconds()
+        if self.requests['per_hour'].count() >= self.limits['sources'].per_hour:
+            return ((timezone.now() + datetime.timedelta(hours=1)) - timezone.now()).total_seconds()
+        if self.requests['per_min'].count() >= self.limits['sources'].per_minute:
             return ((timezone.now() + datetime.timedelta(minutes=1)) - timezone.now()).total_seconds()
 
         return 0
@@ -211,11 +293,11 @@ class LNAPI:
             return 0
 
         # Calculate
-        if self.requests_per_day.filter(is_download=True).count() >= settings.DOWNLOADS_PER_DAY:
+        if self.requests['per_day'].filter(is_download=True).count() >= self.limits['download'].per_day:
             seconds = ((timezone.now() + datetime.timedelta(days=1)) - timezone.now()).total_seconds()
-        if self.requests_per_hour.filter(is_download=True).count() >= settings.DOWNLOADS_PER_HOUR:
+        if self.requests['per_hour'].filter(is_download=True).count() >= self.limits['download'].per_hour:
             seconds = ((timezone.now() + datetime.timedelta(hours=1)) - timezone.now()).total_seconds()
-        if self.requests_per_min.filter(is_download=True).count() >= settings.DOWNLOADS_PER_MINUTE:
+        if self.requests['per_min'].filter(is_download=True).count() >= self.limits['download'].per_minute:
             seconds = ((timezone.now() + datetime.timedelta(minutes=1)) - timezone.now()).total_seconds()
 
 
@@ -232,6 +314,46 @@ class LNAPI:
         if seconds > seconds_window:
             return seconds
         return seconds_window
+
+    def api_get_rate_limit(self, limit_type='search'):
+        '''
+        Calls the API, but returns only the header information to parse for the limit
+        Returns: X-RateLimit-Limit
+        '''
+        error_message = self.authenticate()
+        if error_message:
+            return {"error_message": error_message}
+
+        headers = {"Authorization": "Bearer " + self.access_token}
+        resp = None
+
+        # Call the API
+        if limit_type.lower() == 'search':
+            url = self.api_url + "News"
+            resp = requests.get(url, params=None, headers=headers, timeout=settings.LN_TIMEOUT)
+
+        elif limit_type.lower() == 'download':
+            url = self.api_url + "News"
+            resp = requests.get(url, params={"$expand": "Document"}, headers=headers, timeout=settings.LN_TIMEOUT)
+
+        elif limit_type.lower() == 'sources':
+            url = self.api_url + "Sources"
+            resp = requests.get(url, params=None, headers=headers, timeout=settings.LN_TIMEOUT)
+
+        # Log the API call
+        self.api_log.objects.create(
+            request_url=resp.url,
+            request_type="GET",
+            response_code=resp.status_code,
+            num_results=0,
+            is_download=True if limit_type.lower() == 'download' else False)
+
+        # Return the results
+        if resp and resp.headers and 'X-RateLimit-Limit' in resp.headers:
+            return {"X-RateLimit-Limit": resp.headers['X-RateLimit-Limit']}
+        elif resp and resp.headers:
+            return {"error_message": f"Failed to retrieve limit. {resp.status_code}. {resp.text}. {resp.headers}"}
+        return {"error_message": f"Failed calling LexisNexis API to get limits"}
 
     def api_call(self, req_type='GET', resource='News', params=None):
         '''

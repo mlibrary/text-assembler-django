@@ -1,10 +1,18 @@
 '''
 Database models for the web interface
 '''
+from enum import Enum
 from django.db import models
 from django.dispatch import receiver
 from django.db.models.signals import pre_delete
 
+class CallTypeChoice(Enum):
+    '''
+    API Call Types
+    '''
+    SRC = "Sources"
+    SRH = "Search"
+    DWL = "Download"
 
 class sources(models.Model): # pylint: disable=invalid-name
     '''
@@ -75,6 +83,20 @@ class administrative_users(models.Model): # pylint: disable=invalid-name
     Administrative users
     '''
     userid = models.CharField(max_length=50)
+
+class api_limits(models.Model): # pylint: disable=invalid-name
+    '''
+    Controls number of API calls per minute/hour/day
+    '''
+    limit_type = models.CharField(
+        max_length=20,
+        choices=[(tag, tag.value) for tag in CallTypeChoice],
+        primary_key=True,
+    )
+    per_minute = models.IntegerField(default=0)
+    per_hour = models.IntegerField(default=0)
+    per_day = models.IntegerField(default=0)
+    update_date = models.DateTimeField(auto_now=True)
 
 class historical_searches(models.Model): # pylint: disable=invalid-name
     '''

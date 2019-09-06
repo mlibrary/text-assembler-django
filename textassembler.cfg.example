@@ -58,6 +58,7 @@ PREVIEW_FORMAT = FULL
 NUM_MONTHS_KEEP_SEARCHES = 3
 
 [api.limits]
+# Settings these allows overriding the values in the X-RateLimit-Limit header 
 # Number of search-only calls we are allowed to make per minute/hour/day
 SEARCHES_PER_MINUTE = 5
 SEARCHES_PER_HOUR = 100
@@ -67,6 +68,10 @@ SEARCHES_PER_DAY = 1000
 DOWNLOADS_PER_MINUTE = 5
 DOWNLOADS_PER_HOUR = 100
 DOWNLOADS_PER_DAY = 100
+# Number of source (/sources) calls we are allowed to make
+SOURCES_PER_MINUTE = 5
+SOURCES_PER_HOUR = 100
+SOURCES_PER_DAY = 1000
 # Time we can process queued searches on weekdays (using 24-hour clock)
 WEEKDAY_START_TIME = 23:00
 WEEKDAY_END_TIME = 06:00
