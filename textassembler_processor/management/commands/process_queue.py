@@ -167,6 +167,13 @@ class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
                         continue # not adding to retry count since it wasn't a problem with the search
 
                 if "error_message" in results:
+                    # Check for throttle limit error from API, this should not happen, but just to make sure search
+                    # doesn't fail due to misconfigured throttle settings
+                    if "response_code" in results and results["response_code"] == 429:
+                        log_error((f"An error occurred processing search id: {self.cur_search.search_id}. "
+                                   f"Misconfigured throttle limits. {results['error_message']}"))
+                        continue # not adding to retry count since it wasn't a problem with the search
+
                     send_email = False
                     log_error(f"An error occurred processing search id: {self.cur_search.search_id}. {results['error_message']}", self.cur_search)
                     self.cur_search.retry_count = self.cur_search.retry_count + 1
