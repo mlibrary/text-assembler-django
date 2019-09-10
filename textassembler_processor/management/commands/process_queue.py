@@ -30,6 +30,7 @@ class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
         self.api = None
         self.set_formats = None
         self.set_filters = None
+        self.created_files = [] # track the files that have been created before a DB save occurs
 
         # Grab the necessary models
         self.searches = apps.get_model('textassembler_web', 'searches')
@@ -190,6 +191,8 @@ class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
                     continue
 
                 ## save the results to the server
+                # remove any created files since the error since the DB will not reflect these
+                remove_files(self.created_files, "Before saving next batch of files")
                 save_location = os.path.join(settings.STORAGE_LOCATION, str(self.cur_search.search_id))
                 for result in results["value"]:
                     if self.terminate:
@@ -216,6 +219,7 @@ class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
                                     file_path = file_path + ".html"
                                 with open(file_path, 'w') as flh:
                                     flh.write(full_text)
+                                    self.created_files.append(file_path)
                             elif fmt.format_id.format_name == "TXT":
                                 if os.path.isfile(os.path.join(save_path, file_name + ".txt")):
                                     logging.debug(f"Search: {self.cur_search.search_id}. File path already exists for {file_path + '.txt'}")
@@ -224,6 +228,7 @@ class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
                                     file_path = file_path + ".txt"
                                 with open(file_path, 'w') as flh:
                                     flh.write(full_text)
+                                    self.created_files.append(file_path)
                             elif fmt.format_id.format_name == "TXT Only":
                                 try:
                                     cleaned_full_text = remove_html(full_text)
@@ -238,10 +243,13 @@ class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
                                     file_path = file_path + ".txt"
                                 with open(file_path, 'w') as flh:
                                     flh.write(cleaned_full_text)
+                                    self.created_files.append(file_path)
                     except OSError as ex:
                         log_error(f"Failed to save downloaded results to the server. {create_error_message(ex, os.path.basename(__file__))}")
                         self.terminate = True
                         self.error = True
+                        # remove any created files since the error since the DB will not reflect these
+                        remove_files(self.created_files, "After OSError saving the files.")
                         continue # not adding to retry count since it wasn't a problem with the search
 
                 if not self.error:
@@ -265,8 +273,11 @@ class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
                     self.cur_search.save()
 
                     self.retry = False
+                    self.created_files = []
 
             except OperationalError as ex:
+                # remove any created files since the error since the DB will not reflect these
+                remove_files(self.created_files, "After OperationalErrorr updating the search record in the DB.")
                 if not self.retry:
                     time.sleep(settings.DB_WAIT_TIME) # wait and re-try (giving this more time in case db server is being rebooted)
                     self.retry = True
@@ -286,6 +297,7 @@ class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
                 continue
 
         # any cleanup after terminate
+        remove_files(self.created_files, "After terminate flag is processed.") # remove any created files since the error since the DB will not reflect these
         logging.info("Stopped queue processing.")
 
     def sig_term(self, _, __):
@@ -335,3 +347,22 @@ def remove_html(text):
     full_output = "\n\n".join(output)
 
     return full_output
+
+def remove_files(files_to_remove=None, message=""):
+    '''
+    Removes the list of files from the filesystem
+    Params:
+        files_to_remove (array): list of full filepaths to delete
+        message (string): message to print before removing files
+    '''
+    if not files_to_remove:
+        return # nothing to remove
+
+    logging.warning(f"Removing {len(files_to_remove)} from the server. {message}")
+    for file_to_remove in files_to_remove:
+        if os.path.isfile(file_to_remove):
+            logging.warning("Deleting {file_to_remove}.")
+            try:
+                os.remove(file_to_remove)
+            except OSError as ose:
+                log_error(f"Failed to delete {file_to_remove} from the server. {create_error_message(ose, os.path.basename(__file__))}")
