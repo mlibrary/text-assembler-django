@@ -19,6 +19,9 @@ DB_WAIT_TIME = 300
 STORAGE_WAIT_TIME = 300 
 # number of seconds to wait before failing out due to LN calls failing
 LN_WAIT_TIME = 30 
+# number of times to retry processing after a non-search related error
+# (i.e. database or API connection reset) before existing the processor
+NUM_PROCESSOR_RETRIES = 10
 
 [database.default]
 ENGINE = django.db.backends.mysql
