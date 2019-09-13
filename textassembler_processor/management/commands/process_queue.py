@@ -368,7 +368,18 @@ class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
             # be able to handle sig_term triggering (i.e. we don't want to sleep for an hour before
             # a kill command is processed)
             while not self.api.check_can_download(True):
-                time.sleep(10)
+                try:
+                    time.sleep(10)
+                    self.retry_counts["database"] = 0
+                except OperationalError as ex:
+                    if self.retry_counts["database"] <= settings.NUM_PROCESSOR_RETRIES:
+                        logging.warning(f"Queue Processor failed to check download status. Will try again in {settings.DB_WAIT_TIME} seconds. {ex}")
+                        time.sleep(settings.DB_WAIT_TIME) # wait and re-try (giving this more time in case db server is being rebooted)
+                        self.retry_counts["database"] = self.retry_counts["database"] + 1
+                    else:
+                        log_error(f"Stopping. Queue Processor failed to check the download status. {ex}")
+                        self.terminate = True
+                    continue
             logging.info("Resuming processing")
 
     def get_queue(self):
