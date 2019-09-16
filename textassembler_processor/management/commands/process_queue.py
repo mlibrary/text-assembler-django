@@ -286,6 +286,11 @@ class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
                        f"Misconfigured throttle limits. {results['error_message']}"))
             return True
 
+        # Check for gateway timeout, to not add to retry count
+        if "response_code" in results and results["response_code"] == 504:
+            logging.error(f"A gateway timeout occured processing search {self.cur_search.search_id}.")
+            return True
+
         send_email = False
         log_error(f"An error occurred processing search id: {self.cur_search.search_id}. {results['error_message']}", self.cur_search)
         self.cur_search.retry_count = self.cur_search.retry_count + 1
