@@ -335,7 +335,7 @@ class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
             if self.retry_counts["api"] <= settings.NUM_PROCESSOR_RETRIES:
                 logging.error((f"Failed to download the results from the API due to a ReadTimeout.",
                                f"If this continues, consider raising the TIMEOUT_SECONDS ",
-                               f"(current: {settings.TIMEOUT_SECONDS}) configuration."))
+                               f"(current: {settings.LN_TIMEOUT}) configuration."))
                 # Wait before continuing processing to avoid re-triggering the error immediately
                 time.sleep(settings.LN_WAIT_TIME)
             else:
