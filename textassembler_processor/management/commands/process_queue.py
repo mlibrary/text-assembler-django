@@ -70,6 +70,8 @@ class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
 
                 # wait until we can download
                 self.wait_for_download()
+                if self.terminate:
+                    continue
 
                 # continue loop if there are no downloads remaining
                 #   (this could happen if some other search sneaks in on the UI
@@ -372,7 +374,7 @@ class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
             # Check if we can download every 10 seconds instead of waiting the full wait_time to
             # be able to handle sig_term triggering (i.e. we don't want to sleep for an hour before
             # a kill command is processed)
-            while not self.api.check_can_download(True):
+            while not self.api.check_can_download(True) and not self.terminate:
                 try:
                     time.sleep(10)
                     self.retry_counts["database"] = 0
