@@ -25,9 +25,11 @@ class Command(BaseCommand):
         self.cur_search = None
         self.retry = False
         self.searches = None
+        self.retry_counts = {"storage":0, "database":0, "filesystem":0}
+
         super().__init__()
 
-    def handle(self, *args, **options): # pylint: disable=too-many-locals, too-many-branches, too-many-statements
+    def handle(self, *args, **options): # pylint: disable=too-many-branches
         signal.signal(signal.SIGINT, self.sig_term)
         signal.signal(signal.SIGTERM, self.sig_term)
 
@@ -42,115 +44,36 @@ class Command(BaseCommand):
         while not self.terminate:
             time.sleep(1) # take a quick break!
             try:
-                # check that there are items in the queue to process
-                # that have completed downloading results and haven't already completed compression
-                try:
-                    queue = self.searches.objects.filter(
-                        date_completed__isnull=False, date_completed_compression__isnull=True, failed_date__isnull=True, deleted=False).order_by('-update_date')
-                    if queue:
-                        self.cur_search = queue[0]
-                        self.retry = False
-                    else:
-                        self.retry = False
-                        continue # nothing to process
-                except Exception as ex: # pylint: disable=broad-except
-                    if not self.retry:
-                        logging.warning(f"Compression Processor failed to retrieve the compress queue. Will try again in {settings.DB_WAIT_TIME} seconds. {ex}")
-                        time.sleep(settings.DB_WAIT_TIME) # wait and re-try (giving this more time in case db server is being rebooted)
-                        self.retry = True
-                        continue
-                    else:
-                        log_error(f"Stopping. Compression Processor failed to retrieve the compress queue.  {ex}")
-                        self.terminate = True
-                        continue
-
+                (queue, cont) = self.get_queue()
+                if cont or not queue or self.terminate:
+                    continue
 
                 # verify the storage location is accessibly
-                if not os.access(settings.STORAGE_LOCATION, os.W_OK) or not os.path.isdir(settings.STORAGE_LOCATION):
-                    logging.warning((f"Compression Processor failed to connect to storage location. "
-                                     f"Either being inaccessible or not writable. {settings.STORAGE_LOCATION}"))
-                    # wait and retry, if the storage is still not available, then terminate
-                    time.sleep(settings.STORAGE_WAIT_TIME)
-                    if not os.access(settings.STORAGE_LOCATION, os.W_OK) or \
-                        not os.path.isdir(settings.STORAGE_LOCATION):
-                        log_error(f"Stopping. Compression Processor failed due to {settings.STORAGE_LOCATION} being inaccessible or not writable.")
-                        self.terminate = True
-                        continue
+                cont = self.check_storage()
+                if cont or self.terminate:
+                    continue
 
-                # check that there are items in the queue to process after verifying the storage
-                # location is accessible. This is necessary in case it has changed during that time.
-                try:
-                    queue = self.searches.objects.filter(
-                        date_completed__isnull=False, date_completed_compression__isnull=True, failed_date__isnull=True, deleted=False).order_by('-update_date')
-                    if queue:
-                        self.cur_search = queue[0]
-                        self.retry = False
-                    else:
-                        self.retry = False
-                        continue # nothing to process
-                except Exception as ex: # pylint: disable=broad-except
-                    if not self.retry:
-                        logging.warning(f"Compression Processor failed to retrieve the compress queue. Will try again in {settings.DB_WAIT_TIME} seconds. {ex}")
-                        self.retry = True
-                        time.sleep(settings.DB_WAIT_TIME) # wait and re-try (giving this more time in case db server is being rebooted)
-                        self.retry = True
-                        continue
-                    else:
-                        log_error(f"Stopping. Compression Processor failed to retrieve the compress queue.  {ex}")
-                        self.terminate = True
-                        continue
+                # get the next item from the queue
+                ## we are doing this again in case the search has been deleted
+                ## while waiting for the API to be available
+                (queue, cont) = self.get_queue()
+                if cont or not queue or self.terminate:
+                    continue
+                self.cur_search = queue[0]
 
                 # mark the search record as started compression
-                self.cur_search.update_date = timezone.now()
-                self.cur_search.date_started_compression = timezone.now()
+                cont = self.set_start_time()
+                if cont or not queue or self.terminate:
+                    continue
 
-                # compress the files for the search
-                zippath = os.path.join(settings.STORAGE_LOCATION, str(self.cur_search.search_id))
-                zipname = settings.APP_NAME.replace(" ", "") + "_" + self.cur_search.date_submitted.strftime("%Y%m%d_%H%M%S")
-                logging.info(f"Starting compression of search {self.cur_search.search_id}.")
-                files_to_compress = []
-                for root, dirs, files in os.walk(zippath):
-                    for fln in files:
-                        files_to_compress.append(os.path.join(root, fln))
-                with zipfile.ZipFile(os.path.join(zippath, zipname + ".zip"), 'w', zipfile.ZIP_DEFLATED) as zipf:
-                    for fln in files_to_compress:
-                        logging.info(f"Adding file to zip: {fln}. {fln.replace(zippath,'')}")
-                        zipf.write(fln, fln.replace(zippath, ""))
+                cont = self.compress_search()
+                if cont or self.terminate:
+                    continue
 
-                # this method also works but we can't easily track progress for large zips
-                #shutil.make_archive(os.path.join(zippath, zipname),"zip", zippath)
-
-                logging.info(f"Completed compression of search {self.cur_search.search_id}")
-
-                #  remove non-compressed files
-                logging.info(f"Started cleanup of non-compressed files for search {self.cur_search.search_id}")
-                for root, dirs, files in os.walk(zippath):
-                    for dirn in dirs:
-                        logging.debug(f"Deleting directory: {os.path.join(root, dirn)}")
-                        shutil.rmtree(os.path.join(root, dirn))
-
-                logging.info(f"Completed cleanup of non-compressed files for search {self.cur_search.search_id}")
-
-                # update the search record
-                self.cur_search.update_date = timezone.now()
-                self.cur_search.date_completed_compression = timezone.now()
-                if not self.cur_search.user_notified and settings.NOTIF_EMAIL_DOMAIN:
-                    self.cur_search.user_notified = True
-                    send_email = True
-                else:
-                    send_email = False
-
-                # save the search record
-                try:
-                    self.cur_search.save()
-                except OperationalError as oexp:
-                    time.sleep(settings.DB_WAIT_TIME) # wait and re-try (giving this more time in case db server is being rebooted)
-                    try:
-                        self.cur_search.save()
-                    except OperationalError as oexp:
-                        log_error("Stopping. A database error occured while trying to save the record to the database", oexp)
-                        self.terminate = True
-                        continue
+                ## save the results to the database
+                (cont, send_email) = self.update_search_with_results()
+                if cont or self.terminate:
+                    continue
 
                 #  send email notification
                 #   sending this after the DB save in case that fails for some reason
@@ -169,6 +92,146 @@ class Command(BaseCommand):
 
         # any cleanup after terminate
         logging.info("Stopped compression processing.")
+
+    def get_queue(self):
+        '''
+        Check if there are items in the queueu to process that have
+        completed downloading their results and haven't already
+        completed compression.
+        Returns:
+            queue (list): Items to be processed
+            cont (bool): If the loop should continue or not
+        '''
+        # check that there are items in the queue to process
+        # that have completed downloading results and haven't already completed compression
+        try:
+            queue = self.searches.objects.filter(
+                date_completed__isnull=False, date_completed_compression__isnull=True, failed_date__isnull=True, deleted=False).order_by('-update_date')
+            if not queue:
+                return (None, True)
+        except OperationalError as ex:
+            if self.retry_counts["database"] <= settings.NUM_PROCESSOR_RETRIES:
+                logging.warning(f"Compression Processor failed to retrieve the compress queue. Will try again in {settings.DB_WAIT_TIME} seconds. {ex}")
+                time.sleep(settings.DB_WAIT_TIME) # wait and re-try (giving this more time in case db server is being rebooted)
+                self.retry_counts["database"] = self.retry_counts["database"] + 1
+            else:
+                log_error(f"Stopping. Queue Processor failed to retrieve the search queue. {ex}")
+                self.terminate = True
+            return (None, True)
+        return (queue, False)
+
+    def check_storage(self):
+        '''
+        Check to see if the storage location is available
+        Returns:
+            continue (bool): If you need to continue the loop
+        '''
+        if not os.access(settings.STORAGE_LOCATION, os.W_OK) or not os.path.isdir(settings.STORAGE_LOCATION):
+            if self.retry_counts["storage"] <= settings.NUM_PROCESSOR_RETRIES:
+                logging.error(f"Compression Processor failed due to storage location being inaccessible or not writable. {settings.STORAGE_LOCATION}")
+                # wait and retry, if the storage is still not available, then terminate
+                time.sleep(settings.STORAGE_WAIT_TIME)
+                self.retry_counts["storage"] = self.retry_counts["storage"] + 1
+            else:
+                log_error(f"Stopping. Compression Processor failed due to storage location being inaccessible or not writable. {settings.STORAGE_LOCATION}")
+                self.terminate = True
+            return True
+        self.retry_counts["storage"] = 0
+        return False
+
+    def set_start_time(self):
+        '''
+        Set the start time for the compression to now
+        Returns:
+            continue (bool): If you need to continue the loop
+        '''
+        self.cur_search.update_date = timezone.now()
+        self.cur_search.date_started_compression = timezone.now()
+        try:
+            self.cur_search.save()
+        except OperationalError as ex:
+            if self.retry_counts["database"] <= settings.NUM_PROCESSOR_RETRIES:
+                logging.error(f"Failed to update the start time in the database.")
+                time.sleep(settings.DB_WAIT_TIME) # wait and re-try (giving this more time in case db server is being rebooted)
+                self.retry_counts["database"] = self.retry_counts["database"] + 1
+            else:
+                log_error(f"Stopping. Failed to set the start time in the database for {self.cur_search.search_id}. {ex}")
+                self.terminate = True
+            return True
+        return False
+
+    def compress_search(self):
+        '''
+        Compresses the search results
+        Returns:
+            cont (bool): If the loop should continue
+        '''
+        try:
+            # compress the files for the search
+            zippath = os.path.join(settings.STORAGE_LOCATION, str(self.cur_search.search_id))
+            zipname = settings.APP_NAME.replace(" ", "") + "_" + self.cur_search.date_submitted.strftime("%Y%m%d_%H%M%S")
+            logging.info(f"Starting compression of search {self.cur_search.search_id}.")
+            files_to_compress = []
+            for root, dirs, files in os.walk(zippath):
+                for fln in files:
+                    files_to_compress.append(os.path.join(root, fln))
+            with zipfile.ZipFile(os.path.join(zippath, zipname + ".zip"), 'w', zipfile.ZIP_DEFLATED) as zipf:
+                for fln in files_to_compress:
+                    logging.info(f"Adding file to zip: {fln}. {fln.replace(zippath,'')}")
+                    zipf.write(fln, fln.replace(zippath, ""))
+
+            # this method also works but we can't easily track progress for large zips
+            #shutil.make_archive(os.path.join(zippath, zipname),"zip", zippath)
+
+            logging.info(f"Completed compression of search {self.cur_search.search_id}")
+
+            #  remove non-compressed files
+            logging.info(f"Started cleanup of non-compressed files for search {self.cur_search.search_id}")
+            for root, dirs, files in os.walk(zippath):
+                for dirn in dirs:
+                    logging.debug(f"Deleting directory: {os.path.join(root, dirn)}")
+                    shutil.rmtree(os.path.join(root, dirn))
+
+            logging.info(f"Completed cleanup of non-compressed files for search {self.cur_search.search_id}")
+            self.retry_counts["filesystem"] = 0
+        except OSError as ex:
+            if self.retry_counts["filesystem"] <= settings.NUM_PROCESSOR_RETRIES:
+                logging.error(f"Failed to compress the search: {self.cur_search.search_id}. {ex}")
+                self.retry_counts["filesystem"] = self.retry_counts["filesystem"] + 1
+            else:
+                log_error(f"Stopping. Failed to compress the search for {self.cur_search.search_id}. {create_error_message(ex, os.path.basename(__file__))}")
+                self.terminate = True
+            return True
+        return False
+
+    def update_search_with_results(self):
+        '''
+        Save the compression with the final results
+        Returns:
+            cont (bool): If the loop should continue
+            send_email (bool): If an email should be sent to the user
+        '''
+        try:
+            self.cur_search.update_date = timezone.now()
+            self.cur_search.date_completed_compression = timezone.now()
+            if not self.cur_search.user_notified and settings.NOTIF_EMAIL_DOMAIN:
+                self.cur_search.user_notified = True
+                send_email = True
+            else:
+                send_email = False
+            self.cur_search.save()
+            self.retry_counts["database"] = 0
+            return (False, send_email)
+        except OperationalError as ex:
+            if self.retry_counts["database"] <= settings.NUM_PROCESSOR_RETRIES:
+                time.sleep(settings.DB_WAIT_TIME) # wait and re-try (giving this more time in case db server is being rebooted)
+                self.retry_counts["database"] = self.retry_counts["database"] + 1
+            else:
+                log_error((f"Stopping. Compression Processor failed due to a database connectivity issue.",
+                           f"(search id={'N/A' if self.cur_search is None else self.cur_search.search_id}.",
+                           f" {create_error_message(ex, os.path.basename(__file__))}"))
+                self.terminate = True
+            return (True, False)
 
     def sig_term(self, _, __):
         '''
