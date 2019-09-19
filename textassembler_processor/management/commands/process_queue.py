@@ -288,9 +288,9 @@ class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
                        f"Misconfigured throttle limits. {results['error_message']}"))
             return True
 
-        # Check for gateway timeout, to not add to retry count
-        if "response_code" in results and results["response_code"] == 504:
-            logging.error(f"A gateway timeout occured processing search {self.cur_search.search_id}.")
+        # Check for gateway timeout or any other server error, to not add to retry count
+        if "response_code" in results and results["response_code"] >= 500:
+            logging.error(f"An API server error occured occured processing search {self.cur_search.search_id}. {results['response_code']}")
             return True
 
         send_email = False
@@ -374,9 +374,11 @@ class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
             # Check if we can download every 10 seconds instead of waiting the full wait_time to
             # be able to handle sig_term triggering (i.e. we don't want to sleep for an hour before
             # a kill command is processed)
-            while not self.api.check_can_download(True) and not self.terminate:
+            can_download = False
+            while not can_download and not self.terminate:
                 try:
                     time.sleep(10)
+                    can_download = self.api.check_can_download(True)
                     self.retry_counts["database"] = 0
                 except OperationalError as ex:
                     if self.retry_counts["database"] <= settings.NUM_PROCESSOR_RETRIES:
