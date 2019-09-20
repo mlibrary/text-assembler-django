@@ -2,6 +2,7 @@
 APP_NAME = Text Assembler
 TIME_ZONE = America/Detroit
 MAINTAINER_EMAILS = schanzme@msu.edu, schanzme@lib.msu.edu
+EMAIL_MAINTAINER_ON_API_ERROR = false
 STORAGE_LOCATION = /mnt/textassembler
 # NOTIF_EMAIL_DOMAIN should be the end part of the email address to use for
 # constructing user email addresses. The first part will be the USER_ID_FIELD

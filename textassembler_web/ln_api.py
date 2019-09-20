@@ -404,7 +404,11 @@ class LNAPI:
         else:
             error_message = "An unexpected API error occurred."
             full_error_message = f"Call to {resp.url} failed with code {resp.status_code}. Response: "
-            log_error(full_error_message, results)
+            if settings.EMAIL_MAINTAINERS_ON_API_ERROR:
+                log_error(full_error_message, results)
+            else:
+                logging.error(full_error_message)
+                logging.error(results)
             if "error" in results and "message" in results:
                 error_message = f"Error: {results['error']}. Message: {results['message']}"
             elif "ErrorDescription" in results:
