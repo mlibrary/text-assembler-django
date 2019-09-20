@@ -141,6 +141,7 @@ MAINTAINER_EMAILS = [email.strip() for email in CONFIGS.get("general", "MAINTAIN
 NOTIF_EMAIL_DOMAIN = CONFIGS.get("general", "NOTIF_EMAIL_DOMAIN")
 BCC_MAINTAINERS_ON_NOTIF = CONFIGS.get("general", "BCC_MAINTAINERS_ON_NOTIF").lower() == 'true'
 PREFERED_HOST_URL = CONFIGS.get("hosts", "PREFERED_HOST_URL")
+EMAIL_MAINTAINERS_ON_API_ERROR = CONFIGS.get("general", "EMAIL_MAINTAINERS_ON_API_ERROR").lower() == 'true'
 
 
 # Application definition
