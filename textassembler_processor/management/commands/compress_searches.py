@@ -23,7 +23,6 @@ class Command(BaseCommand):
     def __init__(self):
         self.terminate = False
         self.cur_search = None
-        self.retry = False
         self.searches = None
         self.retry_counts = {"storage":0, "database":0, "filesystem":0}
 
@@ -35,7 +34,6 @@ class Command(BaseCommand):
 
         self.terminate = False
         self.cur_search = None
-        self.retry = False
 
         # Grab the necessary models
         self.searches = apps.get_model('textassembler_web', 'searches')
@@ -107,6 +105,7 @@ class Command(BaseCommand):
         try:
             queue = self.searches.objects.filter(
                 date_completed__isnull=False, date_completed_compression__isnull=True, failed_date__isnull=True, deleted=False).order_by('-update_date')
+            self.retry_counts["database"] = 0
             if not queue:
                 return (None, True)
         except OperationalError as ex:
