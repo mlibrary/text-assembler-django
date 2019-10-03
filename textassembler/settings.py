@@ -44,6 +44,10 @@ CONFIGS = load_configs(SECURE_SETTINGS)
 # App Name
 APP_NAME = CONFIGS.get("general", "APP_NAME")
 
+# Filesystem configs for saving results
+MAX_SUB_DIRS_PER_DIR = int(CONFIGS.get("filesystem","MAX_SUB_DIRS_PER_DIR"))
+MAX_FILES_PER_DIR = int(CONFIGS.get("filesystem","MAX_FILES_PER_DIR"))
+
 # Storage location where search results will be saved
 STORAGE_LOCATION = CONFIGS.get("general", "STORAGE_LOCATION")
 

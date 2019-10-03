@@ -15,6 +15,7 @@ from django.conf import settings
 from django.utils import timezone
 from django.db import OperationalError
 from textassembler_web.ln_api import LNAPI
+from textassembler_web.path_util import get_path
 from textassembler_web.utilities import log_error, create_error_message, send_user_notification
 
 class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
@@ -32,6 +33,7 @@ class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
         self.set_formats = None
         self.set_filters = None
         self.created_files = [] # track the files that have been created before a DB save occurs
+        self.cur_path = None # the current path being saved to
 
         # Grab the necessary models
         self.searches = apps.get_model('textassembler_web', 'searches')
@@ -186,30 +188,37 @@ class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
         '''
         # remove any created files since the error since the DB will not reflect these
         remove_files(self.created_files, "Before saving next batch of files")
-        save_location = os.path.join(settings.STORAGE_LOCATION, str(self.cur_search.search_id))
 
         for result in results["value"]:
+            # Set the path to save the result in
+            base_path = os.path.join(settings.STORAGE_LOCATION, str(self.cur_search.search_id))
+            if self.cur_search.last_save_dir:
+                base_path = os.path.join(base_path, self.cur_search.last_save_dir)
+            save_location = get_path(base_path)
+
             if self.terminate:
                 return (False, True)
+
             if "Document" not in result or "Content" not in result["Document"] or "ResultId" not in result:
                 log_error(f"WARNING: Could not parse result value from search for ID: {self.cur_search.search_id}.", json.dumps(result))
                 return (True, False)
+
             full_text = result["Document"]["Content"]
-            file_name = result["ResultId"]
+            file_name = result["ResultId"].replace("urn:contentItem:", "")
+            unique_timestamp = datetime.now().strftime('%d%H%M%S%f')
+            file_name = file_name + f"_{unique_timestamp}"
             try:
                 for fmt in self.set_formats:
                     save_path = os.path.join(save_location, fmt.format_id.format_name)
-                    if not os.path.exists(save_location):
-                        os.mkdir(save_location)
                     if not os.path.exists(save_path):
-                        os.mkdir(save_path)
-                    unique_timestamp = datetime.now().strftime('%d%H%M%S%f')
+                        os.makedirs(save_path)
                     if fmt.format_id.format_name == "HTML":
-                        self.save_html(save_path, file_name, full_text, unique_timestamp)
+                        self.save_html(save_path, file_name, full_text)
                     elif fmt.format_id.format_name == "TXT":
-                        self.save_txt(save_path, file_name, full_text, unique_timestamp)
+                        self.save_txt(save_path, file_name, full_text)
                     elif fmt.format_id.format_name == "TXT Only":
-                        self.save_txt_only(save_path, file_name, full_text, unique_timestamp)
+                        self.save_txt_only(save_path, file_name, full_text)
+                self.cur_search.last_save_dir = save_location.replace(base_path + "/", "") # only save the relative path
                 self.retry_counts["filesystem"] = 0
             except OSError as ex:
                 if self.retry_counts["filesystem"] <= settings.NUM_PROCESSOR_RETRIES:
@@ -224,35 +233,25 @@ class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
                 return (True, False)
         return (False, False)
 
-    def save_html(self, save_path, file_name, full_text, unique_timestamp):
+    def save_html(self, save_path, file_name, full_text):
         '''
         Save the full_text as an HTML
         '''
-        file_path = os.path.join(save_path, file_name)
-        if os.path.isfile(os.path.join(save_path, file_name + ".html")):
-            logging.debug(f"Search: {self.cur_search.search_id}. File path already exists for {os.path.join(save_path, file_name + '.html')}")
-            file_path = file_path  + f"_{unique_timestamp}.html"
-        else:
-            file_path = file_path + ".html"
+        file_path = os.path.join(save_path, file_name + ".html")
         with open(file_path, 'w') as flh:
             flh.write(full_text)
             self.created_files.append(file_path)
 
-    def save_txt(self, save_path, file_name, full_text, unique_timestamp):
+    def save_txt(self, save_path, file_name, full_text):
         '''
         Save the full_text as a txt
         '''
-        file_path = os.path.join(save_path, file_name)
-        if os.path.isfile(os.path.join(save_path, file_name + ".txt")):
-            logging.debug(f"Search: {self.cur_search.search_id}. File path already exists for {os.path.join(save_path, file_name + '.txt')}")
-            file_path = file_path  + f"_{unique_timestamp}.txt"
-        else:
-            file_path = file_path + ".txt"
+        file_path = os.path.join(save_path, file_name + ".txt")
         with open(file_path, 'w') as flh:
             flh.write(full_text)
             self.created_files.append(file_path)
 
-    def save_txt_only(self, save_path, file_name, full_text, unique_timestamp):
+    def save_txt_only(self, save_path, file_name, full_text):
         '''
         Convert the full_text to strip html characters and save as a txt
         '''
@@ -263,12 +262,7 @@ class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
                        f"filename {file_name}. Error. {create_error_message(exp, os.path.basename(__file__))}"))
             cleaned_full_text = full_text ## write the original text to the file instead
 
-        file_path = os.path.join(save_path, file_name)
-        if os.path.isfile(os.path.join(save_path, file_name + ".txt")):
-            logging.debug(f"Search: {self.cur_search.search_id}. File path already exists for {os.path.join(save_path, file_name + '.txt')}")
-            file_path = file_path  + f"_{unique_timestamp}.txt"
-        else:
-            file_path = file_path + ".txt"
+        file_path = os.path.join(save_path, file_name + ".txt")
         with open(file_path, 'w') as flh:
             flh.write(cleaned_full_text)
             self.created_files.append(file_path)
@@ -531,7 +525,7 @@ def remove_files(files_to_remove=None, message=""):
     logging.warning(f"Removing {len(files_to_remove)} from the server. {message}")
     for file_to_remove in files_to_remove:
         if os.path.isfile(file_to_remove):
-            logging.warning("Deleting {file_to_remove}.")
+            logging.warning(f"Deleting {file_to_remove}.")
             try:
                 os.remove(file_to_remove)
             except OSError as ose:
