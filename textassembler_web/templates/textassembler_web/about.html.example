@@ -4,7 +4,7 @@
 
 <h2>About</h2><hr/>
 
-<p>Text Assembler enables construction and bulk download of full text corpora derived from newspapers, newswires, web-based news publications, broadcast news transcripts, magazines, and legal and trade publications published between 1980 and the present. Consult the Lexis Nexis <a href="https://w3.nexis.com/sources/scripts/eslClient.pl?GSDTYPE=News">A-Z list of sources and dates</a> to orient yourself to available data. 
+<p>Text Assembler enables construction and bulk download of full text corpora derived from newspapers, newswires, web-based news publications, broadcast news transcripts, magazines, and legal and trade publications published between 1980 and the present.
 
 <br /><br />In order to build a corpus, construct a search, review the search results, and queue all content matching your search criteria for download. Text Assembler outputs a ZIP file that contains an identical set of HTML of your search criteria, sorted in descending date order. Downloading is queued for nights and weekends. Please plan ahead to ensure sufficient time to retrieve results.
 <br /><br />Text Assembler and data provided through it can only be used for educational and research purposes of authorized users.  
