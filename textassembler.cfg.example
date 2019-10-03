@@ -24,6 +24,12 @@ LN_WAIT_TIME = 30
 # (i.e. database or API connection reset) before existing the processor
 NUM_PROCESSOR_RETRIES = 10
 
+[filesystem]
+# These numbers should not go over 10,000 each. Otherwise searches will not run
+# efficiently.
+MAX_SUB_DIRS_PER_DIR = 1000
+MAX_FILES_PER_DIR = 10000
+
 [database.default]
 ENGINE = django.db.backends.mysql
 NAME = name

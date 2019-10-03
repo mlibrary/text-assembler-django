@@ -49,6 +49,7 @@ class searches(models.Model): # pylint: disable=invalid-name
     user_notified = models.BooleanField(default=False) # flag indicating if the user has been send the email notification yet
     run_time_seconds = models.IntegerField(default=0) # number of seconds the download has been actively running (not including waiting in queue)
     retry_count = models.IntegerField(default=0) # number of times a call to the API failed
+    last_save_dir = models.CharField(max_length=1024, null=True) # the last directory, relative to the save path, where a result file was saved
     error_message = models.TextField(null=True)
     failed_date = models.DateTimeField(null=True) # date the search failed
     deleted = models.BooleanField(default=False) # flag the search for deletion

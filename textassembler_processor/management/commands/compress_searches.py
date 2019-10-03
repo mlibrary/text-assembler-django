@@ -7,6 +7,7 @@ import time
 import os
 import zipfile
 import shutil
+import re
 from django.core.management.base import BaseCommand
 from django.db import OperationalError
 from django.apps import apps
@@ -176,8 +177,9 @@ class Command(BaseCommand):
                     files_to_compress.append(os.path.join(root, fln))
             with zipfile.ZipFile(os.path.join(zippath, zipname + ".zip"), 'w', zipfile.ZIP_DEFLATED) as zipf:
                 for fln in files_to_compress:
-                    logging.info(f"Adding file to zip: {fln}. {fln.replace(zippath,'')}")
-                    zipf.write(fln, fln.replace(zippath, ""))
+                    target_name = re.sub(zippath+r'/\d/\d/\d/', '', fln)
+                    logging.info(f"Adding file to zip: {fln}. Target Name: {target_name}")
+                    zipf.write(fln, target_name)
 
             # this method also works but we can't easily track progress for large zips
             #shutil.make_archive(os.path.join(zippath, zipname),"zip", zippath)
