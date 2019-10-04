@@ -323,7 +323,7 @@ class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
         '''
         try:
             results = self.api.download(self.cur_search.query, \
-                self.set_filters, self.cur_search.sort_order.sort_value, settings.LN_DOWNLOAD_PER_CALL, \
+                self.set_filters, "" if self.cur_search.sort_order is None else self.cur_search.sort_order.sort_value, settings.LN_DOWNLOAD_PER_CALL, \
                 self.cur_search.skip_value)
             self.retry_counts["api"] = 0
             return (results, False)
