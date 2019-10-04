@@ -52,7 +52,7 @@
                     (details)
                 </a>
             </td>
-            <td class="search-column {{ headings.2|lower|slugify }}-column">
+            <td class="search-column {{ headings.2|lower|slugify }}-column" data-order="{{ s.percent_complete }}">
                 Status: {{ s.status }}
                 <a href='' role='button' onClick='return false;' data-trigger='focus' data-html='true' data-toggle='popover' 
                     title="Progress Details" 
