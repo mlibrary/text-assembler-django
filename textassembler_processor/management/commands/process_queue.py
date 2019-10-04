@@ -206,7 +206,7 @@ class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
             full_text = result["Document"]["Content"]
             file_name = result["ResultId"].replace("urn:contentItem:", "")
             unique_timestamp = datetime.now().strftime('%d%H%M%S%f')
-            file_name = file_name + f"_{unique_timestamp}"
+            file_name = f"{unique_timestamp}_{file_name}"
             try:
                 for fmt in self.set_formats:
                     save_path = os.path.join(save_location, fmt.format_id.format_name)
@@ -323,7 +323,7 @@ class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
         '''
         try:
             results = self.api.download(self.cur_search.query, \
-                self.set_filters, settings.LN_DOWNLOAD_PER_CALL, \
+                self.set_filters, self.cur_search.sort_order.sort_value, settings.LN_DOWNLOAD_PER_CALL, \
                 self.cur_search.skip_value)
             self.retry_counts["api"] = 0
             return (results, False)

@@ -30,6 +30,15 @@ class available_formats(models.Model): # pylint: disable=invalid-name
     format_name = models.CharField(max_length=20)
     help_text = models.CharField(max_length=255)
 
+class available_sort_orders(models.Model): # pylint: disable=invalid-name
+    '''
+    Available sort orders for searches
+    '''
+    sort_id = models.AutoField(primary_key=True)
+    sort_value = models.CharField(max_length=30, null=False) # used for calling the api
+    sort_label = models.CharField(max_length=255) # used for UI display
+    removed = models.DateTimeField(null=True) # used when we remove an available sort option
+
 class searches(models.Model): # pylint: disable=invalid-name
     '''
     User searches and their status
@@ -39,6 +48,7 @@ class searches(models.Model): # pylint: disable=invalid-name
     date_submitted = models.DateTimeField(auto_now_add=True) # date the user submitted the search request
     update_date = models.DateTimeField(auto_now_add=True) # time the search was last updated, i.e. more progress made on downloads
     query = models.TextField() # search term/query to use in the LN API
+    sort_order = models.ForeignKey("available_sort_orders", models.SET_NULL, null=True) # the sort order for the search
     date_started = models.DateTimeField(null=True) # date the search actually started
     date_completed = models.DateTimeField(null=True) # date that the download of all results completed
     num_results_downloaded = models.IntegerField(default=0) # total number of results already downloaded from the search

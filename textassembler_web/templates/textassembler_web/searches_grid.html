@@ -39,6 +39,13 @@
 
                         {% endfor %}
                         <br/>
+                        <strong>Sort Order</strong></br>
+                        {% if not s.sort_order %}
+                            Relevance
+                        {% else %}
+                            {{ s.sort_order.sort_label }}
+                        {% endif %}
+                        <br/><br/>
                         <strong>Search Query</strong><br/>
                         {{ s.query }}
                     '>

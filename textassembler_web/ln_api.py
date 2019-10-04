@@ -432,7 +432,7 @@ class LNAPI:
 
         return self.api_call(resource='News', params=params)
 
-    def download(self, term="", set_filters=None, download_cnt=10, skip=0):
+    def download(self, term="", set_filters=None, sort_order="Date", download_cnt=50, skip=0): # pylint: disable=too-many-arguments
         '''
         Download the full-text results from the API given the search term and filters.
         @return API results with full text
@@ -440,7 +440,7 @@ class LNAPI:
         filters = convert_filters_to_query_string(set_filters)
 
         # Always provide the $exand=Document so we get the full text result
-        params = {"$search":term, "$expand": "Document", "$top": download_cnt, "$skip": skip}
+        params = {"$search":term, "$expand": "Document", "$top": download_cnt, "$orderby": sort_order, "$skip": skip}
 
         if filters:
             params['$filter'] = filters

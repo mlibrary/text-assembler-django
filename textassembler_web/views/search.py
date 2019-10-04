@@ -12,7 +12,7 @@ from textassembler_web.forms import TextAssemblerWebForm
 from textassembler_web.ln_api import LNAPI
 from textassembler_web.filters import get_available_filters, get_filter_values, get_enum_namespace, get_format_type
 from textassembler_web.utilities import log_error, create_error_message, est_days_to_complete_search
-from textassembler_web.models import available_formats, download_formats, searches, filters
+from textassembler_web.models import available_formats, download_formats, searches, filters, available_sort_orders
 
 def search(request): # pylint:disable=too-many-locals, too-many-branches, too-many-statements
     '''
@@ -38,7 +38,8 @@ def search(request): # pylint:disable=too-many-locals, too-many-branches, too-ma
     response = {
         "form": form,
         "error_message": "",
-        "available_formats":available_formats.objects.all()
+        "available_formats":available_formats.objects.all(),
+        "available_sort_orders":available_sort_orders.objects.filter(removed__isnull=True),
     }
 
     # Parse the POST data
@@ -50,6 +51,8 @@ def search(request): # pylint:disable=too-many-locals, too-many-branches, too-ma
         set_formats = dict(request.POST)['selected-formats']
     if "post_filters" in dict(request.POST):
         set_post_filters = dict(request.POST)['post_filters']
+    if "selected-sort-order" in dict(request.POST):
+        set_sort_order = int(dict(request.POST)['selected-sort-order'][0])
 
     # Add post filters to set_filters
     for post_filter in set_post_filters:
@@ -107,7 +110,7 @@ def search(request): # pylint:disable=too-many-locals, too-many-branches, too-ma
 
                 elif "submit-search" in dict(request.POST):
                     # Submit Search button selected
-                    response = handle_save_search(request.session['userid'], clean['search'], set_filters, set_formats, response)
+                    response = handle_save_search(request.session['userid'], clean['search'], set_filters, set_formats, set_sort_order, response)
                     return response
 
             except Exception as exp: # pylint: disable=broad-except
@@ -166,7 +169,7 @@ def handle_preview_search(term, set_filters, response):
     return response
 
 
-def handle_save_search(userid, term, set_filters, set_formats, response):
+def handle_save_search(userid, term, set_filters, set_formats, set_sort_order, response): # pylint: disable=too-many-arguments, too-many-locals
     '''
     Handles the search being queued for full download
     '''
@@ -179,9 +182,11 @@ def handle_save_search(userid, term, set_filters, set_formats, response):
             response['search_results'] = response['result_data']
 
     if response["error_message"] == "":
-        # Save the search record
-        search_obj = searches(userid=userid, query=term)
+        # Get the sort order id
+        sort_order_obj = available_sort_orders.objects.get(sort_id=set_sort_order)
 
+        # Save the search record
+        search_obj = searches(userid=userid, query=term, sort_order=sort_order_obj)
         search_obj.save()
 
         # Save the selected filters

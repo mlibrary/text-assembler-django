@@ -98,6 +98,15 @@
                         </div>
                         {% endfor %}
                     </div>
+                    <p>Select the sort order for the results:</p>
+                    <div id='sort_order'>
+                        {% for sort_order in available_sort_orders %}
+                            <div class='input-group radio'>
+                            <label><input type='radio' name='selected-sort-order' value='{{ sort_order.sort_id }}' {% if forloop.first %} checked {% endif %}/> 
+                                {{ sort_order.sort_label }}</label>
+                            </div>
+                        {% endfor %}
+                    </div>
                     <button type="submit" name='submit-search' class="btn btn-block btn-primary col-6 offset-4">Submit Search</button>
                 </form>
             </div>
