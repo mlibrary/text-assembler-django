@@ -4,7 +4,7 @@
         <div id="MSUstandardFooter" class="MSUwrapper light-background"  role="contentinfo">
             <div class="fourMSUcolumns" id="standard-footer-MSU-wordmark">
                     <a href="https://www.msu.edu">
-                        <img class="screen-msuwordmark" alt="Michigan State University Wordmark" src="https://academicprofile.msu.edu/_files/images/branding/msu-wordmark-green-221x47.png"/>
+                        <img class="screen-msuwordmark" alt="Michigan State University Wordmark" src="https://cdn.cabs.msu.edu/brand/images/msu-wordmark-green.svg"/>
                     </a>
             </div>
             <div class="twelveMSUcolumns">
