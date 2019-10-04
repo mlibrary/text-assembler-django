@@ -101,7 +101,8 @@ def get_api_log_stats(from_date, to_date):
     api_recs = api_log.objects.filter(Q(request_date__lte=to_date) & Q(request_date__gte=from_date) & Q(request_url__icontains="expand=PostFilters"))
     site_searches_run = len(api_recs)
 
-    download_api_recs = api_log.objects.filter(Q(request_date__lte=to_date) & Q(request_date__gte=from_date) & Q(request_url__icontains="expand=Document") & Q(response_code=200))
+    download_api_recs = api_log.objects.filter(Q(request_date__lte=to_date) & Q(request_date__gte=from_date) & \
+         Q(request_url__icontains="expand=Document") & Q(response_code=200))
     download_cnt = 0
     pattern = r'(top=)(\d+)'
     for rec in download_api_recs:
