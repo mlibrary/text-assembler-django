@@ -227,3 +227,6 @@ input[type=checkbox], input[type=radio] {
     max-width:30%;
     word-wrap:break-word;
 }
+.indent {
+    padding-left:20px;
+}

@@ -1,10 +1,12 @@
 {% load humanize %}
 {% load custom_tags %}
-<label>
- <input type="checkbox" id="hide_deleted" checked> Hide Deleted Searches
-</label>
 {% if is_admin %}
-
+<label>
+ <input type="checkbox" name='filter' value="Deleted" id="hide_deleted" checked> Hide Deleted Searches
+</label>
+<label class="indent">
+ <input type="checkbox" name='filter' value="Completed" id="hide_completed"> Hide Completed Searches
+</label>
 {% endif %}
 <table id='mysearches' class="table">
     <thead><tr>
@@ -52,7 +54,7 @@
                     (details)
                 </a>
             </td>
-            <td class="search-column {{ headings.2|lower|slugify }}-column" data-order="{{ s.percent_complete }}">
+            <td class="search-column {{ headings.2|lower|slugify }}-column" data-order="{{ s.percent_complete }}" data-search="{{ s.status }}">
                 Status: {{ s.status }}
                 <a href='' role='button' onClick='return false;' data-trigger='focus' data-html='true' data-toggle='popover' 
                     title="Progress Details" 

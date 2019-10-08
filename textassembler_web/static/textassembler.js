@@ -147,6 +147,50 @@ function displayFilterValues(selected_filter, selected_filter_value='') {
         }
     });
 }
+
+function handleCheckChange(table) {
+   
+    //build a regex filter string with an or(|) condition
+    var types = $('input:checkbox[name="filter"]:checked').map(function() {
+        return '^' + this.value + '\$';
+    }).get().join('|');
+
+    //filter in column 0, with an regex, no smart filtering, no inputbox,not case sensitive
+    table.fnFilter(types, 0, true, false, false, false);
+
+    return;
+ 
+    if ($("#hide_deleted").is(':checked')) {
+        var hide_deleted = true;
+    }
+    if ($("#hide_completed").is(':checked')) {
+        var hide_completed = true;
+    }
+
+    if (hide_deleted && hide_completed) { // Filter completed and deleted searches
+       $.fn.dataTable.ext.search.push(
+            function(settings, data, dataIndex) {
+                return !data[2].includes("Status: Completed") &&
+                    !data[2].includes("Status: Deleted");
+            }
+        )
+    } else if (hide_deleted) { // Filter only deleted searches 
+       $.fn.dataTable.ext.search.push(
+            function(settings, data, dataIndex) {
+                return !data[2].includes("Status: Deleted");
+            }
+        )
+    } else if (hide_completed) { // Filter only completed searches
+       $.fn.dataTable.ext.search.push(
+            function(settings, data, dataIndex) {
+                return !data[2].includes("Status: Completed");
+            }
+        )
+    } else { // Don't filter out anything
+        $.fn.dataTable.ext.search.pop();
+    }
+}
+
 $(document).on('click', '.add-form-row', function(e){
     e.preventDefault();
     cloneMore('.form-row:last', 'form');
@@ -164,6 +208,7 @@ $(document).on('change', '#id_filter_opts', function(e) {
     displayFilterValues(selected_filter, null);
 
 });
+
 
 /*
 Handle POST data to pre-populate the filters
@@ -190,24 +235,40 @@ $( document ).ready(function() {
          ]
     });
 
-    $.fn.dataTable.ext.search.push(
-      function(settings, data, dataIndex) {
-         return !data[2].includes("Status: Deleted");
-      }
-    )
-    table.draw();
+    //filter in column 0, with an regex, no smart filtering, no inputbox,not case sensitive
+    table.column(2).search("Queued|In Progress|Preparing Results for Download|Completed|Failed", true,false).draw();
 
     $('#hide_deleted').on('change', function() {
-      if ($(this).is(':checked')) {
-        $.fn.dataTable.ext.search.push(
-          function(settings, data, dataIndex) {
-             return !data[2].includes("Status: Deleted");
-          }
-        )
-      } else {
-        $.fn.dataTable.ext.search.pop();
-      }
-      table.draw();
+        var all_types = ["Queued","In Progress","Preparing Results for Download","Completed","Failed","Deleted"];
+        //build a regex filter string with an or(|) condition
+        var types = $('input:checkbox[name="filter"]:checked').map(function() {
+            return this.value;
+        }).get()
+
+        types = all_types.filter( function (ele1) {
+            return types.indexOf(ele1) < 0;
+        });
+
+        types = types.join('|');
+
+        //filter in column 0, with an regex, no smart filtering, no inputbox,not case sensitive
+        table.column(2).search(types, true, false).draw();
+    });
+    $('#hide_completed').on('change', function() {
+        var all_types = ["Queued","In Progress","Preparing Results for Download","Completed","Failed","Deleted"];
+        //build a regex filter string with an or(|) condition
+        var types = $('input:checkbox[name="filter"]:checked').map(function() {
+            return this.value;
+        }).get()
+
+        types = all_types.filter( function (ele1) {
+            return types.indexOf(ele1) < 0;
+        });
+
+        types = types.join('|');
+
+        //filter in column 0, with an regex, no smart filtering, no inputbox,not case sensitive
+        table.column(2).search(types, true, false).draw();
     });
 });
 
