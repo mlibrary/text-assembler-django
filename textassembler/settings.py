@@ -51,6 +51,9 @@ MAX_FILES_PER_DIR = int(CONFIGS.get("filesystem","MAX_FILES_PER_DIR"))
 # Storage location where search results will be saved
 STORAGE_LOCATION = CONFIGS.get("general", "STORAGE_LOCATION")
 
+# Max number of results a non-admin user is allowed to queue a search for
+MAX_RESULTS_ALLOWED = int(CONFIGS.get("general", "MAX_RESULTS_ALLOWED"))
+
 # LexisNexis Configs
 LN_TOKEN_URL = CONFIGS.get("lexisnexis", "TOKEN_URL")
 LN_CLIENT_ID = CONFIGS.get("lexisnexis", "CLIENT_ID")

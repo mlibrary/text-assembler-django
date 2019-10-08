@@ -7,10 +7,13 @@ STORAGE_LOCATION = /mnt/textassembler
 # NOTIF_EMAIL_DOMAIN should be the end part of the email address to use for
 # constructing user email addresses. The first part will be the USER_ID_FIELD
 # returned from OAuth. Ex: schanzme@msu.edu. If blank, no notification
-# emaikls will be sent for completed/failed searches
+# emails will be sent for completed/failed searches
 NOTIF_EMAIL_DOMAIN = msu.edu
 # If set to true, all notification emails will have the MAINTAINER_EMAILS BCC'd
 BCC_MAINTAINERS_ON_NOTIF = true
+# Sets the max number of results a search is expected to return that a 
+# non-admin is allowed to queue for.
+MAX_RESULTS_ALLOWED = 100000
 
 [processor]
 # configs related to the backend processors (download, compress, delete)

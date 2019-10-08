@@ -6,7 +6,6 @@
 
 {% block content %}
     <h2>Search</h2><hr/>
-    
     <p><strong>Instructions:</strong> Construct your search applying filters as required to narrow your results. If preview results look appropriate, you may queue the search for download. Downloading is queued for nights and weekends. Please plan ahead to ensure sufficient time to retrieve results. For more information on how to construct more effective searches see <a href="#"  data-toggle="modal" data-target="#tipModal">these tips</a>.</p>
     <form method="post" novalidate>
         <input type='hidden' display="none" id='id_form-TOTAL_FORMS' value="1"/>
@@ -65,21 +64,29 @@
             <h2>Queue Search For Full Download</h2>
             <p>Be sure to review the preview of the results below to ensure that you are happy with the filters before queueing the full seach. 
             The number of days to complete the download is estimated based on the number of other searches in the queue and the number of 
-            allowed downloads per day by LexisNexis.</p>
+            allowed downloads per day by LexisNexis. The max amount of results allowed for regular users is <strong>{% max_results_allowed %}</strong>. See the <a href="/about">About page</a> for who to contact for an exception.</p>
             <div class='queue-search'>
                     <div class='input-group radio'>
-                        <label><input type='radio' name='use_filter' value='existing' data-toggle="collapse" data-target='#post_filters.show' checked/>Use existing filters ({{ search_results.count | intcomma }} results, approximately {{ search_results.est_days_to_complete | intcomma }} days to download)</label>
+                        {% is_over_max search_results.count as over_max %}
+                        <label><input type='radio' name='use_filter' value='existing' 
+
+                        data-toggle="collapse" data-target='#post_filters.show'
+                        {% if over_max and not request.session.is_admin %} disabled {% endif %}
+                        />Use existing filters ({{ search_results.count | intcomma }} results, approximately {{ search_results.est_days_to_complete | intcomma }} days to download)</label>
                     </div>
                     {% if search_results.postFilters|length > 0 %}
                         <div class='input-group radio'>
-                            <label><input type='radio' name='use_filter' id='use_suggested' data-toggle="collapse" data-target='#post_filters:not(.show)' value='suggested'/>Select additional filter(s)&nbsp;<a href='' role='button' onClick='return false;' data-trigger='focus' data-html='true' data-toggle='popover' title='Additional Filters' data-content='These are suggestions provided by LexisNexis to help narrow down your search further. They are grouped by the field they filter on and show how many results you could expect by adding that filter. You can select one or more of these and either submit your search directly or refresh the preview of the results with the new filters. <strong>Note that the filter values populated may appear in code instead of plain text.</strong>'>(?)</a></label>
+                            <label><input type='radio' checked name='use_filter' id='use_suggested' data-toggle="collapse" data-target='#post_filters:not(.show)' value='suggested'/>Select additional filter(s)&nbsp;<a href='' role='button' onClick='return false;' data-trigger='focus' data-html='true' data-toggle='popover' title='Additional Filters' data-content='These are suggestions provided by LexisNexis to help narrow down your search further. They are grouped by the field they filter on and show how many results you could expect by adding that filter. You can select one or more of these and either submit your search directly or refresh the preview of the results with the new filters. <strong>Note that the filter values populated may appear in code instead of plain text.</strong><br/><br/>'>(?)</a></label>
                         </div>
-                        <div id='post_filters' class='collapse form-row col-6'>
+                        <div id='post_filters' class='form-row col-6'>
                             <select name='post_filters' class='sp' multiple data-live-search='true' data-width='100%' aria-label='post filters'>
                            {% for filterName, filterValues in search_results.postFilters.items %}
                                 <optgroup label='{{ filterName }}'>
                                     {% for valueName, value in filterValues.items %}
-                                        <option value='{{ filterName }}||{{ value.Value }}'>{{ valueName }} ({{ value.Count | intcomma }} results, {{ value.est_days_to_complete | intcomma }} day(s) to download)</span></option>
+                                        {% is_over_max value.Count as over_max %}
+                                        <option value='{{ filterName }}||{{ value.Value }}'
+                                            {% if over_max %}disabled{% endif %}>
+                                {{ valueName }}({{ value.Count | intcomma }} results, {{ value.est_days_to_complete | intcomma }} day(s) to download)</span></option>
                                     {% endfor %}
                                 </optgroup>
                             {% endfor %} 
@@ -189,5 +196,4 @@ results to be returned to researchers.</p>
         </div>
       </div>
     </div>
-
 {% endblock %}

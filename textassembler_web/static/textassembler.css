@@ -184,9 +184,7 @@ input[type=checkbox], input[type=radio] {
 .field-title, .post-filter-title {
     font-weight: bold;
 }
-.extract {
-    padding-left: 20px;
-    display: inline-block;
+.extractsplay: inline-block;
 }
 .overview-title {
     padding-left: 200px;
