@@ -440,10 +440,12 @@ class LNAPI:
         filters = convert_filters_to_query_string(set_filters)
 
         # Always provide the $exand=Document so we get the full text result
-        params = {"$search":term, "$expand": "Document", "$top": download_cnt, "$orderby": sort_order, "$skip": skip}
+        params = {"$search":term, "$expand": "Document", "$top": download_cnt, "$skip": skip}
 
         if filters:
             params['$filter'] = filters
+        if sort_order:
+            params["$orderby"] = sort_order
 
         return self.api_call(resource='News', params=params)
 
