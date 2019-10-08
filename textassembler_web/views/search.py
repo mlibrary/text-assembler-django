@@ -11,7 +11,7 @@ from django.conf import settings
 from textassembler_web.forms import TextAssemblerWebForm
 from textassembler_web.ln_api import LNAPI
 from textassembler_web.filters import get_available_filters, get_filter_values, get_enum_namespace, get_format_type
-from textassembler_web.utilities import log_error, create_error_message, est_days_to_complete_search
+from textassembler_web.utilities import log_error, create_error_message, est_days_to_complete_search, get_is_admin
 from textassembler_web.models import available_formats, download_formats, searches, filters, available_sort_orders
 
 def search(request): # pylint:disable=too-many-locals, too-many-branches, too-many-statements
@@ -69,6 +69,13 @@ def search(request): # pylint:disable=too-many-locals, too-many-branches, too-ma
         else:
             set_filters[name] = [value]
 
+    # Parse the User For field if an admin
+    search_user = request.session['userid']
+    if get_is_admin(request.session['userid']):
+        if 'user_for' in dict(request.POST):
+            search_user = dict(request.POST)['user_for'][0]
+            logging.debug(f"Overriding search save user from {request.session['userid']} to {search_user}")
+
     logging.debug("==== SET FILTERS ====")
     logging.debug(set_filters)
 
@@ -90,6 +97,9 @@ def search(request): # pylint:disable=too-many-locals, too-many-branches, too-ma
     if 'Date' in set_filters and 'year(Date)' in set_filters:
         response['error_message'] += \
             "Please you either the year filter or the range filter for dates, but not a combination of both."
+    if len(search_user) > 50:
+        response['error_message'] += \
+            "The provided 'For User ID' value is longer than the maximum of 50 characters."
 
     # Send the set filters back to the form to pre-populate the fields
     response["post_data"] = json.dumps(set_filters)
@@ -110,7 +120,7 @@ def search(request): # pylint:disable=too-many-locals, too-many-branches, too-ma
 
                 elif "submit-search" in dict(request.POST):
                     # Submit Search button selected
-                    response = handle_save_search(request.session['userid'], clean['search'], set_filters, set_formats, set_sort_order, response)
+                    response = handle_save_search(search_user, clean['search'], set_filters, set_formats, set_sort_order, response)
                     return response
 
             except Exception as exp: # pylint: disable=broad-except

@@ -230,3 +230,12 @@ input[type=checkbox], input[type=radio] {
 .indent {
     padding-left:20px;
 }
+.indent_right {
+    padding-right: 20px;
+}
+#user_for {
+    width: 200px;
+}
+#user_for_lbl {
+    margin-top: 10px;
+}

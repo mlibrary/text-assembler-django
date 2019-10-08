@@ -8,7 +8,6 @@
     <h2>Search</h2><hr/>
     
     <p><strong>Instructions:</strong> Construct your search applying filters as required to narrow your results. If preview results look appropriate, you may queue the search for download. Downloading is queued for nights and weekends. Please plan ahead to ensure sufficient time to retrieve results. For more information on how to construct more effective searches see <a href="#"  data-toggle="modal" data-target="#tipModal">these tips</a>.</p>
-
     <form method="post" novalidate>
         <input type='hidden' display="none" id='id_form-TOTAL_FORMS' value="1"/>
         {% csrf_token %}
@@ -106,7 +105,18 @@
                                 {{ sort_order.sort_label }}</label>
                             </div>
                         {% endfor %}
-                    </div>
+                    </div>  
+                    {% if request.session.is_admin %}
+                        <div id='user_for' class='input-group'>
+                            <label for="user_for" id='user_for_lbl' class='indent_right'>For User ID:&nbsp;
+                                <a href='#' role='button' onClick='return false;' data-trigger='focus' data-html='true' 
+                                    data-toggle='popover' title='For User ID' 
+                                    data-content='Allows administrative users to queue searches for other users.<br/>Defaults to the current user.'>(?)</a>
+                            </label>
+                            <input type='text' name='user_for' id='user_for' class='form-control' placeholder='User ID' value='{{ request.session.userid }}'/>
+                            </label>
+                        </div>
+                    {% endif %}
                     <button type="submit" name='submit-search' class="btn btn-block btn-primary col-6 offset-4">Submit Search</button>
                 </form>
             </div>
