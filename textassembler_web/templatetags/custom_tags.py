@@ -16,28 +16,18 @@ def app_name():
     return settings.APP_NAME
 
 @register.simple_tag
-def to_int(value):
-    if value:
-        return int(value)
-    else:
-        0
-
-@register.simple_tag
 def max_results_allowed():
     '''
     Get the max allowed results for non-admins from the config file
     '''
-    return format(settings.MAX_RESULTS_ALLOWED,',d')
+    return format(settings.MAX_RESULTS_ALLOWED, ',d')
 
 @register.simple_tag
 def is_over_max(value):
     '''
     Returns true or false if the value is over the max
     '''
-    if value:
-        return int(value) >= settings.MAX_RESULTS_ALLOWED
-    else:
-        False
+    return int(value) >= settings.MAX_RESULTS_ALLOWED
 
 @register.filter(expects_localtime=True)
 def parse_iso(value):
