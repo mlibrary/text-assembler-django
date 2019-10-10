@@ -360,7 +360,7 @@ class LNAPI:
         Calls the API given the request type, resource, and parameters. Returns the response
         '''
 
-        is_download = True if "$expand" in params else False
+        is_download = True if "$expand" in params and params['$expand'] == "Document" else False
 
         # Make sure we are within the API throttling limits
         if is_download and not self.check_can_download():

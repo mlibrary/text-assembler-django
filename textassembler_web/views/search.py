@@ -57,7 +57,7 @@ def search(request): # pylint:disable=too-many-locals, too-many-branches, too-ma
     # Add post filters to set_filters
     for post_filter in set_post_filters:
         name = post_filter.split("||")[0]
-        value = post_filter.split("||")[-1]
+        value = post_filter.split("||")[1]
         fmt = get_format_type(name)
         # convert the value(s) from base64 if the filter expects it
         if fmt == 'base64':
@@ -68,6 +68,7 @@ def search(request): # pylint:disable=too-many-locals, too-many-branches, too-ma
             set_filters[name].append(value)
         else:
             set_filters[name] = [value]
+
 
     # Parse the User For field if an admin
     search_user = request.session['userid']
@@ -101,6 +102,8 @@ def search(request): # pylint:disable=too-many-locals, too-many-branches, too-ma
         response['error_message'] += \
             "The provided 'For User ID' value is longer than the maximum of 50 characters."
 
+
+
     # Send the set filters back to the form to pre-populate the fields
     response["post_data"] = json.dumps(set_filters)
 
@@ -120,8 +123,11 @@ def search(request): # pylint:disable=too-many-locals, too-many-branches, too-ma
 
                 elif "submit-search" in dict(request.POST):
                     # Submit Search button selected
-                    response = handle_save_search(search_user, clean['search'], set_filters, set_formats, set_sort_order, response)
-                    return response
+                    response = handle_save_search(search_user, clean['search'], set_filters,
+                                                  set_formats, set_sort_order, response, set_post_filters,
+                                                  request.session['userid'])
+                    if "error_message" not in response:
+                        return response
 
             except Exception as exp: # pylint: disable=broad-except
                 error = create_error_message(exp, os.path.basename(__file__))
@@ -179,24 +185,18 @@ def handle_preview_search(term, set_filters, response):
     return response
 
 
-def handle_save_search(userid, term, set_filters, set_formats, set_sort_order, response): # pylint: disable=too-many-arguments, too-many-locals
+def handle_save_search(userid, term, set_filters, set_formats, set_sort_order, response, set_post_filters, cur_user): # pylint: disable=too-many-arguments, too-many-locals
     '''
     Handles the search being queued for full download
     '''
-    # Perform any validation before saving
-    if not set_formats:
-        response["error_message"] = "At least one download format must be selected."
-        # Set the result data with the previous results if an error occurs
-        # only do this if there are not already results since we don't want to overwrite those
-        if "result_data" in response and 'search_results' not in response:
-            response['search_results'] = response['result_data']
+    response, est_results = validate_save(response, set_formats, set_post_filters, cur_user)
 
     if response["error_message"] == "":
         # Get the sort order id
         sort_order_obj = available_sort_orders.objects.get(sort_id=set_sort_order)
 
         # Save the search record
-        search_obj = searches(userid=userid, query=term, sort_order=sort_order_obj)
+        search_obj = searches(userid=userid, query=term, sort_order=sort_order_obj, num_results_in_search=est_results)
         search_obj.save()
 
         # Save the selected filters
@@ -218,6 +218,43 @@ def handle_save_search(userid, term, set_filters, set_formats, set_sort_order, r
 
         response = redirect('/mysearches')
     return response
+
+def validate_save(response, set_formats, set_post_filters, cur_user):
+    '''
+    Perform validation before saving the search
+    '''
+    est_results = None
+
+    if 'error_message' not in response:
+        response['error_message'] = ""
+
+    # Perform any validation before saving
+    ## Verify download formats
+    if not set_formats:
+        response["error_message"] += "At least one download format must be selected."
+        # Set the result data with the previous results if an error occurs
+        # only do this if there are not already results since we don't want to overwrite those
+        if "result_data" in response and 'search_results' not in response:
+            response['search_results'] = response['result_data']
+
+    ## Calculate estimated results for current selection
+    if set_post_filters and len(set_post_filters) > 1 and not get_is_admin(cur_user):
+        # The UI should enforce this doesn't happen, but just in case a user manually modified the request sent to the server
+        response['error_message'] += "Please preview your search results with your selected filters to obtain a more accurate " \
+            "result count before queueing your search."
+    elif set_post_filters:
+        est_results = sum(int(x.split("||")[-1]) for x in set_post_filters)
+    elif 'result_data' in response and '@odata.count' in response['result_data']:
+        est_results = int(response['result_data']['@odata.count'])
+    else:
+        response['error_message'] += "Please select the filters to apply to the search; either the existing filters or one " \
+            + "of the additional filter suggestions."
+
+    if est_results and not get_is_admin(cur_user) and est_results > settings.MAX_RESULTS_ALLOWED:
+        response["error_message"] += f"Non-administrative users are not allowed to queue searches with more than "\
+            f"{settings.MAX_RESULTS_ALLOWED} results. Either further refine your search or see who to contact on the About page."
+
+    return (response, est_results)
 
 def clean_post_filters(results):
     '''

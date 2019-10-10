@@ -237,3 +237,8 @@ input[type=checkbox], input[type=radio] {
 #user_for_lbl {
     margin-top: 10px;
 }
+#mult_filter_info {
+    color: red;
+    margin-left:20%;
+    text-align: center;
+}

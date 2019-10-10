@@ -238,6 +238,8 @@ $( document ).ready(function() {
     //filter in column 0, with an regex, no smart filtering, no inputbox,not case sensitive
     table.column(2).search("Queued|In Progress|Preparing Results for Download|Completed|Failed", true,false).draw();
 
+
+    // event listeners for hiding deleted/completed searches
     $('#hide_deleted').on('change', function() {
         var all_types = ["Queued","In Progress","Preparing Results for Download","Completed","Failed","Deleted"];
         //build a regex filter string with an or(|) condition
@@ -270,5 +272,28 @@ $( document ).ready(function() {
         //filter in column 0, with an regex, no smart filtering, no inputbox,not case sensitive
         table.column(2).search(types, true, false).draw();
     });
+
+    if ($('#use_existing')[0].disabled) {
+        $('#submit-search')[0].disabled = true;
+        $('#mult_filter_info')[0].innerHTML = "The existing filters result in more than the allowed number of results. Please further refine your search.";
+    }
+
+    // event listener for post filter selection to disable the save search button if more than 2 are selected
+    $('#post_filters').on('hidden.bs.dropdown', function(){
+        var select1 = this.children[0].children[0];
+        var selected1 = [];
+        for (var i = 0; i < select1.length; i++) {
+            if (select1.options[i].selected) selected1.push(select1.options[i].value);
+        }
+
+        // check if admin
+        if (selected1.length > 1 && $('#is_admin')[0].value == 'N'){
+            $('#submit-search')[0].disabled = true;
+            $('#mult_filter_info')[0].innerHTML = "Please refresh your search preview to get an accurate estimate before queueing your search. Or select only one filter.";
+        } else {
+            $('#submit-search')[0].disabled = false;
+            $('#mult_filter_info')[0].innerHTML = "";
+        }
+      });
 });
 

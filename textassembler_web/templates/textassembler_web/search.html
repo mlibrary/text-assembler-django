@@ -9,6 +9,7 @@
     <p><strong>Instructions:</strong> Construct your search applying filters as required to narrow your results. If preview results look appropriate, you may queue the search for download. Downloading is queued for nights and weekends. Please plan ahead to ensure sufficient time to retrieve results. For more information on how to construct more effective searches see <a href="#"  data-toggle="modal" data-target="#tipModal">these tips</a>.</p>
     <form method="post" novalidate>
         <input type='hidden' display="none" id='id_form-TOTAL_FORMS' value="1"/>
+        <input type='hidden' displayed='none' id='is_admin' value='{% if  request.session.is_admin %}Y{% else %}N{% endif %}'/>
         {% csrf_token %}
         <div class="row form-row spacer">
             <div class="col-4">
@@ -68,7 +69,7 @@
             <div class='queue-search'>
                     <div class='input-group radio'>
                         {% is_over_max search_results.count as over_max %}
-                        <label><input type='radio' name='use_filter' value='existing' 
+                        <label><input type='radio' name='use_filter' id='use_existing' value='existing' 
 
                         data-toggle="collapse" data-target='#post_filters.show'
                         {% if over_max and not request.session.is_admin %} disabled {% endif %}
@@ -84,7 +85,7 @@
                                 <optgroup label='{{ filterName }}'>
                                     {% for valueName, value in filterValues.items %}
                                         {% is_over_max value.Count as over_max %}
-                                        <option value='{{ filterName }}||{{ value.Value }}'
+                                        <option value='{{ filterName }}||{{ value.Value }}||{{ value.Count }}'
                                             {% if over_max %}disabled{% endif %}>
                                 {{ valueName }}({{ value.Count | intcomma }} results, {{ value.est_days_to_complete | intcomma }} day(s) to download)</span></option>
                                     {% endfor %}
@@ -124,7 +125,8 @@
                             </label>
                         </div>
                     {% endif %}
-                    <button type="submit" name='submit-search' class="btn btn-block btn-primary col-6 offset-4">Submit Search</button>
+                    <button type="submit" name='submit-search' id='submit-search' class="btn btn-block btn-primary col-6 offset-4">Submit Search</button>
+                    <p id='mult_filter_info'></p>
                 </form>
             </div>
             <hr/>
