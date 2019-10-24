@@ -1,0 +1,22 @@
+[MASTER]
+
+# A comma-separated list of package or module names from where C extensions may
+# be loaded. Extensions are loading into the active Python interpreter and may
+# run arbitrary code.
+extension-pkg-whitelist=lxml
+
+# Add files or directories to the blacklist. They should be base names, not
+# paths.
+ignore=CVS, migrations
+
+
+# Load plugins
+load-plugins=pylint_django
+
+[FORMAT]
+
+# Maximum number of characters on a single line.
+max-line-length=160
+# Maximum number of lines in a module
+max-module-lines=2000
+

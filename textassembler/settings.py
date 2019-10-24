@@ -245,6 +245,9 @@ USE_L10N = True
 
 USE_TZ = True
 
+# Increase the default POST size due to how we pass the intermediate results
+# back and forth between the client and server between requests.
+DATA_UPLOAD_MAX_MEMORY_SIZE = 5242880
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/2.2/howto/static-files/
