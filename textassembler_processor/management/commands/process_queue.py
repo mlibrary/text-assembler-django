@@ -279,7 +279,7 @@ class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
         # doesn't fail due to misconfigured throttle settings
         if "response_code" in results and results["response_code"] == 429:
             self.api.refresh_throttle_data(True) # print the throttle limits to the log
-            log_error((f"An error occurred processing search id: {self.cur_search.search_id}. "
+            logging.error((f"An error occurred processing search id: {self.cur_search.search_id}. "
                        f"Misconfigured throttle limits. {results['error_message']}"))
             # Wait before continuing processing to avoid re-triggering the error immediately
             time.sleep(settings.LN_WAIT_TIME)
