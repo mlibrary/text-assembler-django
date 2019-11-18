@@ -99,7 +99,7 @@ def send_user_notification(userid, search_query, date_queued, num_results, faile
     <p>Status: {'Success' if not failed else 'Failed'}</p>
     <p>Number of Results: {num_results if not failed else 'N/A'}</p>
     <p>Date Submitted: {date_queued.strftime('%B %m, %Y')}</p>
-    <p>Please visit {settings.PREFERED_HOST_URL} to view your search.</p>
+    <p>Please visit {settings.PREFERRED_HOST_URL} to view your search.</p>
     """
 
     try:

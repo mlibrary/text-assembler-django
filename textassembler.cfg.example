@@ -44,8 +44,8 @@ ATOMIC_REQUESTS = true
 
 [hosts]
 ALLOWED_HOSTS = textassembler.lib.msu.edu
-# PREFERED_HOST_URL is used for notification emails to indicate the URL they should use to check their searches
-PREFERED_HOST_URL = https://textassembler.lib.msu.edu
+# PREFERRED_HOST_URL is used for notification emails to indicate the URL they should use to check their searches
+PREFERRED_HOST_URL = https://textassembler.lib.msu.edu
 
 [debug]
 DEBUG = false

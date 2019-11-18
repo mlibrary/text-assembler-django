@@ -147,7 +147,7 @@ ALLOWED_HOSTS = [host.strip() for host in CONFIGS.get("hosts", "ALLOWED_HOSTS").
 MAINTAINER_EMAILS = [email.strip() for email in CONFIGS.get("general", "MAINTAINER_EMAILS").split(", ")]
 NOTIF_EMAIL_DOMAIN = CONFIGS.get("general", "NOTIF_EMAIL_DOMAIN")
 BCC_MAINTAINERS_ON_NOTIF = CONFIGS.get("general", "BCC_MAINTAINERS_ON_NOTIF").lower() == 'true'
-PREFERED_HOST_URL = CONFIGS.get("hosts", "PREFERED_HOST_URL")
+PREFERRED_HOST_URL = CONFIGS.get("hosts", "PREFERRED_HOST_URL")
 EMAIL_MAINTAINERS_ON_API_ERROR = CONFIGS.get("general", "EMAIL_MAINTAINERS_ON_API_ERROR").lower() == 'true'
 
 
