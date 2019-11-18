@@ -22,20 +22,20 @@ a {
   display:inline;
 }
 
-.btn-green {
-    background-color: #18453b;
-    border-color: #18453b;
+.btn-blue {
+    background-color: #00274C;
+    border-color: #00274C;
     -webkit-appearance:unset !important;
 }
 
-.btn-green:hover {
-    background-color: green;
-    border-color: green;
+.btn-blue:hover {
+    background-color: #1D7491;
+    border-color: #1D7491;
 }
 
 .btn-selected {
-    background-color: #225e52;
-    border-color: #225e52;
+    background-color: #4C6781;
+    border-color: #4C6781;
 }
 
 .dropdown-menu {
@@ -44,7 +44,7 @@ a {
 
 .navbar-container {
     margin-top: -1px;
-    background-color: #18453b;
+    background-color: #00274C;
     position: relative;
     width: 100%;
     z-index: 2;
@@ -84,7 +84,7 @@ a {
 h2 {
     text-align: center;
     font-size: 30px;
-    color: #18453b;
+    color: #00274C;
     text-shadow: 0.5px 0.5px #222;
     font-weight:500;
     margin-top:0px;
@@ -115,7 +115,7 @@ input[type=checkbox], input[type=radio] {
 * Search Form
 **********/
 .form-row label {
-    color: #18453b;
+    color: #00274C;
     font-weight: bold;
 }
 .input-group-append, .add-form-row, .remove-form-row {

@@ -1,24 +1,24 @@
 {% block header %}
 {% load custom_tags %}
-<div id="msulPhoto" class="row"></div>
-<div id="msulHeader" class="container s-lib-side-borders">
-    <div id="msuMast">
-        <a href="https://msu.edu"><img src="https://www.lib.msu.edu/sites/all/themes/msul_omega/images/masthead-helmet-white.png" width="298" height="34" alt="Michigan State University"></a>
+<div id="mlibPhoto" class="row"></div>
+<div id="mlibHeader" class="container s-lib-side-borders">
+    <div id="mlibMast">
+        <a href="https://umich.edu"><img src="static/2color-transparentbg.png" width="50" height="50" alt="University of Michigan"></a>
         <div class="toplinks">
             <ul>
-                <li><a href="https://lib.msu.edu/contact/askalib" rel="nofollow">Ask a Librarian</a></li>
-                <li><a href="https://lib.msu.edu/general/account" id="AccountLink" rel="nofollow">Account</a></li>
-                <li><a href="https://bookings.lib.msu.edu/calendar/events" rel="nofollow">Events</a></li>
+                <li><a href="https://www.lib.umich.edu/ask-librarian" rel="nofollow">Ask a Librarian</a></li>
+                <li><a href="https://www.lib.umich.edu/my-account" id="AccountLink" rel="nofollow">Account</a></li>
+                <li><a href="https://www.lib.umich.edu/events" rel="nofollow">Events</a></li>
             </ul>
         </div>
     </div>
-    <div id="msulHeaderText">
-        <div id="msuLib" >
+    <div id="mlibHeaderText">
+        <div id="mLib" >
             <h2>
-                <a href="https://lib.msu.edu">MSU Libraries</a>
+                <a href="https://lib.umich.edu">University of Michigan Libraries</a>
             </h2>
         </div>
-        <div id="msulApp" >
+        <div id="mlibApp" >
             <h2>
                 <a href="/">{% app_name %}</a>
             </h2>

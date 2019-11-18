@@ -1,32 +1,30 @@
 {% block footer %}
 <footer>
     <div class="content-wrapper container">
-        <div id="MSUstandardFooter" class="MSUwrapper light-background"  role="contentinfo">
-            <div class="fourMSUcolumns" id="standard-footer-MSU-wordmark">
-                    <a href="https://www.msu.edu">
-                        <img class="screen-msuwordmark" alt="Michigan State University Wordmark" src="https://cdn.cabs.msu.edu/brand/images/msu-wordmark-green.svg"/>
+        <div id="UMstandardFooter" class="UMwrapper light-background"  role="contentinfo">
+            <div class="fourUMcolumns" id="standard-footer-UM-wordmark">
+                    <a href="https://www.umich.edu">
+                        <img class="screen-umwordmark" alt="Michigan State University Wordmark" src="static/U-M_2color-HorizontalReversed.png"/>
                     </a>
             </div>
-            <div class="twelveMSUcolumns">
+            <div class="twelveUMcolumns">
                 <div id="standard-footer-site-links">
                     <ul>
                         <li>Call us: <strong>(800) 500-1554</strong></li>
-                        <li><a href="https://www.lib.msu.edu/contact/">Contact Information</a></li>
-                        <li><a href="https://www.lib.msu.edu/atoz/">Site A to Z</a></li>
-                        <li><a href="https://www.lib.msu.edu/about/privacystmt/">Privacy Statement</a></li>
-                        <li><a href="https://www.lib.msu.edu/general/site-accessibility/" rel="nofollow">Site Accessibility</a></li>
+                        <li><a href="https://www.lib.umich.edu/about-library">About</a></li>
+                        <li><a href="https://www.lib.umich.edu/services">Services</a></li>
+                        <li><a href="https://www.lib.umich.edu/library-administration/library-privacy-statement">Library Privacy Statement</a></li>
+                        <li><a href="https://www.lib.umich.edu/accessibility" rel="nofollow">Accessibility</a></li>
                     </ul>
                 </div>
-                <div id="standard-footer-MSU-info">
+                <div id="standard-footer-UM-info">
                     <ul>
-                        <li>Call MSU: <span class="msu-phone"><strong>(517) 355-1855</strong></span></li>
-                        <li>Visit: <strong><a href="https://msu.edu">msu.edu</a></strong></li>
-                        <li>MSU is an affirmative-action, equal-opportunity employer. </li>
-                        <li><a href="https://oie.msu.edu/" rel="nofollow"><span class="msu_footer_green">Nondescrimination (OIE)</span></a></li>
+                        <li>Call University of Michigan: <span class="um-phone"><strong>+1 (734) 764-1817</strong></span></li>
+                        <li>Visit: <strong><a href="https://umich.edu">umich.edu</a></strong></li>
                     </ul>
                     <ul>
-                        <li class="spartans-will">Spartans Will.</li>
-                        <li>&#169; Michigan State University</li>                     
+                        <li>The University of Michigan is an affirmative-action, equal-opportunity employer.</li>
+                        <li>&#169; University of Michigan</li>                     
                     </ul>
                 </div>
             </div>

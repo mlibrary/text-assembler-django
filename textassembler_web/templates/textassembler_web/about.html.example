@@ -14,9 +14,7 @@
 <li>You may not sell or otherwise re-distribute data to third parties without express permission.</li>
 <li>You may not engage in bulk reproduction or distribution of the licensed materials in any form.</li>
 </ul>
-<p><br />Under some circumstances, violation of these guidelines could lead to loss of your right to use the campus network, in accord with <a href="https://tech.msu.edu/about/guidelines-policies/aup/">MSU's Statement on Acceptable Use of Computing Systems</a>.
-
-<br /><br />For support using Text Assembler, contact <a href="https://staff.lib.msu.edu/chua/">Hui Hua Chua</a>. For technical support, contact <a href="mailto: schanzme@msu.edu">Megan Schanz</a>.
+<p><br />Under some circumstances, violation of these guidelines could lead to loss of your right to use the campus network, in accord with <a href="https://its.umich.edu/enterprise/wifi-networks/network-responsible-use-agreement">the University of Michigan's Network Responsible Use Agreement</a>.
 
 
 {% endblock %}
