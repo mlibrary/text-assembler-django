@@ -25,22 +25,16 @@ def login(request):
         logging.debug(f"User already logged in: {request.session['userid']}")
         return redirect('/search')
 
-    # Initialize the OAuth client
-    app_auth = OAuthClient(settings.APP_CLIENT_ID, settings.APP_CLIENT_SECRET, \
-        settings.APP_REDIRECT_URL, settings.APP_AUTH_URL, \
-        settings.APP_TOKEN_URL, settings.APP_PROFILE_URL)
-
     # Check if the logon was successful already
-    if 'code' in request.GET and request.session.get('state', False):
+    if request.META['REMOTE_USER']:
         logging.debug("Getting OAuth access token from the code")
         app_auth.set_state(request.session['state'])
-        request.session['access_token'] = app_auth.get_access_token(request.GET['code'])
-
-    # Call the OAuth provider to authenticate
-    if not request.session.get('access_token', False):
+        request.session['userid'] = request.META['REMOTE_USER']
+        request.session['is_admin'] = get_is_admin(request.session['userid'])
+        return redirect('/search')
+    else:
         logging.debug("Authenticating the user")
         app_auth.init_auth_url()
-        request.session['state'] = app_auth.get_state() # save the state in the session to use later
         return redirect(app_auth.get_auth_url())
 
     # Retrieve user information after a successful logon
