@@ -509,7 +509,7 @@ def remove_html(text):
     if title != headline: # prevent duplicate output to file
         output.append(headline)
 
-    text = bsp.find('bodytext').text if bsp.find('bodytext') is not None else ""
+    text = bsp.find('nitf:body').text if bsp.find('nitf:body') is not None else ""
     output.append(text)
     full_output = "\n\n".join(output)
 
