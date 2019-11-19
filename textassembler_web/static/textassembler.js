@@ -273,7 +273,7 @@ $( document ).ready(function() {
         table.column(2).search(types, true, false).draw();
     });
 
-    if ($('#use_existing')[0].disabled) {
+    if ($('#use_existing')[0] && $('#use_existing')[0].disabled) {
         $('#submit-search')[0].disabled = true;
         $('#mult_filter_info')[0].innerHTML = "The existing filters result in more than the allowed number of results. Please further refine your search.";
     }
