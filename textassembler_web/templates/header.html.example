@@ -3,7 +3,7 @@
 <div id="mlibPhoto" class="row"></div>
 <div id="mlibHeader" class="container s-lib-side-borders">
     <div id="mlibMast">
-        <a href="https://umich.edu"><img src="static/2color-transparentbg.png" width="50" height="50" alt="University of Michigan"></a>
+        <a href="https://umich.edu"><img src="static/logo_transparent.png" width="50" height="50" alt="University of Michigan"></a>
         <div class="toplinks">
             <ul>
                 <li><a href="https://www.lib.umich.edu/ask-librarian" rel="nofollow">Ask a Librarian</a></li>
