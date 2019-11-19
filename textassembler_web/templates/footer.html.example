@@ -4,7 +4,7 @@
         <div id="UMstandardFooter" class="UMwrapper light-background"  role="contentinfo">
             <div class="fourUMcolumns" id="standard-footer-UM-wordmark">
                     <a href="https://www.umich.edu">
-                        <img class="screen-umwordmark" alt="Michigan State University Wordmark" src="static/U-M_2color-HorizontalReversed.png"/>
+                        <img class="screen-umwordmark" alt="University of Michigan Wordmark" src="static/U-M_2color-HorizontalReversed.png"/>
                     </a>
             </div>
             <div class="twelveUMcolumns">
