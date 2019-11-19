@@ -1,0 +1,445 @@
+/***************************************************************
+ * Styling for UM Header and Footer
+ **************************************************************/
+
+body {
+	margin-top: 0;
+	font: 16px/28px 'Gotham SSm A', 'Gotham SSm B', arial, sans-serif;
+	-webkit-font-smoothing: antialiased; /* Fix for webkit rendering */
+	-moz-osx-font-smoothing: grayscale; /* Fix for firefox rendering */
+      
+}
+
+#mlibPhoto {
+    background: #00274C;
+    background-size: cover;
+    height: 118px;
+    margin:0px;
+}
+
+
+#mlibHeader {
+    margin-top: -100px;
+}
+
+#mlibHeaderText h2 {
+  font-size: 28px;
+  margin-top: 0;
+  color: #ffffff;
+  text-shadow: 2px 2px #222;
+}
+@media all and (max-width: 500px) {
+    #mlibHeaderText h2 {font-size: 16px;}
+}
+
+@media all and (max-width: 770px) {
+    #mlibHeaderText h2 {font-size: 20px;}
+}
+
+h2 {
+  display: block;
+  font-size: 1.5em;
+  -webkit-margin-before: 0.83em;
+  -webkit-margin-after: 0.83em;
+  -webkit-margin-start: 0px;
+  -webkit-margin-end: 0px;
+  font-weight: bold;
+}
+
+#mlibMast {
+    height: 43px;
+    padding-top: 5px;
+}
+#mlibHeaderText {
+    height: 45px;
+    margin-top: 13px;
+}
+
+    #mlibHeaderText h2 a, #mlibHeaderText h2 a:hover, #mlibHeaderText h2 a:active, #mlibHeaderText h2 a:visited {
+        text-decoration: none;
+        color: #ffffff;
+    }
+
+#mLib {
+    padding-right: 10px;
+}
+#mLib, #mlibApp {
+    display: inline-block;
+}
+
+#mlibApp a {
+  border-left: 2px solid #8aa89b;
+  padding-left: 10px;
+}
+
+.s-lib-side-borders {
+  border-left: 0;
+  border-right: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
+.container {
+  padding-right: 30px;
+  padding-left: 0px;
+  margin-right: auto;
+  margin-left: 45px;
+  width: auto;
+}
+
+.toplinks {
+  float: right;
+  color: #ffffff;
+}
+
+.toplinks ul {
+  text-align: right;
+  margin-bottom: 0px;
+  margin-top: 0px;
+  list-style-type: none;
+}
+
+.toplinks li {
+  display: list-item;
+  text-align: -webkit-match-parent;
+  color: #ffffff;
+  margin-bottom: 4px;
+  margin-top: 4px;
+}
+
+.toplinks ul li {
+  font-size: 14px;
+  padding-right: 2px;
+  height: 20px;
+}
+
+.toplinks ul a {
+  color: #ffffff;
+}
+ul, menu, dir {
+  display: block;
+  list-style-type: disc;
+  -webkit-margin-before: 1em;
+  -webkit-margin-after: 1em;
+  -webkit-margin-start: 0px;
+  -webkit-margin-end: 0px;
+  -webkit-padding-start: 40px;
+}
+
+/* #Se
+
+/* #Set Page Width
+================================================== */
+
+.UMwrapper{ width: 100%; max-width: 940px; min-width: 940px; margin: 0 auto; clear: both;}
+/* You may have to adjust the max-width and min-width to fit the width of your site. 
+If the margin is set differently for your site, fix the margin here to reflect that. */
+
+
+
+/* #UM Masthead
+================================================== */
+
+#UMheader {
+	height: 60px;
+}
+
+#UMmasthead {
+  	width: 50%;
+  	float: left; 
+  	position: relative;
+}
+
+#UMmasthead img {
+  	padding-top: 12px;
+}
+
+#UMmasthead img.print-mlibgraphic {
+	display: none;
+}
+
+/* Search Tool */
+
+#UMSearchTool form .hide {
+	position: absolute;
+	left: -9999px;
+}
+
+#UMSearchTool {
+	width: 50%; 
+	float: left;
+	position: relative;
+	margin-top: 14px;
+}
+
+
+#UMSearchTool #search-tool-box {
+	height: 28px;
+	width: 319px;
+	float: right;
+	border: 1px solid #999;
+	-webkit-border-radius: 3px;
+	-moz-border-radius: 3px;
+	border-radius: 3px;
+	font-family: 'Gotham SSm A', 'Gotham SSm B', arial, sans-serif;
+}
+
+#UMSearchTool.white-fill #search-tool-box {
+	background: #fff;
+}
+
+#UMSearchTool.no-fill #search-tool-box {
+	background: transparent;
+}
+
+#UMSearchTool #btn_search {
+	height: 28px;
+	width: 34px;
+	
+	cursor: pointer;
+	outline: 0px none;
+	border: 0pc none;
+	float: right;
+	margin: 0 auto;
+	text-indent: -9999px;
+	text-transform: capitalize;
+	-webkit-border-radius: 0px 3px 3px 0px;
+	-moz-border-radius: 0px 3px 3px 0px;
+	border-radius: 0px 3px 3px 0px;
+}
+
+#UMSearchTool.white-fill #btn_search {
+	background: #fff url(../images/icon-search.png) no-repeat center;
+}
+
+#UMSearchTool.no-fill #btn_search {
+	background: transparent url(../images/icon-search.png) no-repeat center;
+}
+
+#UMSearchTool #btn_search:hover {
+	-moz-box-shadow: inset 0 0px 60px rgba(0,0,0,0.3);
+    -webkit-box-shadow: inset 0 0px 60px rgba(0,0,0,0.3);
+    box-shadow: inset 0 0px 60px rgba(0,0,0,0.3);
+}
+
+#UMSearchTool input#q {
+	width: 258px;
+	background-color: transparent;
+	border-top-style: none;
+	border-right-style: none;
+	border-bottom-style: none;
+	border-left-style: none;
+	border-top-width: 0px;
+	border-right-width: 0px;
+	border-bottom-width: 0px;
+	border-left-width: 0px;
+	color: #666;
+	font-size: 12px;
+	font-weight: normal;
+	float: left;
+	height: 28px;
+	outline: none;
+	padding-left: 12px;
+	padding-top: 0px;
+}
+
+
+/* #UM Footer 
+================================================== */
+footer {
+    clear: both;
+    font-size: .8em;
+    position:relative;
+    bottom:0;
+    margin: 5% auto;
+	left: 0;
+	right: 0;
+}
+
+#UMstandardFooter {
+	height: 170px;
+	font-family: 'Gotham SSm A', 'Gotham SSm B', arial, sans-serif;
+
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	}
+
+#UMstandardFooter .fourUMcolumns {
+	width: 221px;
+	float: left;
+	position: relative;
+	margin-right: 18px;
+}
+
+
+#UMstandardFooter .fourUMcolumns img {
+	width: 100%;
+	margin-top: 10%;
+}
+
+#UMstandardFooter .twelveUMcolumns {   
+	width: 700px;
+	float: left;
+	position: relative; 
+	margin: 5px 0px 0px 0px;
+
+}
+
+
+
+#UMstandardFooter #standard-footer-site-links ul {
+	margin: 0px;
+	padding: 0px;
+	height: 26px;
+	border-bottom: 1px dotted #808080;
+	float: left;
+	clear: right;
+}
+
+#UMstandardFooter #standard-footer-site-links ul li {
+	display: inline-block;
+	padding-left: 4px;
+	font-size: 13px;
+}
+
+#UMstandardFooter #standard-footer-site-links ul li:first-child {
+	padding: 0px;
+}
+
+#UMstandardFooter #standard-footer-site-links ul li:nth-child(2) a {
+	padding: 0px 8px 0px 8px;	
+}
+
+#UMstandardFooter #standard-footer-site-links ul li:last-child a {
+	border-right: none;
+}
+
+#UMstandardFooter #standard-footer-site-links ul li a {
+	text-decoration: none;
+	padding-right: 8px;
+	
+}
+
+#UMstandardFooter #standard-footer-site-links ul li a:hover {
+	text-decoration: underline;
+}
+
+#UMstandardFooter.light-background #standard-footer-site-links {
+	color: #00274C;
+}
+
+#UMstandardFooter.light-background #standard-footer-site-links a {
+	color: #00274C;
+	border-right: 1px solid #00274C;
+}
+
+#UMstandardFooter.light-background #standard-footer-site-links ul li:nth-child(2) a {
+	border-left: 1px solid #18354b;
+}
+
+#UMstandardFooter.dark-background #standard-footer-site-links{
+	color: #fff;
+}
+
+
+#UMstandardFooter.dark-background #standard-footer-site-links ul li:nth-child(2) a {
+	border-left: 1px solid #737373;
+}
+
+#UMstandardFooter.dark-background #standard-footer-site-links a {
+	color: #fff;
+	border-right: 1px solid #737373;
+}
+
+
+
+
+
+
+#UMstandardFooter #standard-footer-UM-info {
+	font-size: 10px;
+	margin-top: 4px;
+	padding-top: 0px;
+	float: left;
+	clear: right;
+}
+
+#UMstandardFooter #standard-footer-UM-info ul {
+	margin: 0px;
+	padding: 0px;
+	height: 16px;
+}
+
+#UMstandardFooter #standard-footer-UM-info ul li {
+	margin-bottom: 0px;
+	line-height: 10px;
+	display: inline;
+	border-right: 1px solid #999;
+	padding: 0px 8px 0px 4px;
+}
+
+#UMstandardFooter #standard-footer-UM-info ul li.spartans-will {
+	text-transform: uppercase;
+	font-weight: 600;
+}
+
+
+
+#UMstandardFooter #standard-footer-UM-info ul li:first-child {
+	padding-left: 0px;
+}
+
+#UMstandardFooter #standard-footer-UM-info ul li:last-child {
+	border-right: 0px;
+}	
+
+
+#UMstandardFooter #standard-footer-UM-info ul li a {
+	text-decoration: none;
+}
+
+#UMstandardFooter #standard-footer-UM-info ul li a:hover {
+	text-decoration: underline;
+}
+
+#UMstandardFooter.light-background #standard-footer-UM-info{
+	color: #00274C;
+}
+#UMstandardFooter.light-background #standard-footer-UM-info a, #UMstandardFooter.light-background #standard-footer-UM-info .mlib-phone {
+	color: #106684;
+}
+
+
+#UMstandardFooter.dark-background #standard-footer-UM-info{
+	color: #fff;
+}
+
+#UMstandardFooter.dark-background #standard-footer-UM-info a, #UMstandardFooter.dark-background #standard-footer-UM-info .mlib-phone {
+	color: #84d123;
+}
+
+#standard-footer-UM-wordmark img.print-mlibwordmark {
+	display: none;
+}
+
+
+
+
+/* #Print Styles
+================================================== */
+@media print {
+
+	#UMmasthead img.print-mlibgraphic, #standard-footer-UM-wordmark img.print-mlibwordmark {
+		display: block;
+	}
+
+	#UMmasthead img.screen-mlibgraphic, #standard-footer-UM-wordmark img.screen-mlibwordmark {
+		display: none;
+	}
+
+	#UMSearchTool #search-tool-box{
+
+		margin-right: 12px;
+	}
+
+}
+

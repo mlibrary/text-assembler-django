@@ -11,7 +11,10 @@ textassembler_web/templates/footer.html
 textassembler_web/templates/textassembler_web/about.html
 textassembler_web/static/*
 !textassembler_web/static/LexisNexis.gif
-!textassembler_web/static/MSU.css
+!textassembler_web/static/mlibrary.css
 !textassembler_web/static/textassembler.css
 !textassembler_web/static/textassembler.js
+!textassembler_web/static/favicon.ico
+!textassembler_web/static/wordmark.png
+!textassembler_web/static/logo_transparent.png
 TODO.md
