@@ -23,6 +23,8 @@ OAuth client.
 
 Install & Setup
 ---------------
+These instructions have been automated as [an Ansible playbook](https://github.com/mlibrary/text-assembler-playbook).
+
 * Install the base software
 ```
 sudo aptitude install python3
