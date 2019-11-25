@@ -11,8 +11,6 @@ def logout(request):
     '''
     # Clear the session
     request.session['userid'] = None
-    request.session['access_token'] = None
-    request.session['state'] = None
 
-    # Redirect to OAuth logout page
+    # Redirect to logout page
     return redirect(settings.APP_LOGOUT_URL)

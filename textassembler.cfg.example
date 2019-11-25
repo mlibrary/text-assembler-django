@@ -6,7 +6,7 @@ EMAIL_MAINTAINERS_ON_API_ERROR = false
 STORAGE_LOCATION = /mnt/textassembler
 # NOTIF_EMAIL_DOMAIN should be the end part of the email address to use for
 # constructing user email addresses. The first part will be the USER_ID_FIELD
-# returned from OAuth. Ex: schanzme@msu.edu. If blank, no notification
+# returned from authentication. Ex: esty@umich.edu. If blank, no notification
 # emails will be sent for completed/failed searches
 NOTIF_EMAIL_DOMAIN = umich.edu
 # If set to true, all notification emails will have the MAINTAINER_EMAILS BCC'd
