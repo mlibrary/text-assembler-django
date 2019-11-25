@@ -115,17 +115,14 @@ WEEKDAY_END_TIME = datetime.datetime.strptime(CONFIGS.get("api.limits", "WEEKDAY
 WEEKEND_START_TIME = datetime.datetime.strptime(CONFIGS.get("api.limits", "WEEKEND_START_TIME"), '%H:%M').time()
 WEEKEND_END_TIME = datetime.datetime.strptime(CONFIGS.get("api.limits", "WEEKEND_END_TIME"), '%H:%M').time()
 
-# App OAuth Configs
-OAUTH_BYPASS = CONFIGS.get("oauth", "BYPASS").lower() == 'true'
-OAUTH_BYPASS_USER = CONFIGS.get("oauth", "BYPASS_USER")
-APP_AUTH_URL = CONFIGS.get("oauth", "AUTH_URL")
-APP_TOKEN_URL = CONFIGS.get("oauth", "TOKEN_URL")
-APP_PROFILE_URL = CONFIGS.get("oauth", "PROFILE_URL")
-APP_LOGOUT_URL = CONFIGS.get("oauth", "LOGOUT_URL")
-APP_CLIENT_ID = CONFIGS.get("oauth", "CLIENT_ID")
-APP_CLIENT_SECRET = CONFIGS.get("oauth", "CLIENT_SECRET")
-APP_REDIRECT_URL = CONFIGS.get("oauth", "REDIRECT_URL")
-APP_USER_ID_FIELD = CONFIGS.get("oauth", "USER_ID_FIELD")
+# App Auth Configs
+AUTH_BYPASS = CONFIGS.get("auth", "BYPASS").lower() == 'true'
+AUTH_BYPASS_USER = CONFIGS.get("auth", "BYPASS_USER")
+APP_LOGOUT_URL = CONFIGS.get("auth", "LOGOUT_URL")
+APP_CLIENT_ID = CONFIGS.get("auth", "CLIENT_ID")
+APP_CLIENT_SECRET = CONFIGS.get("auth", "CLIENT_SECRET")
+APP_REDIRECT_URL = CONFIGS.get("auth", "REDIRECT_URL")
+APP_USER_ID_FIELD = CONFIGS.get("auth", "USER_ID_FIELD")
 
 
 # SECURITY WARNING: keep the secret key used in production secret!

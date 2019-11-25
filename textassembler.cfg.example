@@ -1,14 +1,14 @@
 [general]
 APP_NAME = Text Assembler
 TIME_ZONE = America/Detroit
-MAINTAINER_EMAILS = schanzme@msu.edu, schanzme@lib.msu.edu
+MAINTAINER_EMAILS = esty@umich.edu
 EMAIL_MAINTAINERS_ON_API_ERROR = false
 STORAGE_LOCATION = /mnt/textassembler
 # NOTIF_EMAIL_DOMAIN should be the end part of the email address to use for
 # constructing user email addresses. The first part will be the USER_ID_FIELD
 # returned from OAuth. Ex: schanzme@msu.edu. If blank, no notification
 # emails will be sent for completed/failed searches
-NOTIF_EMAIL_DOMAIN = msu.edu
+NOTIF_EMAIL_DOMAIN = umich.edu
 # If set to true, all notification emails will have the MAINTAINER_EMAILS BCC'd
 BCC_MAINTAINERS_ON_NOTIF = true
 # Sets the max number of results a search is expected to return that a 
@@ -43,9 +43,9 @@ PORT = 3306
 ATOMIC_REQUESTS = true
 
 [hosts]
-ALLOWED_HOSTS = textassembler.lib.msu.edu
+ALLOWED_HOSTS = lexnex.lib.msu.edu
 # PREFERRED_HOST_URL is used for notification emails to indicate the URL they should use to check their searches
-PREFERRED_HOST_URL = https://textassembler.lib.msu.edu
+PREFERRED_HOST_URL = https://lexnex.lib.umich.edu
 
 [debug]
 DEBUG = false
@@ -92,18 +92,15 @@ WEEKDAY_END_TIME = 06:00
 WEEKEND_START_TIME = 00:00
 WEEKEND_END_TIME = 00:00
 
-[oauth]
-# If you want to test code without going through an OAuth setup, set this to
+[auth]
+# If you want to test code without going through an auth setup, set this to
 # TRUE and provide a test user id to use. This cannot be used in production
 # since it would then have no way to distinguish user's searches from
 # one and other
-BYPASS = TRUE
+BYPASS = false
 BYPASS_USER = testuser
-AUTH_URL = https://oauth.itservices.msu.edu/oauth/authorize
-TOKEN_URL = https://oauth.itservices.msu.edu/oauth/token
-PROFILE_URL = https://oauth.itservices.msu.edu/oauth/me
-LOGOUT_URL = https://oauth.itservices.msu.edu/oauth/logout 
+LOGOUT_URL = https://weblogin.umich.edu/logout
 CLIENT_ID = client_id
 CLIENT_SECRET = client_secret
-REDIRECT_URL = https://textassembler.lib.msu.edu/login
-USER_ID_FIELD = msunetid
+REDIRECT_URL = https://lexnex.lib.umich.edu/login
+USER_ID_FIELD = REMOTE_USER

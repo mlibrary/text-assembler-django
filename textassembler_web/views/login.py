@@ -13,10 +13,10 @@ def login(request):
     Handles login requests
     '''
     # Check if bypass mode is enabled
-    if settings.OAUTH_BYPASS:
-        request.session['userid'] = settings.OAUTH_BYPASS_USER
+    if settings.AUTH_BYPASS:
+        request.session['userid'] = settings.AUTH_BYPASS_USER
         request.session['is_admin'] = get_is_admin(request.session['userid'])
-        logging.debug(f"OAuth bypass mode is enabled. Logging in as {request.session['userid']}")
+        logging.debug(f"Auth bypass mode is enabled. Logging in as {request.session['userid']}")
         return redirect('/search')
 
     # If they are already logged in, send users to search page
@@ -26,16 +26,14 @@ def login(request):
         return redirect('/search')
 
     # Check if the logon was successful already
-    if request.META['REMOTE_USER']:
-        logging.debug("Getting OAuth access token from the code")
-        app_auth.set_state(request.session['state'])
+    if request.META.get('REMOTE_USER', False):
+        logging.debug("Found signed-in Cosign user")
         request.session['userid'] = request.META['REMOTE_USER']
         request.session['is_admin'] = get_is_admin(request.session['userid'])
         return redirect('/search')
     else:
         logging.debug("Authenticating the user")
-        app_auth.init_auth_url()
-        return redirect(app_auth.get_auth_url())
+        return redirect("/login")
 
     # Retrieve user information after a successful logon
     if request.session.get('access_token', False) and not request.session.get('userid', False):
