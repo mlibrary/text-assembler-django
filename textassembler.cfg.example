@@ -35,20 +35,20 @@ MAX_FILES_PER_DIR = 10000
 
 [database.default]
 ENGINE = django.db.backends.mysql
-NAME = name
-USER = user
-PASSWORD = password
-HOST = host
+NAME = tassembler
+USER = tassembler
+PASSWORD = badpassword
+HOST = localhost
 PORT = 3306
 ATOMIC_REQUESTS = true
 
 [hosts]
-ALLOWED_HOSTS = lexnex.lib.msu.edu
+ALLOWED_HOSTS = lexnex.lib.umich.edu
 # PREFERRED_HOST_URL is used for notification emails to indicate the URL they should use to check their searches
 PREFERRED_HOST_URL = https://lexnex.lib.umich.edu
 
 [debug]
-DEBUG = false
+DEBUG = true
 # This can be set to true without DEBUG being true to allow for the log files to contain full debug information
 # without having it print to the screen, which DEBUG will do on error
 LOG_DEBUG_LEVEL = true
