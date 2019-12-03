@@ -3,25 +3,21 @@
 <div id="mlibPhoto" class="row"></div>
 <div id="mlibHeader" class="container s-lib-side-borders">
     <div id="mlibMast">
-        <a href="https://umich.edu"><img src="static/logo_transparent.png" width="50" height="50" alt="University of Michigan"></a>
-        <div class="toplinks">
-            <ul>
-                <li><a href="https://www.lib.umich.edu/ask-librarian" rel="nofollow">Ask a Librarian</a></li>
-                <li><a href="https://www.lib.umich.edu/my-account" id="AccountLink" rel="nofollow">Account</a></li>
-                <li><a href="https://www.lib.umich.edu/events" rel="nofollow">Events</a></li>
-            </ul>
-        </div>
-    </div>
-    <div id="mlibHeaderText">
         <div id="mLib" >
             <h2>
-                <a href="https://lib.umich.edu">University of Michigan Libraries</a>
+              <a href="https://lib.umich.edu"><img src="static/MLibLogo-color-1-5.png" height="50" alt="University of Michigan Library"></a>
             </h2>
         </div>
         <div id="mlibApp" >
             <h2>
                 <a href="/">{% app_name %}</a>
             </h2>
+        </div>
+        <div class="toplinks">
+            <ul>
+                <li><a href="https://www.lib.umich.edu/ask-librarian" rel="nofollow">Ask a Librarian</a></li>
+                <li><a href="https://www.lib.umich.edu/my-account" id="AccountLink" rel="nofollow">Account</a></li>
+            </ul>
         </div>
     </div>
 </div>

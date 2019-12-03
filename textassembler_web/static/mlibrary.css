@@ -22,18 +22,18 @@ body {
     margin-top: -100px;
 }
 
-#mlibHeaderText h2 {
+#mlibMast h2 {
   font-size: 28px;
   margin-top: 0;
   color: #ffffff;
   text-shadow: 2px 2px #222;
 }
 @media all and (max-width: 500px) {
-    #mlibHeaderText h2 {font-size: 16px;}
+    #mlibMast h2 {font-size: 16px;}
 }
 
 @media all and (max-width: 770px) {
-    #mlibHeaderText h2 {font-size: 20px;}
+    #mlibMast h2 {font-size: 20px;}
 }
 
 h2 {
@@ -47,15 +47,16 @@ h2 {
 }
 
 #mlibMast {
-    height: 43px;
+    height: 55px;
     padding-top: 5px;
+    margin-bottom: 13px;
 }
 #mlibHeaderText {
     height: 45px;
     margin-top: 13px;
 }
 
-    #mlibHeaderText h2 a, #mlibHeaderText h2 a:hover, #mlibHeaderText h2 a:active, #mlibHeaderText h2 a:visited {
+    #mlibMast h2 a, #mlibMast h2 a:hover, #mlibMast h2 a:active, #mlibMast h2 a:visited {
         text-decoration: none;
         color: #ffffff;
     }
