@@ -8,9 +8,11 @@
                     </a>
             </div>
             <div class="twelveUMcolumns">
+                <div id="standard-footer-help">
+                  <p>Please contact <a href="mailto:librarytdm@umich.edu">librarytdm@umich.edu</a> for questions regarding the LexisNexis Text Assembler</p>
+                </div>
                 <div id="standard-footer-site-links">
                     <ul>
-                        <li>Call us: <strong>(800) 500-1554</strong></li>
                         <li><a href="https://www.lib.umich.edu/about-library">About</a></li>
                         <li><a href="https://www.lib.umich.edu/services">Services</a></li>
                         <li><a href="https://www.lib.umich.edu/library-administration/library-privacy-statement">Library Privacy Statement</a></li>
@@ -18,10 +20,6 @@
                     </ul>
                 </div>
                 <div id="standard-footer-UM-info">
-                    <ul>
-                        <li>Call University of Michigan: <span class="um-phone"><strong>+1 (734) 764-1817</strong></span></li>
-                        <li>Visit: <strong><a href="https://umich.edu">umich.edu</a></strong></li>
-                    </ul>
                     <ul>
                         <li>The University of Michigan is an affirmative-action, equal-opportunity employer.</li>
                         <li>&#169; University of Michigan</li>                     

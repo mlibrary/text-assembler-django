@@ -285,7 +285,13 @@ footer {
 
 }
 
-
+#UMstandardFooter #standard-footer-help p {
+  margin: 0px;
+  padding: 0px;
+  height: 26px;
+	border-bottom: 1px dotted #808080;
+  float: left;
+}
 
 #UMstandardFooter #standard-footer-site-links ul {
 	margin: 0px;
@@ -304,10 +310,6 @@ footer {
 
 #UMstandardFooter #standard-footer-site-links ul li:first-child {
 	padding: 0px;
-}
-
-#UMstandardFooter #standard-footer-site-links ul li:nth-child(2) a {
-	padding: 0px 8px 0px 8px;	
 }
 
 #UMstandardFooter #standard-footer-site-links ul li:last-child a {
@@ -333,10 +335,6 @@ footer {
 	border-right: 1px solid #00274C;
 }
 
-#UMstandardFooter.light-background #standard-footer-site-links ul li:nth-child(2) a {
-	border-left: 1px solid #18354b;
-}
-
 #UMstandardFooter.dark-background #standard-footer-site-links{
 	color: #fff;
 }
@@ -350,11 +348,6 @@ footer {
 	color: #fff;
 	border-right: 1px solid #737373;
 }
-
-
-
-
-
 
 #UMstandardFooter #standard-footer-UM-info {
 	font-size: 10px;
@@ -378,13 +371,6 @@ footer {
 	padding: 0px 8px 0px 4px;
 }
 
-#UMstandardFooter #standard-footer-UM-info ul li.spartans-will {
-	text-transform: uppercase;
-	font-weight: 600;
-}
-
-
-
 #UMstandardFooter #standard-footer-UM-info ul li:first-child {
 	padding-left: 0px;
 }
@@ -392,7 +378,6 @@ footer {
 #UMstandardFooter #standard-footer-UM-info ul li:last-child {
 	border-right: 0px;
 }	
-
 
 #UMstandardFooter #standard-footer-UM-info ul li a {
 	text-decoration: none;
@@ -405,10 +390,6 @@ footer {
 #UMstandardFooter.light-background #standard-footer-UM-info{
 	color: #00274C;
 }
-#UMstandardFooter.light-background #standard-footer-UM-info a, #UMstandardFooter.light-background #standard-footer-UM-info .mlib-phone {
-	color: #106684;
-}
-
 
 #UMstandardFooter.dark-background #standard-footer-UM-info{
 	color: #fff;
