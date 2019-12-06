@@ -104,9 +104,15 @@ class api_limits(models.Model): # pylint: disable=invalid-name
         choices=[(tag, tag.value) for tag in CallTypeChoice],
         primary_key=True,
     )
-    per_minute = models.IntegerField(default=0)
-    per_hour = models.IntegerField(default=0)
-    per_day = models.IntegerField(default=0)
+    limit_per_minute = models.IntegerField(default=0)
+    limit_per_hour = models.IntegerField(default=0)
+    limit_per_day = models.IntegerField(default=0)
+    remaining_per_minute = models.IntegerField(default=0)
+    remaining_per_hour = models.IntegerField(default=0)
+    remaining_per_day = models.IntegerField(default=0)
+    reset_on_minute = models.DateTimeField(null=True)
+    reset_on_hour = models.DateTimeField(null=True)
+    reset_on_day = models.DateTimeField(null=True)
     update_date = models.DateTimeField(auto_now=True)
 
 class historical_searches(models.Model): # pylint: disable=invalid-name

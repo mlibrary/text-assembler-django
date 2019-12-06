@@ -117,7 +117,6 @@ systemctl start tassemblerdeld
 * Set up cron job to update Lexis Nexis sources and API limits on a regular basis (`/etc/crontab`)
 ```
 @monthly    root        /var/www/text-assembler/ta_env/bin/python /var/www/text-assembler/manage.py update_sources
-@monthly    root        /var/www/text-assembler/ta_env/bin/python /var/www/text-assembler/manage.py update_limits
 ```
 
 * Create an initial admin user to use the admin interface
@@ -158,8 +157,9 @@ mysql -h [DB_HOST] -p [DB_NAME] -e "INSERT INTO textassembler_web_administrative
 /var/www/text-assembler/ta_env/bin/python /var/www/text-assembler/manage.py update_limits
 ```
 
-* If you have not already, add the required cron rule to update API limits
+* If you have not already, remove the cron rule to update API limits
 ```
+# REMOVE
 @monthly    root        /var/www/text-assembler/ta_env/bin/python /var/www/text-assembler/manage.py update_limits
 ```
 

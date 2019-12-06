@@ -9,8 +9,8 @@ import requests
 from django.conf import settings
 from django.apps import apps
 from django.utils import timezone
-from django.core.exceptions import ObjectDoesNotExist
-from .utilities import log_error, seconds_to_dhms_string
+from django.db import OperationalError
+from .utilities import log_error
 from .filters import get_enum_namespace, get_format_type
 from .models import api_limits, CallTypeChoice
 
@@ -26,14 +26,6 @@ class LNAPI:
         self.api_log = apps.get_model('textassembler_processor', 'api_log')
         self.access_token = None
         self.expiration_time = None
-
-        self.requests = {
-            "per_min": None,
-            "per_hour": None,
-            "per_day": None,
-        }
-
-        self.limits = {}
 
         self.api_url = settings.LN_API_URL
         if not self.api_url.endswith("/"):
@@ -73,249 +65,49 @@ class LNAPI:
             return error
         return ""
 
-
-    def refresh_throttle_data(self, display=False):
+    def check_when_available(self, limit_type='search'): # pylint:disable=too-many-return-statements, no-self-use
         '''
-        Get the current throttle data from the database
+        Note: Disabling too many return statements since it keeps the code more readable
+        Note: Disabling no self use because other classes use it and it makes more
+        sence and class function that importing it as a utility separately
+
+        Check how many seconds until the given service API is available to call
+        returns: datetime when it is available again
         '''
-        # Get the current number of searches and downloads per the current min/hr/day
+        service = CallTypeChoice.SRH
+        if limit_type == 'download':
+            service = CallTypeChoice.DWL
+        if limit_type == 'sources':
+            service = CallTypeChoice.SRC
 
-        self.requests['per_min'] = self.api_log.objects.filter(request_date__gte=timezone.now() - datetime.timedelta(minutes=1))
-        self.requests['per_hour'] = self.api_log.objects.filter(request_date__gte=timezone.now()- datetime.timedelta(hours=1))
-        self.requests['per_day'] = self.api_log.objects.filter(request_date__gte=timezone.now() - datetime.timedelta(days=1))
+        limits = api_limits.objects.get(limit_type=service)
+        (in_run_window, start_time) = is_in_run_window()
 
-        # validate trottle settings, if not set, pull from the database api_limits table
-        ## Search
-        if not settings.SEARCHES_PER_MINUTE or not settings.SEARCHES_PER_HOUR or \
-            not settings.SEARCHES_PER_DAY:
-            try:
-                self.limits['search'] = api_limits.objects.get(limit_type=CallTypeChoice.SRH)
-            except ObjectDoesNotExist:
-                log_error("API search limits are not properly configured. Run: manage.py update_limits")
-        else:
-            self.limits['search'] = api_limits(
-                limit_type=CallTypeChoice.SRH,
-                per_minute=settings.SEARCHES_PER_MINUTE,
-                per_hour=settings.SEARCHES_PER_HOUR,
-                per_day=settings.SEARCHES_PER_DAY)
+        # If it is for sources or search, or within the run window for downloads: check if available now
+        if limit_type != 'download' or in_run_window:
+            if limits.remaining_per_minute > 0 and limits.remaining_per_hour > 0 and limits.remaining_per_day > 0:
+                return timezone.now()
+            if limits.remaining_per_day == 0 and limits.reset_on_day < timezone.now():
+                return timezone.now()
+            if limits.remaining_per_hour == 0 and limits.reset_on_hour < timezone.now():
+                return timezone.now()
+            if limits.remaining_per_minute == 0 and limits.reset_on_minute < timezone.now():
+                return timezone.now()
+        # Else calculate time remaining to wait
+        all_dates = [limits.reset_on_day, limits.reset_on_hour, limits.reset_on_minute, start_time]
+        if limit_type == 'download':
+            return max(all_dates)
+        if limits.remaining_per_day == 0:
+            return limits.reset_on_day
+        if limits.remaining_per_hour == 0:
+            return limits.reset_on_hour
+        if limits.remaining_per_minute == 0:
+            return limits.reset_on_minute
 
-        ## Download
-        if not settings.DOWNLOADS_PER_MINUTE or not settings.DOWNLOADS_PER_HOUR or \
-            not settings.DOWNLOADS_PER_DAY:
-            try:
-                self.limits['download'] = api_limits.objects.get(limit_type=CallTypeChoice.DWL)
-            except ObjectDoesNotExist:
-                log_error("API download limits are not properly configured. Run: manage.py update_limits")
-        else:
-            self.limits['download'] = api_limits(
-                limit_type=CallTypeChoice.DWL,
-                per_minute=settings.DOWNLOADS_PER_MINUTE,
-                per_hour=settings.DOWNLOADS_PER_HOUR,
-                per_day=settings.DOWNLOADS_PER_DAY)
+        # Failsafe, should never get to this point
+        return timezone.now()
 
-        ## Sources
-        if not settings.SOURCES_PER_MINUTE or not settings.SOURCES_PER_HOUR or \
-            not settings.SOURCES_PER_DAY:
-            try:
-                self.limits['sources'] = api_limits.objects.get(limit_type=CallTypeChoice.SRC)
-            except ObjectDoesNotExist:
-                log_error("API sources limits are not properly configured. Run: manage.py update_limits")
-        else:
-            self.limits['sources'] = api_limits(
-                limit_type=CallTypeChoice.SRC,
-                per_minute=settings.SOURCES_PER_MINUTE,
-                per_hour=settings.SOURCES_PER_HOUR,
-                per_day=settings.SOURCES_PER_DAY)
-
-        ## Start and End Times
-        if not settings.WEEKDAY_START_TIME or not settings.WEEKDAY_END_TIME or \
-            not settings.WEEKEND_START_TIME or not settings.WEEKEND_START_TIME:
-            log_error("API processing start and end times not properly configured")
-
-        # Compare against the limits for min/hr/day
-        if display:
-            logging.debug((f"Current search limits: {self.requests['per_min'].count()}/min, "
-                           f"{self.requests['per_hour'].count()}/hr, {self.requests['per_day'].count()}/day "
-                           f"out of {self.limits['search'].per_minute}/min, "
-                           f"{self.limits['search'].per_hour}/hr, "
-                           f"{self.limits['search'].per_day}/day"))
-
-            logging.debug((f"Current download limits: {self.requests['per_min'].filter(is_download=True).count()}/min,"
-                           f" {self.requests['per_hour'].filter(is_download=True).count()}/hr, {self.requests['per_day'].filter(is_download=True).count()}/day"
-                           f" out of {self.limits['download'].per_minute}/min, "
-                           f"{self.limits['download'].per_hour}/hr, "
-                           f"{self.limits['download'].per_day}/day"))
-
-    def check_can_search(self):
-        '''
-        Checks the remaining searches available per min/hr/day to see if we are able to do any more
-
-        returns: bool can_search
-        '''
-
-        self.refresh_throttle_data(True)
-
-        if self.requests['per_min'].count() < self.limits['search'].per_minute \
-            and self.requests['per_hour'].count() < self.limits['search'].per_hour and \
-            self.requests['per_day'].count() < self.limits['search'].per_day:
-            return True
-
-        return False
-
-    def check_can_sources(self):
-        '''
-        Checks the remaining sources calls available per min/hr/day to see if we are able to do any more
-
-        returns: bool can_sources
-        '''
-
-        self.refresh_throttle_data(True)
-
-        if self.requests['per_min'].count() < self.limits['sources'].per_minute \
-            and self.requests['per_hour'].count() < self.limits['sources'].per_hour and \
-            self.requests['per_day'].count() < self.limits['sources'].per_day:
-            return True
-
-        return False
-
-    def check_can_download(self, processing=False):
-        '''
-        Checks the remaining searches available per min/hr/day to see if we are able to do any more
-
-        returns: (bool) can_download
-        '''
-
-        self.refresh_throttle_data(True)
-
-        #  check that we are within the valid processing time window
-        if processing:
-            # determine if it is currently a weekend or weekday
-            is_weekday = datetime.datetime.today().weekday() < 5
-            now = datetime.datetime.now()
-
-            if is_weekday:
-                start_time = datetime.datetime.now().replace(hour=settings.WEEKDAY_START_TIME.hour,\
-                    minute=settings.WEEKDAY_START_TIME.minute, second=0, microsecond=0)
-                end_time = datetime.datetime.now().replace(hour=settings.WEEKDAY_END_TIME.hour,\
-                    minute=settings.WEEKDAY_END_TIME.minute, second=0, microsecond=0)
-
-                end_is_next_day = settings.WEEKDAY_END_TIME < settings.WEEKDAY_START_TIME
-            else:
-                start_time = datetime.datetime.now().replace(hour=settings.WEEKEND_START_TIME.hour,\
-                    minute=settings.WEEKEND_START_TIME.minute, second=0, microsecond=0)
-                end_time = datetime.datetime.now().replace(hour=settings.WEEKEND_END_TIME.hour,\
-                    minute=settings.WEEKEND_END_TIME.minute, second=0, microsecond=0)
-
-                end_is_next_day = settings.WEEKEND_END_TIME < settings.WEEKEND_START_TIME
-
-            if end_is_next_day:
-                end_time = end_time + datetime.timedelta(days=1)
-
-            # Add in allowance for checking the previous day's run window since if the time just changed over
-            # then it would still be within that window instead of the next day's
-            not_todays = now < start_time or now > end_time
-            not_yesterdays = now < (start_time - datetime.timedelta(days=1)) or now > (end_time - datetime.timedelta(days=1))
-            not_all_day = start_time != end_time
-            if not_todays and not_yesterdays and not_all_day:
-                message = (
-                    f"Not during the valid processing window. "
-                    f"Start time: {(start_time-datetime.timedelta(days=1)).strftime('%A %I:%M%p')} "
-                    f"End time: {(end_time-datetime.timedelta(days=1)).strftime('%A %I:%M%p')} "
-                    f"or "
-                    f"Start time: {start_time.strftime('%A %I:%M%p')} "
-                    f"End time: {end_time.strftime('%A %I:%M%p')}")
-                logging.debug(message)
-                return False
-
-        if self.requests['per_min'].filter(is_download=True).count() < self.limits['download'].per_minute \
-            and self.requests['per_hour'].filter(is_download=True).count() < self.limits['download'].per_hour \
-            and self.requests['per_day'].filter(is_download=True).count() < self.limits['download'].per_day:
-            return True
-
-        return False
-
-    def get_time_until_next_search(self):
-        '''
-        Gets the number of seconds until we can perform the next search
-        '''
-
-        self.refresh_throttle_data()
-
-        # Available now
-        if self.requests['per_min'].count() < self.limits['search'].per_minute  \
-            and self.requests['per_hour'].count() < self.limits['search'].per_hour \
-            and self.requests['per_day'].count() < self.limits['search'].per_day:
-            return 0
-
-        # Calculate
-        if self.requests['per_day'].count() >= self.limits['search'].per_day:
-            return ((timezone.now() + datetime.timedelta(days=1)) - timezone.now()).total_seconds()
-        if self.requests['per_hour'].count() >= self.limits['search'].per_hour:
-            return ((timezone.now() + datetime.timedelta(hours=1)) - timezone.now()).total_seconds()
-        if self.requests['per_min'].count() >= self.limits['search'].per_minute:
-            return ((timezone.now() + datetime.timedelta(minutes=1)) - timezone.now()).total_seconds()
-
-        return 0
-
-    def get_time_until_next_sources(self):
-        '''
-        Gets the number of seconds until we can perform the next sources call
-        '''
-
-        self.refresh_throttle_data()
-
-        # Available now
-        if self.check_can_sources():
-            return 0
-
-        # Calculate
-        if self.requests['per_day'].count() >= self.limits['sources'].per_day:
-            return ((timezone.now() + datetime.timedelta(days=1)) - timezone.now()).total_seconds()
-        if self.requests['per_hour'].count() >= self.limits['sources'].per_hour:
-            return ((timezone.now() + datetime.timedelta(hours=1)) - timezone.now()).total_seconds()
-        if self.requests['per_min'].count() >= self.limits['sources'].per_minute:
-            return ((timezone.now() + datetime.timedelta(minutes=1)) - timezone.now()).total_seconds()
-
-        return 0
-
-    def get_time_until_next_download(self):
-        '''
-        Gets the number of seconds until we can perform the next download.
-        Does not account for run window
-        '''
-
-        self.refresh_throttle_data()
-        seconds = 0
-        seconds_window = 0
-
-        # Available now
-        if self.check_can_download(True):
-            return 0
-
-        # Calculate
-        if self.requests['per_day'].filter(is_download=True).count() >= self.limits['download'].per_day:
-            seconds = ((timezone.now() + datetime.timedelta(days=1)) - timezone.now()).total_seconds()
-        if self.requests['per_hour'].filter(is_download=True).count() >= self.limits['download'].per_hour:
-            seconds = ((timezone.now() + datetime.timedelta(hours=1)) - timezone.now()).total_seconds()
-        if self.requests['per_min'].filter(is_download=True).count() >= self.limits['download'].per_minute:
-            seconds = ((timezone.now() + datetime.timedelta(minutes=1)) - timezone.now()).total_seconds()
-
-
-        is_weekday = datetime.datetime.today().weekday() < 5
-
-        if is_weekday:
-            start_date = datetime.datetime.combine(datetime.date.today(), settings.WEEKDAY_START_TIME)
-        else:
-            start_date = datetime.datetime.combine(datetime.date.today(), settings.WEEKEND_START_TIME)
-        delta = start_date  - datetime.datetime.now()
-        seconds_window = delta.total_seconds()
-
-
-        if seconds > seconds_window:
-            return seconds
-        return seconds_window
-
-    def api_get_rate_limit(self, limit_type='search'):
+    def api_update_rate_limit(self, limit_type='search'):
         '''
         Calls the API, but returns only the header information to parse for the limit
         Returns: X-RateLimit-Limit
@@ -348,12 +140,10 @@ class LNAPI:
             num_results=0,
             is_download=True if limit_type.lower() == 'download' else False)
 
-        # Return the results
-        if resp and resp.headers and 'X-RateLimit-Limit' in resp.headers:
-            return {"X-RateLimit-Limit": resp.headers['X-RateLimit-Limit']}
-        elif resp and resp.headers:
-            return {"error_message": f"Failed to retrieve limit. {resp.status_code}. {resp.text}. {resp.headers}"}
-        return {"error_message": f"Failed calling LexisNexis API to get limits"}
+        # Update the limits
+        update_limits(limit_type, resp.headers)
+
+        return None
 
     def api_call(self, req_type='GET', resource='News', params=None):
         '''
@@ -361,15 +151,14 @@ class LNAPI:
         '''
 
         is_download = True if "$expand" in params and params['$expand'] == "Document" else False
+        service = 'search'
+        service = 'download' if is_download else service
+        service = 'sources' if resource == 'Sources' else service
 
         # Make sure we are within the API throttling limits
-        if is_download and not self.check_can_download():
-            time = seconds_to_dhms_string(self.get_time_until_next_download())
-            return {"error_message":f"There are no LexisNexis downloads remaining for the current min/hour/day. Next available in {time}"}
-
-        if not self.check_can_search():
-            time = seconds_to_dhms_string(self.get_time_until_next_search())
-            return {"error_message":f"There are no LexisNexis searches remaining for the current min/hour/day. Next available in {time}"}
+        avail_time = self.check_when_available(service)
+        if avail_time > timezone.now():
+            return {"error_message":f"There are no LexisNexis {service} remaining for the current min/hour/day. Next available at {avail_time}"}
 
         error_message = self.authenticate()
         if error_message:
@@ -398,9 +187,10 @@ class LNAPI:
         except json.decoder.JSONDecodeError:
             results = "[Could not parse response]"
 
+        # Check response code
         if resp.status_code == requests.codes.ok: # pylint: disable=no-member
+            update_limits(service, resp.headers)
             return results
-
         else:
             error_message = "An unexpected API error occurred."
             full_error_message = f"Call to {resp.url} failed with code {resp.status_code}. Response: "
@@ -448,6 +238,87 @@ class LNAPI:
             params["$orderby"] = sort_order
 
         return self.api_call(resource='News', params=params)
+
+def is_in_run_window():
+    '''
+    Calculate the datetime run window for the download processor
+    returns: (bool, datetime) if we are in the run window or not and when the start time is
+    '''
+    # determine if it is currently a weekend or weekday
+    is_weekday = datetime.datetime.today().weekday() < 5
+    now = datetime.datetime.now()
+
+    if is_weekday:
+        start_time = datetime.datetime.now().replace(hour=settings.WEEKDAY_START_TIME.hour,\
+            minute=settings.WEEKDAY_START_TIME.minute, second=0, microsecond=0)
+        end_time = datetime.datetime.now().replace(hour=settings.WEEKDAY_END_TIME.hour,\
+            minute=settings.WEEKDAY_END_TIME.minute, second=0, microsecond=0)
+
+        end_is_next_day = settings.WEEKDAY_END_TIME < settings.WEEKDAY_START_TIME
+    else:
+        start_time = datetime.datetime.now().replace(hour=settings.WEEKEND_START_TIME.hour,\
+            minute=settings.WEEKEND_START_TIME.minute, second=0, microsecond=0)
+        end_time = datetime.datetime.now().replace(hour=settings.WEEKEND_END_TIME.hour,\
+            minute=settings.WEEKEND_END_TIME.minute, second=0, microsecond=0)
+
+        end_is_next_day = settings.WEEKEND_END_TIME < settings.WEEKEND_START_TIME
+
+    if end_is_next_day:
+        end_time = end_time + datetime.timedelta(days=1)
+
+    # Add in allowance for checking the previous day's run window since if the time just changed over
+    # then it would still be within that window instead of the next day's
+    not_todays = now < start_time or now > end_time
+    not_yesterdays = now < (start_time - datetime.timedelta(days=1)) or now > (end_time - datetime.timedelta(days=1))
+    not_all_day = start_time != end_time
+
+    if not_todays and not_yesterdays and not_all_day:
+        message = (
+            f"Not during the valid processing window. "
+            f"Start time: {(start_time-datetime.timedelta(days=1)).strftime('%A %I:%M%p')} "
+            f"End time: {(end_time-datetime.timedelta(days=1)).strftime('%A %I:%M%p')} "
+            f"or "
+            f"Start time: {start_time.strftime('%A %I:%M%p')} "
+            f"End time: {end_time.strftime('%A %I:%M%p')}")
+        logging.debug(message)
+        return (False, start_time)
+    return (True, start_time)
+
+def update_limits(service, headers):
+    '''
+    Updates the limits in the database
+    '''
+    limit_type = CallTypeChoice.SRH
+    if service == 'download':
+        limit_type = CallTypeChoice.DWL
+    if service == 'sources':
+        limit_type = CallTypeChoice.SRC
+
+    # Update the DB with the current rate limits remaining
+    limits = api_limits.objects.get(limit_type=limit_type)
+    if headers and 'X-RateLimit-Limit' in headers:
+        vals = str(headers['X-RateLimit-Limit']).split('/')
+        limits.limits_per_minute = int(vals[0])
+        limits.limits_per_hour = int(vals[1])
+        limits.limits_per_day = int(vals[2])
+    if headers and 'X-RateLimit-Reset' in headers:
+        vals = str(headers['X-RateLimit-Reset']).split('/')
+        limits.reset_on_minute = timezone.make_aware(datetime.datetime.fromtimestamp(int(vals[0])))
+        limits.reset_on_hour = timezone.make_aware(datetime.datetime.fromtimestamp(int(vals[1])))
+        limits.reset_on_day = timezone.make_aware(datetime.datetime.fromtimestamp(int(vals[2])))
+    if headers and 'X-RateLimit-Remaining' in headers:
+        vals = str(headers['X-RateLimit-Remaining']).split('/')
+        limits.remaining_per_minute = int(vals[0])
+        limits.remaining_per_hour = int(vals[1])
+        limits.remaining_per_day = int(vals[2])
+
+    # Save to the database
+    try:
+        limits.save()
+        logging.debug(f"Updated limits for {service}.")
+    except OperationalError as exc:
+        log_error(f"Unable to save the new limits to the database for {service}. Error: {exc}")
+        return
 
 def convert_filters_to_query_string(set_filters=None): # pylint: disable=too-many-branches
     '''
@@ -521,7 +392,6 @@ def string_is_int(s_val):
     Check if the string contains an integer since isinstance will return
     false for strings with an integer.
     '''
-
     try:
         int(s_val)
         return True
