@@ -282,7 +282,7 @@ def is_in_run_window():
             f"End time: {end_time.strftime('%A %I:%M%p')}")
         logging.debug(message)
         return (False, start_time)
-    return (True, start_time)
+    return (True, make_aware(start_time))
 
 def update_limits(service, headers):
     '''
