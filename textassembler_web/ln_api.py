@@ -94,7 +94,8 @@ class LNAPI:
             if limits.remaining_per_minute == 0 and limits.reset_on_minute < timezone.now():
                 return timezone.now()
         # Else calculate time remaining to wait
-        all_dates = [limits.reset_on_day, limits.reset_on_hour, limits.reset_on_minute, timezone.make_aware(start_time)]
+        start_time = timezone.make_aware(start_time) if not timezone.is_aware(start_time) else start_time
+        all_dates = [limits.reset_on_day, limits.reset_on_hour, limits.reset_on_minute, start_time]
         if limit_type == 'download':
             return max(all_dates)
         if limits.remaining_per_day == 0:
