@@ -130,10 +130,10 @@ def get_filter_values(filter_type): #pylint: disable=too-many-branches
         vals = {'name':'Date', "type":"date",
                 'help':'The publication date',
                 "choices":[
-                    {"val":"gt", "name":"(&#62;) Greater than"},
-                    {"val":"lt", "name":"(&#60;) Less than"},
-                    {"val":"ge", "name":"(&#8805;) Greater than or equal to"},
-                    {"val":"le", "name":"(&#8804;) Less than or equal to"}]}
+                    {"val":"gt", "name":"After"},
+                    {"val":"lt", "name":"Before"},
+                    {"val":"ge", "name":"On or After"},
+                    {"val":"le", "name":"On or Before"}]}
 
     elif filter_type == 'Location':
         vals = {"name": name, "help": "The location of the publication", "type":"text"}
