@@ -27,7 +27,10 @@ def login(request):
     # Check if the logon was successful already
     if request.META.get('REMOTE_USER', False):
         logging.debug("Found signed-in Cosign user")
-        request.session['userid'] = request.META['REMOTE_USER']
+        remote_user = request.META['REMOTE_USER']
+        if '@' in remote_user:
+            return redirect('/logout')
+        request.session['userid'] = remote_user
         request.session['is_admin'] = get_is_admin(request.session['userid'])
         return redirect('/search')
     else:
