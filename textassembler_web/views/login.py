@@ -29,7 +29,7 @@ def login(request):
         logging.debug("Found signed-in Cosign user")
         remote_user = request.META['REMOTE_USER']
         if '@' in remote_user:
-            return redirect('/logout')
+            return redirect('/unauthorized')
         request.session['userid'] = remote_user
         request.session['is_admin'] = get_is_admin(request.session['userid'])
         return redirect('/search')
