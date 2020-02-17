@@ -78,7 +78,7 @@ class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
                 # continue loop if there are no downloads remaining
                 #   (this could happen if some other search sneaks in on the UI
                 #   before this process wakes)
-                if not self.api.check_can_download(True):
+                if self.api.check_when_available('download') > timezone.now():
                     continue
 
                 # get the next item from the queue
@@ -278,7 +278,6 @@ class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
         # Check for throttle limit error from API, this should not happen, but just to make sure search
         # doesn't fail due to misconfigured throttle settings
         if "response_code" in results and results["response_code"] == 429:
-            self.api.refresh_throttle_data(True) # print the throttle limits to the log
             logging.error((f"An error occurred processing search id: {self.cur_search.search_id}. "
                            f"Misconfigured throttle limits. {results['error_message']}"))
             # Wait before continuing processing to avoid re-triggering the error immediately
@@ -365,17 +364,15 @@ class Command(BaseCommand): # pylint: disable=too-many-instance-attributes
         Will wait for an open download window before returning, checking periodically
         '''
 
-        wait_time = round(self.api.get_time_until_next_download(), 0)
-        if wait_time > 0:
-            logging.info(f"No downloads remaining. Must wait {wait_time} seconds until next available download window is available.")
+        avail_time = self.api.check_when_available('download')
+        if avail_time > timezone.now():
+            logging.info(f"No downloads remaining. Must wait until {avail_time.strftime('%c')} until next available download window is available.")
             # Check if we can download every 10 seconds instead of waiting the full wait_time to
             # be able to handle sig_term triggering (i.e. we don't want to sleep for an hour before
             # a kill command is processed)
-            can_download = False
-            while not can_download and not self.terminate:
+            while self.api.check_when_available('download') > timezone.now() and not self.terminate:
                 try:
                     time.sleep(10)
-                    can_download = self.api.check_can_download(True)
                     self.retry_counts["database"] = 0
                 except OperationalError as ex:
                     if self.retry_counts["database"] <= settings.NUM_PROCESSOR_RETRIES:
@@ -509,7 +506,7 @@ def remove_html(text):
     if title != headline: # prevent duplicate output to file
         output.append(headline)
 
-    text = bsp.find('bodytext').text if bsp.find('bodytext') is not None else ""
+    text = bsp.find('nitf:body').text if bsp.find('nitf:body') is not None else ""
     output.append(text)
     full_output = "\n\n".join(output)
 
