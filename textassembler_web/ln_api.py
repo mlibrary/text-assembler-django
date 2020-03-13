@@ -245,45 +245,42 @@ def is_in_run_window():
     Calculate the datetime run window for the download processor
     returns: (bool, datetime) if we are in the run window or not and when the start time is
     '''
-    # determine if it is currently a weekend or weekday
-    is_weekday = datetime.datetime.today().weekday() < 5
     now = datetime.datetime.now()
+    in_window, start_time = check_window(now)
 
-    if is_weekday:
-        start_time = datetime.datetime.now().replace(hour=settings.WEEKDAY_START_TIME.hour,\
-            minute=settings.WEEKDAY_START_TIME.minute, second=0, microsecond=0)
-        end_time = datetime.datetime.now().replace(hour=settings.WEEKDAY_END_TIME.hour,\
-            minute=settings.WEEKDAY_END_TIME.minute, second=0, microsecond=0)
-
-        end_is_next_day = settings.WEEKDAY_END_TIME < settings.WEEKDAY_START_TIME
-    else:
-        start_time = datetime.datetime.now().replace(hour=settings.WEEKEND_START_TIME.hour,\
-            minute=settings.WEEKEND_START_TIME.minute, second=0, microsecond=0)
-        end_time = datetime.datetime.now().replace(hour=settings.WEEKEND_END_TIME.hour,\
-            minute=settings.WEEKEND_END_TIME.minute, second=0, microsecond=0)
-
-        end_is_next_day = settings.WEEKEND_END_TIME < settings.WEEKEND_START_TIME
-
-    if end_is_next_day:
-        end_time = end_time + datetime.timedelta(days=1)
-
-    # Add in allowance for checking the previous day's run window since if the time just changed over
-    # then it would still be within that window instead of the next day's
-    not_todays = now < start_time or now > end_time
-    not_yesterdays = now < (start_time - datetime.timedelta(days=1)) or now > (end_time - datetime.timedelta(days=1))
-    not_all_day = start_time != end_time
-
-    if not_todays and not_yesterdays and not_all_day:
+    if not in_window:
         message = (
-            f"Not during the valid processing window. "
-            f"Start time: {(start_time-datetime.timedelta(days=1)).strftime('%A %I:%M%p')} "
-            f"End time: {(end_time-datetime.timedelta(days=1)).strftime('%A %I:%M%p')} "
-            f"or "
-            f"Start time: {start_time.strftime('%A %I:%M%p')} "
-            f"End time: {end_time.strftime('%A %I:%M%p')}")
+            "Not during the valid processing window."
+            "Start time: 10 pm Friday"
+            "End time: 6 am Monday"
+        )
         logging.debug(message)
         return (False, start_time)
     return (True, timezone.make_aware(start_time))
+
+
+def check_window(now):
+    day_of_week = now.weekday()
+    if day_of_week == 5 or day_of_week == 6:  # sat/sun
+        start_time = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_time = now.replace(hour=0, minute=0, second=0, microsecond=0) + datetime.timedelta(1)
+        all_day = True
+    elif day_of_week == 4:  # fri
+        start_time = now.replace(hour=22, minute=0, second=0, microsecond=0)
+        end_time = now.replace(hour=0, minute=0, second=0, microsecond=0) + datetime.timedelta(1)
+        all_day = False
+    elif day_of_week == 0:  # mon
+        start_time = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_time = now.replace(hour=6, minute=0, second=0, microsecond=0)
+        all_day = False
+    else:
+        start_time = now + datetime.timedelta(minutes=2)
+        end_time = now - datetime.timedelta(minutes=2)
+        all_day = False
+    today = start_time <= now < end_time
+    in_window = all_day or today
+    return in_window, start_time
+
 
 def update_limits(service, headers):
     '''
@@ -320,6 +317,7 @@ def update_limits(service, headers):
     except OperationalError as exc:
         log_error(f"Unable to save the new limits to the database for {service}. Error: {exc}")
         return
+
 
 def convert_filters_to_query_string(set_filters=None): # pylint: disable=too-many-branches
     '''
@@ -387,6 +385,7 @@ def encode_if_needed(field, values=None):
         tmp = [base64.b64encode(val.encode('utf-8')).decode("utf-8").replace("=", "") for val in values]
         values = tmp
     return values
+
 
 def string_is_int(s_val):
     '''
