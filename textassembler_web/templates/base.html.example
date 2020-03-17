@@ -21,8 +21,8 @@
     <!-- Include your own css file here, added to the textassembler_web/static folder -->
     <link rel="stylesheet" type="text/css" href="{% static 'mlibrary.css' %}"/>
     <link rel="stylesheet" type="text/css" href="{% static 'textassembler.css' %}"/>
-    
-    <title>{% app_name %}</title>
+
+    <title>{% block title %}{% endblock %} | {% app_name %}</title>
     <link rel="shortcut icon" type="image/png" href="{% static 'favicon.ico' %}"/>
   </head>
   <body>

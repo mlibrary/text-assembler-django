@@ -1,6 +1,9 @@
 {% extends 'base.html' %}
 
 {% load humanize %}
+
+{% block title %}Administrative Users{% endblock %}
+
 {% block content %}
 
 <h2>Administrative Users</h2><hr/>
@@ -22,10 +25,10 @@
             <td class="user-column {{ headings.0|lower|slugify }}-column" data-order="{{ u.userid }}">
                 {{ u.userid }}
             </td>
-            {% if u.userid != request.session.userid %} 
+            {% if u.userid != request.session.userid %}
             <td class="user-column {{ headings.3|lower|slugify }}-column">
                 <form method="POST" action="/delete/admin/{{u.userid}}/" class='action-btn'>
-                    {% csrf_token %} 
+                    {% csrf_token %}
                     <button type="submit" class="btn btn-danger">Remove</button>
                 </form>
             </td>

@@ -1,5 +1,7 @@
 {% extends 'base.html' %}
 
+{% block title %}About{% endblock %}
+
 {% block content %}
 
 <h2>About</h2><hr/>
@@ -7,7 +9,7 @@
 <p>Text Assembler enables construction and bulk download of full text corpora derived from newspapers, newswires, web-based news publications, broadcast news transcripts, magazines, and legal and trade publications published between 1980 and the present.
 
 <br /><br />In order to build a corpus, construct a search, review the search results, and queue all content matching your search criteria for download. Text Assembler outputs a ZIP file that contains an identical set of HTML of your search criteria, sorted in descending date order. Downloading is queued for nights and weekends. Please plan ahead to ensure sufficient time to retrieve results.
-<br /><br />Text Assembler and data provided through it can only be used for educational and research purposes of authorized users.  
+<br /><br />Text Assembler and data provided through it can only be used for educational and research purposes of authorized users.
 <br /><br /><strong>Uses that are not allowed:</strong>
 </p>
 <ul><li>You may not use the database or any part of the information comprised in the database content for commercial research, for example, research that is done under a funding or consultant contract, internship, or other relationship in which the results are delivered to a for-profit organization.</li>
