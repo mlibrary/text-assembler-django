@@ -94,7 +94,7 @@ class Command(BaseCommand):
 
     def get_queue(self):
         '''
-        Check if there are items in the queueu to process that have
+        Check if there are items in the queue to process that have
         completed downloading their results and haven't already
         completed compression.
         Returns:
