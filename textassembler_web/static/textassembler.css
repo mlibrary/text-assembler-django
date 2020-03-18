@@ -252,3 +252,6 @@ input[type=checkbox], input[type=radio] {
     margin-left:20%;
     text-align: center;
 }
+legend {
+    font-size: medium;
+}

@@ -69,15 +69,17 @@
             The number of days to complete the download is estimated based on the number of other searches in the queue and the number of
             allowed downloads per day by LexisNexis. The max amount of results allowed is <strong>{% max_results_allowed %}</strong>.</p>
             <div class='queue-search'>
-                    <div class='input-group radio'>
-                        {% is_over_max search_results.count as over_max %}
-                        <label><input type='radio' name='use_filter' id='use_existing' value='existing'
+                    <fieldset>
+                        <legend>Refine Search:</legend>
+                        <div class='input-group radio'>
+                            {% is_over_max search_results.count as over_max %}
+                            <label><input type='radio' name='use_filter' id='use_existing' value='existing'
 
-                        data-toggle="collapse" data-target='#post_filters.show'
-                        {% if over_max and not request.session.is_admin %} disabled {% endif %}
-                        />Use existing filters ({{ search_results.count | intcomma }} results, approximately {{ search_results.est_days_to_complete | intcomma }} days to download)</label>
-                    </div>
-                    {% if search_results.postFilters|length > 0 %}
+                            data-toggle="collapse" data-target='#post_filters.show'
+                            {% if over_max and not request.session.is_admin %} disabled {% endif %}
+                            />Use existing filters ({{ search_results.count | intcomma }} results, approximately {{ search_results.est_days_to_complete | intcomma }} days to download)</label>
+                        </div>
+                        {% if search_results.postFilters|length > 0 %}
                         <div class='input-group radio'>
                             <label><input type='radio' checked name='use_filter' id='use_suggested' data-toggle="collapse" data-target='#post_filters:not(.show)' value='suggested'/>Select additional filter(s)&nbsp;<a href='' role='button' onClick='return false;' data-trigger='focus' data-html='true' data-toggle='popover' title='Additional Filters' data-content='These are suggestions provided by LexisNexis to help narrow down your search further. They are grouped by the field they filter on and show how many results you could expect by adding that filter. You can select one or more of these and either submit your search directly or refresh the preview of the results with the new filters. <strong>Note that the filter values populated may appear in code instead of plain text.</strong><br/><br/>'>(?)</a></label>
                         </div>
@@ -96,26 +98,31 @@
                             </select>
                             <button type="submit" name='add-filters' class="btn btn-block btn-primary col-5 lmargin-10">Refresh Result Preview</button>
                         </div>
-                    {% endif %}
-                    <p>Select format(s) to download the results in:</p>
-                    <div id='advanced_options'>
-                        {% for format in available_formats %}
-                        <div class='input-group checkbox'>
-                            <label><input type='checkbox' name='selected-formats' value='{{ format.format_id }}' {% if forloop.first %} checked {% endif %}/>
-                                {{ format.format_name }}&nbsp;<a href='#' role='button' onClick='return false;' data-trigger='focus' data-html='true' data-toggle='popover' title='{{ format.format_name }}' data-content='{{ format.help_text }}'>(?)</a>
-                            </label>
+                        {% endif %}
+                    </fieldset>
+                    <fieldset>
+                        <legend>Select format(s) to download the results in:</legend>
+                        <div id='advanced_options'>
+                                {% for format in available_formats %}
+                                <div class='input-group checkbox'>
+                                    <label><input type='checkbox' name='selected-formats' value='{{ format.format_id }}' {% if forloop.first %} checked {% endif %}/>
+                                        {{ format.format_name }}&nbsp;<a href='#' role='button' onClick='return false;' data-trigger='focus' data-html='true' data-toggle='popover' title='{{ format.format_name }}' data-content='{{ format.help_text }}'>(?)</a>
+                                    </label>
+                                </div>
+                                {% endfor %}
                         </div>
-                        {% endfor %}
-                    </div>
-                    <p>Select the sort order for the results:</p>
-                    <div id='sort_order'>
-                        {% for sort_order in available_sort_orders %}
-                            <div class='input-group radio'>
-                            <label><input type='radio' name='selected-sort-order' value='{{ sort_order.sort_id }}' {% if forloop.first %} checked {% endif %}/>
-                                {{ sort_order.sort_label }}</label>
-                            </div>
-                        {% endfor %}
-                    </div>
+                    </fieldset>
+                    <fieldset>
+                        <legend>Select the sort order for the results:</legend>
+                        <div id='sort_order'>
+                            {% for sort_order in available_sort_orders %}
+                                <div class='input-group radio'>
+                                <label><input type='radio' name='selected-sort-order' value='{{ sort_order.sort_id }}' {% if forloop.first %} checked {% endif %}/>
+                                    {{ sort_order.sort_label }}</label>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </fieldset>
                     {% if request.session.is_admin %}
                         <div id='user_for' class='input-group'>
                             <label for="user_for" id='user_for_lbl' class='indent_right'>For User ID:&nbsp;
