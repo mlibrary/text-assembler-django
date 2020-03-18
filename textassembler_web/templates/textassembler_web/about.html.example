@@ -4,7 +4,7 @@
 
 {% block content %}
 
-<h2>About</h2><hr/>
+<h1>About</h1><hr/>
 
 <p>Text Assembler enables construction and bulk download of full text corpora derived from newspapers, newswires, web-based news publications, broadcast news transcripts, magazines, and legal and trade publications published between 1980 and the present.
 

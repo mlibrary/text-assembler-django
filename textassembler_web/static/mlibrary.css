@@ -7,25 +7,28 @@ body {
 	font: 16px/28px 'Gotham SSm A', 'Gotham SSm B', arial, sans-serif;
 	-webkit-font-smoothing: antialiased; /* Fix for webkit rendering */
 	-moz-osx-font-smoothing: grayscale; /* Fix for firefox rendering */
-      
+
 }
 
-#mlibMast h2 {
-  font-size: 28px;
-  margin-top: 0;
-  color: #ffffff;
-  text-shadow: 2px 2px #222;
+#mlibMast span.head {
+	font-size: 28px;
+	margin-top: 0;
+	color: #ffffff;
+	text-shadow: 2px 2px #222;
+	text-align: center;
+	font-weight: 500;
 }
+
 @media all and (max-width: 500px) {
-    #mlibMast h2 {font-size: 16px;}
+    #mlibMast span.head {font-size: 16px;}
     #mlibMast .toplinks {float: none;}
 }
 
 @media all and (max-width: 770px) {
-    #mlibMast h2 {font-size: 20px;}
+    #mlibMast span.head {font-size: 20px;}
 }
 
-h2 {
+h1 {
   display: block;
   font-size: 1.5em;
   -webkit-margin-before: 0.83em;
@@ -51,7 +54,7 @@ h2 {
     margin-top: 13px;
 }
 
-    #mlibMast h2 a, #mlibMast h2 a:hover, #mlibMast h2 a:active, #mlibMast h2 a:visited {
+    #mlibMast span.head a, #mlibMast span.head a:hover, #mlibMast span.head a:active, #mlibMast span.head a:visited {
         text-decoration: none;
         color: #ffffff;
     }
@@ -127,7 +130,7 @@ ul, menu, dir {
 ================================================== */
 
 .UMwrapper{ width: 100%; max-width: 940px; min-width: 940px; margin: 0 auto; clear: both;}
-/* You may have to adjust the max-width and min-width to fit the width of your site. 
+/* You may have to adjust the max-width and min-width to fit the width of your site.
 If the margin is set differently for your site, fix the margin here to reflect that. */
 
 
@@ -141,7 +144,7 @@ If the margin is set differently for your site, fix the margin here to reflect t
 
 #UMmasthead {
   	width: 50%;
-  	float: left; 
+  	float: left;
   	position: relative;
 }
 
@@ -161,7 +164,7 @@ If the margin is set differently for your site, fix the margin here to reflect t
 }
 
 #UMSearchTool {
-	width: 50%; 
+	width: 50%;
 	float: left;
 	position: relative;
 	margin-top: 14px;
@@ -190,7 +193,7 @@ If the margin is set differently for your site, fix the margin here to reflect t
 #UMSearchTool #btn_search {
 	height: 28px;
 	width: 34px;
-	
+
 	cursor: pointer;
 	outline: 0px none;
 	border: 0pc none;
@@ -239,7 +242,7 @@ If the margin is set differently for your site, fix the margin here to reflect t
 }
 
 
-/* #UM Footer 
+/* #UM Footer
 ================================================== */
 footer {
     clear: both;
@@ -272,10 +275,10 @@ footer {
 	margin-top: 10%;
 }
 
-#UMstandardFooter .twelveUMcolumns {   
+#UMstandardFooter .twelveUMcolumns {
 	width: 700px;
 	float: left;
-	position: relative; 
+	position: relative;
 	margin: 5px 0px 0px 0px;
 
 }
@@ -314,7 +317,7 @@ footer {
 #UMstandardFooter #standard-footer-site-links ul li a {
 	text-decoration: none;
 	padding-right: 8px;
-	
+
 }
 
 #UMstandardFooter #standard-footer-site-links ul li a:hover {
@@ -372,7 +375,7 @@ footer {
 
 #UMstandardFooter #standard-footer-UM-info ul li:last-child {
 	border-right: 0px;
-}	
+}
 
 #UMstandardFooter #standard-footer-UM-info ul li a {
 	text-decoration: none;

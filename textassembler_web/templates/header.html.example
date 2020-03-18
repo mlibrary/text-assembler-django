@@ -3,14 +3,14 @@
 <div id="mlibHeader" class="s-lib-side-borders">
     <div id="mlibMast">
         <div id="mLib" >
-            <h2>
+            <span class="head">
               <a href="https://lib.umich.edu"><img src="static/MLibLogo-color-1-5.png" alt="University of Michigan Library"></a>
-            </h2>
+            </span>
         </div>
         <div id="mlibApp" >
-            <h2>
+            <span class="head">
                 <a href="/">{% app_name %}</a>
-            </h2>
+            </span>
         </div>
         <div class="toplinks">
             <ul>

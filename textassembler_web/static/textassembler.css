@@ -81,7 +81,7 @@ a {
     margin-left: 10px;
 }
 
-h2 {
+h1, h2 {
     text-align: center;
     font-size: 30px;
     color: #00274C;
@@ -89,7 +89,7 @@ h2 {
     font-weight:500;
     margin-top:0px;
 }
-
+/**
 h1 {
     padding-top:0px;
     padding-bottom: 0px;
@@ -101,7 +101,7 @@ h1 {
 h1>a {
     color:white;
 }
-
+**/
 input[type=checkbox], input[type=radio] {
     margin-right: 5px;
 }
@@ -184,7 +184,8 @@ input[type=checkbox], input[type=radio] {
 .field-title, .post-filter-title {
     font-weight: bold;
 }
-.extractsplay: inline-block;
+.extract {
+    display: inline-block;
 }
 .overview-title {
     padding-left: 200px;
@@ -214,7 +215,7 @@ input[type=checkbox], input[type=radio] {
 }
 #post_filters {
     flex-wrap: nowrap;
-} 
+}
 /*******
 * My Searches
 ********/
