@@ -244,6 +244,9 @@ input[type=checkbox], input[type=radio] {
 #user_for {
     width: 200px;
 }
+#user_for_div {
+    width: 200px;
+}
 #user_for_lbl {
     margin-top: 10px;
 }

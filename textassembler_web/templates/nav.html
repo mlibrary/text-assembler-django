@@ -5,7 +5,7 @@
         class="btn btn-primary btn-blue {% if '/search' == request.path %} btn-selected {% endif %}">
         Search
     </a>
-    
+
     <a href="/mysearches" role="button"
         class="btn btn-primary btn-blue {% if '/mysearches' == request.path %} btn-selected {% endif %}">
         My Search
@@ -19,9 +19,9 @@
 
     {% if request.session.is_admin %}
         <div class="nav-dropdown dropdown">
-            <a href="/admin/searches" role="button"
+            <button role="button"
                 class="btn btn-primary dropdown-toggle btn-blue {% if '/admin' in  request.path %} btn-selected {% endif %}"
-                id="ddAdmin" data-toggle="dropdown">Admin</a>
+                id="ddAdmin" data-toggle="dropdown">Admin</button>
 
             <div class="dropdown-menu nav-subdropdown" aria-labelledby="ddAdmin">
                 <a class="dropdown-item" href="/admin/searches">All Searches</a>

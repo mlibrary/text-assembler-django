@@ -96,7 +96,7 @@
                                 </optgroup>
                             {% endfor %}
                             </select>
-                            <button type="submit" name='add-filters' class="btn btn-block btn-primary col-5 lmargin-10">Refresh Result Preview</button>
+                            <button type="submit" name='add-filters' class="btn btn-block btn-primary col-6 lmargin-10">Refresh Result Preview</button>
                         </div>
                         {% endif %}
                     </fieldset>
@@ -124,14 +124,13 @@
                         </div>
                     </fieldset>
                     {% if request.session.is_admin %}
-                        <div id='user_for' class='input-group'>
+                        <div id='user_for_div' class='input-group'>
                             <label for="user_for" id='user_for_lbl' class='indent_right'>For User ID:&nbsp;
                                 <a href='#' role='button' onClick='return false;' data-trigger='focus' data-html='true'
                                     data-toggle='popover' title='For User ID'
                                     data-content='Allows administrative users to queue searches for other users.<br/>Defaults to the current user.'>(?)</a>
                             </label>
                             <input type='text' name='user_for' id='user_for' class='form-control' placeholder='User ID' value='{{ request.session.userid }}'/>
-                            </label>
                         </div>
                     {% endif %}
                     <button type="submit" name='submit-search' id='submit-search' class="btn btn-block btn-primary col-6 offset-4">Submit Search</button>
