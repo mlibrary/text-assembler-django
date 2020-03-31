@@ -263,26 +263,30 @@ def clean_post_filters(results):
     '''
 
     post_filters = {}
-    for result in results:
+    for result in results: # pylint: disable=too-many-nested-blocks
         for post_filter in result['PostFilters']:
             for item in post_filter['FilterItems']:
                 if item['Count'] != None and item['Count'] != 'null' and item['Count'] > 0:
                     # Clean the URL to get only the name of the filter and the value of the filter
                     # The benefit to using this instead of the PostFilterId field is that is has a better
                     # display name for the UI (PublicationType vs publicationtype)
-                    url = item['SearchResults@odata.navigationLink']
-                    only_filters = url[url.find('$filter='):].replace("$filter=", "")
-                    if '%20and%20' in only_filters:
-                        only_filter = only_filters.split('%20and%20')[-1]
-                    else:
-                        only_filter = only_filters
-                    filter_name = only_filter.split("%20eq%20")[0].replace("/", "_")
-                    if filter_name[0] == '(':
-                        filter_name = filter_name[1:]
+                    try:
+                        url = item['SearchResults@odata.navigationLink']
+                        only_filters = url[url.find('$filter='):].replace("$filter=", "")
+                        if '%20and%20' in only_filters:
+                            only_filter = only_filters.split('%20and%20')[-1]
+                        else:
+                            only_filter = only_filters
+                        filter_name = only_filter.split("%20eq%20")[0].replace("/", "_")
+                        if filter_name[0] == '(':
+                            filter_name = filter_name[1:]
 
-                    value = only_filter.split("%20eq%20")[1]
-                    namespace = get_enum_namespace(filter_name)
-                    value = value.replace(namespace, '') # remove the namespace from the value since we add it in at search time
+                        value = only_filter.split("%20eq%20")[1]
+                        namespace = get_enum_namespace(filter_name)
+                        value = value.replace(namespace, '') # remove the namespace from the value since we add it in at search time
+                    except Exception: # pylint: disable=broad-except
+                        logging.debug(f"Error parsing the post filters. Url: {url}")
+                        continue
                     if "'" in value:
                         value = value.replace("'", "")
                     else:
